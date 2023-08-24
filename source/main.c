@@ -1,8 +1,8 @@
 #include <tonc.h>
 
 const float PI = 3.1415;
-const int MAPSIZE = 4;
-int MAP[4][4] = {0};
+const int MAPSIZE = 8;
+int MAP[8][8] = {0};
 const int SCREENHEIGHT = 160;
 const int SCREENWIDTH = 240;
 const int CASTEDRAYS = 240;
@@ -119,11 +119,20 @@ void castRays(FIXED x, FIXED y, int direction) {
 	}
 }
 
+float floatAbs(float a) {
+	if (a < 0.0) {
+		return -a;
+	}
+	else {
+		return a;
+	}
+}
+
 
 void drawWall(int i, float distance, int type) {
 
 	int wallHeight = fx2int(fxmul(fxdiv(int2fx(32), float2fx(distance)), int2fx(10)));//160;// / distance;
-	wallHeight = CLAMP(wallHeight, 10, 160);
+	wallHeight = CLAMP(wallHeight, 1, 160);
 	int halfHeight = wallHeight / 2;
 	m3_line(i, 0, i, 80-halfHeight, RGB15(0,0,0));
 
@@ -163,21 +172,41 @@ int castGrid(int x, int y, int direction) {
 		}
 		int rayAngle = fx2int(angle);
 
-		//ugly floating point math, placeholder until 
-		float sine = fxdiv(lu_sin(luAngle), 16));
-		float cosine = fx2float(fxdiv(lu_cos(luAngle), 16));
+		int xDir, yDir;
+		if (rayAngle >= 0 && rayAngle < 90) {
+			xDir = 1;
+			yDir = 1;
+		}
+		else if (rayAngle >= 90 && rayAngle < 180) {
+			xDir = 1;
+			yDir = 1;
+		}
+		else if (rayAngle >= 180 && rayAngle < 270) {
+			xDir = -1;
+			yDir = 1;
+		}
+		else if (rayAngle >= 270) {
+			xDir = -1;
+			yDir = -1;
+		}
 
-		float tan = 64*sine/cosine; // in 1/64th range, so 64 equals one
+
+
+		//ugly floating point math, placeholder until 
+		FIXED sine = lu_sin(luAngle);
+		FIXED cosine = lu_cos(luAngle);
+
+		float tan = fx2float(fxdiv(sine, cosine)); // in 1/64th range, so 64 equals one
 		//avoid division by zero later on
-		if (tan == 0) {
+		if (rayAngle == 0) {
 			tan = 0.01;
 		}
 
-		//return tan;
 
-		float cosineInteger = fx2float(lu_cos(luAngle)); //scaled up by 64
+
+
+		float cosineInteger = fx2float(lu_cos(luAngle)); //should be scaled by 64
 		
-		//return cosine*100;
 		/*
 		if (cosineInteger == 0) {
 			cosineInteger = 1;
@@ -205,19 +234,18 @@ int castGrid(int x, int y, int direction) {
 			ty = y / TILESIZE * TILESIZE + TILESIZE;
 			dy = TILESIZE;
 		}
-		tx = x + (y-ty)*64/tan; //64 to correct for tan scaling
-   		dx = TILESIZE*64/tan; //64 to correct for tan scaling
+		tx = x + floatAbs(y-ty)/tan*xDir; //64 to correct for tan scaling
+   		dx = TILESIZE/tan*xDir; //64 to correct for tan scaling
 
-		int initX = CLAMP(tx / TILESIZE, 0, MAPSIZE);
-		int initY = CLAMP(ty / TILESIZE, 0, MAPSIZE);
+		int initX = tx / TILESIZE;
+		int initY = ty / TILESIZE;
 
-		
+		//return initY;
+
+
 
 		if (MAP[initX][initY] != 0) {
-			horizontalDistance = (x - tx) / cosineInteger;
-			if (horizontalDistance < 0) {
-				horizontalDistance = -horizontalDistance;
-			}
+			horizontalDistance = floatAbs((x - tx) / cosineInteger);
 			//drawWall(i, horizontalDistance, MAP[initX][initY]);
 		}
 		
@@ -226,14 +254,11 @@ int castGrid(int x, int y, int direction) {
 			for (int j = 0; j < 20; j++) {
 				tx += dx;
 				ty += dy;
-				initX = CLAMP(tx / TILESIZE, 0, MAPSIZE);
-				initY = CLAMP(ty / TILESIZE, 0, MAPSIZE);
+				initX = tx / TILESIZE;
+				initY = ty / TILESIZE;
 				if (MAP[initX][initY] != 0) {
 					//drawWall(i, horizontalDistance, MAP[initX][initY]);
-					horizontalDistance = (x - tx) / cosineInteger;
-					if (horizontalDistance < 0) {
-						horizontalDistance = -horizontalDistance;
-					}
+					horizontalDistance = floatAbs((x - tx) / cosineInteger);
 					break;
 				}
 			}
@@ -265,44 +290,37 @@ int castGrid(int x, int y, int direction) {
 			txh = x / TILESIZE * TILESIZE + TILESIZE;
 			dxh = TILESIZE;
 		}
-		tyh = y + (x-txh)*tan/64; //64 to correct for tan scaling
-   		dyh = TILESIZE*tan/64; //64 to correct for tan scaling
+		tyh = y + floatAbs(x-txh)*tan*yDir; //64 to correct for tan scaling
+   		dyh = TILESIZE*tan*yDir; //64 to correct for tan scaling
 
 
-		int initXH = CLAMP(txh / TILESIZE, 0, MAPSIZE);
-		int initYH = CLAMP(tyh / TILESIZE, 0, MAPSIZE);
+		int initXH = txh / TILESIZE;
+		int initYH = tyh / TILESIZE;
 
-		//return initYH;
 
+		//return tan*100;
 		//return MAP[initXH][initYH];
 
 
 		
 			if (MAP[initXH][initYH] != 0) {
 
-				verticalDistance = (x - txh) / cosineInteger;
-				if (verticalDistance < 0) {
-						verticalDistance = -verticalDistance;
-				}
+				verticalDistance = floatAbs((x - txh) / cosineInteger);
 
 				//drawWall(i, verticalDistance, MAP[initXH][initYH]);
 			}
-			
-			else if (dyh > 0 && dyh < 9999){
+			else {
 				//step tx & ty up in steps of dx & dy 
 				for (int j = 0; j < 20; j++) {
 
 					txh += dxh;
 					tyh += dyh;
 
-					initXH = CLAMP(txh / TILESIZE, 0, MAPSIZE);
-					initYH = CLAMP(tyh / TILESIZE, 0, MAPSIZE);
+					initXH = txh / TILESIZE;
+					initYH = tyh / TILESIZE;
 
 					if (MAP[initXH][initYH] != 0) {
-						verticalDistance = (x - txh) / cosineInteger;
-						if (verticalDistance < 0) {
-							verticalDistance = -verticalDistance;
-						}
+						verticalDistance = floatAbs((x - txh) / cosineInteger);
 						//drawWall(i, verticalDistance, MAP[initXH][initYH]);
 						break;
 					}
@@ -316,8 +334,8 @@ int castGrid(int x, int y, int direction) {
 		
 
 		//return verticalDistance;
-		//return initYH;
-		//return MAP[0][2];
+		//return initX;
+		//return MAP[0][0];
 
 
 		if (verticalDistance >= 0 && (verticalDistance <= horizontalDistance || horizontalDistance < 0)) {
@@ -342,7 +360,6 @@ int castGrid(int x, int y, int direction) {
 		}
 
 
-		//return;
 
 	}
 
@@ -358,7 +375,7 @@ int main(void)
 	int x = 2*64;//96;//2*64;//
 	int y = 2*64;//224;//2*64;//
 
-	int direction = 260; //315, 0,0
+	int direction = 230; //315, 0,0
 
 	initMap();
 	
@@ -387,7 +404,7 @@ int main(void)
 		
 		
 		castGrid(x, y, direction);
-		direction += 2;
+		direction += 3;
 		//x = fxadd(x, float2fx(0.1));
 		//y = fxadd(y, float2fx(0.1));
 		if (direction >= 360) {
