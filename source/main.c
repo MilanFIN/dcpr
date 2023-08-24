@@ -120,111 +120,9 @@ void castRays(FIXED x, FIXED y, int direction) {
 }
 
 
-int castGrid2(FIXED x, FIXED y, int direction) {
-	const FIXED PI2 = int2fx(0x10000 >> 1);
+void drawWall(int i, float distance, int type) {
 
-	const FIXED STEPANGLE = fxdiv64(int2fx(FOV), int2fx(CASTEDRAYS));
-	//TODO REVERT BACK
-	int positiveAngle = direction - FOV/2;
-	if (positiveAngle < 0) {
-		positiveAngle = 360 + positiveAngle;
-	}
-	if (positiveAngle < 0) {
-		return;
-	}
-	FIXED angle = int2fx(positiveAngle % 360);
-	const FIXED FIXEDTILESIZE = int2fx(TILESIZE);
-
-	//input scaling
-	y = fxmul64(y, FIXEDTILESIZE);
-	x = fxmul64(x, FIXEDTILESIZE);
-
-	for (int i = 0; i < CASTEDRAYS; i++) {
-		int luAngle = fxmul64(PI2, fxdiv64(angle, int2fx(360))) >> 7;
-		int rayAngle = fx2int(angle);
-		FIXED sine = fxdiv64(lu_sin(luAngle), 16);
-		FIXED cosine = fxdiv64(lu_cos(luAngle), 16);
-		FIXED tan = fxdiv64(sine, cosine);
-
-
-		//initial position that will be checked for a wall
-		FIXED aY, aX;
-		//the length of steps that will be taken afterwards for each raymarch
-		FIXED yA, xA;
-		if (rayAngle >= 0 && rayAngle < 180) {
-			aY = fxsub(fxmul64(fxdiv64(y, FIXEDTILESIZE), FIXEDTILESIZE), 1);
-			yA = fxmul64(FIXEDTILESIZE, int2fx(-1));
-		}
-		else {
-			aY = fxadd(fxmul64(fxdiv64(y, FIXEDTILESIZE), FIXEDTILESIZE), FIXEDTILESIZE);
-			yA = FIXEDTILESIZE;
-		}
-		FIXED division;
-
-		if (tan != 0) {
-			xA = fxdiv64(FIXEDTILESIZE, tan);
-			division = fxdiv64(fxsub(y, aY), tan);
-		}
-		else {
-			xA = FIXEDTILESIZE;
-			division = 0;
-		}
-		aX = fxadd(x, division);
-
-
-		int initX = fx2int(fxdiv64(aX, FIXEDTILESIZE));
-		int initY = fx2int(fxdiv64(aY, FIXEDTILESIZE));
-		
-		initX = CLAMP(initX, 0,MAPSIZE-1);
-		initY = CLAMP(initY, 0, MAPSIZE-1);
-
-		if (MAP[initX][initY] != 0) {
-			drawWall(i, y, aY, sine, MAP[initX][initY]);
-		}
-		
-		else {
-			int iterations = 1;
-			while (true) {
-				aX = fxadd(aX, xA);
-				aY = fxadd(aY, yA);
-				int nextX = fx2int(fxdiv64(aX, FIXEDTILESIZE));
-				int nextY = fx2int(fxdiv64(aY, FIXEDTILESIZE));
-				nextX = CLAMP(nextX, 0,MAPSIZE-1);
-				nextY = CLAMP(nextY, 0, MAPSIZE-1);
-				
-				if (MAP[nextX][nextY] != 0) {
-
-					drawWall(i, y, aY, sine, MAP[nextX][nextY]);
-					//m3_line(i, iterations*4, i, 160, RGB15(0,0,16));
-					break;
-				}
-				iterations += 1;
-				if (iterations > 20) {
-					break;
-				}
-				
-				
-			}
-		}
-		
-		
-
-		//return MAP[initX][initY];
-
-		angle = fxadd(angle, STEPANGLE);
-		int intAngle = fx2int(angle) % 360;
-		if (intAngle < 0) {
-			intAngle = 360+intAngle;
-			angle = int2fx(intAngle);
-		}
-
-
-	}
-}
-
-void drawWall(int i, int distance, int type) {
-
-	int wallHeight = fx2int(fxmul(fxdiv(int2fx(8), int2fx(distance)), int2fx(10)));//160;// / distance;
+	int wallHeight = fx2int(fxmul(fxdiv(int2fx(32), float2fx(distance)), int2fx(10)));//160;// / distance;
 	wallHeight = CLAMP(wallHeight, 10, 160);
 	int halfHeight = wallHeight / 2;
 	m3_line(i, 0, i, 80-halfHeight, RGB15(0,0,0));
@@ -266,25 +164,29 @@ int castGrid(int x, int y, int direction) {
 		int rayAngle = fx2int(angle);
 
 		//ugly floating point math, placeholder until 
-		float sine = fx2float(fxdiv(lu_sin(luAngle), 16));
+		float sine = fxdiv(lu_sin(luAngle), 16));
 		float cosine = fx2float(fxdiv(lu_cos(luAngle), 16));
-		int tan = 64*sine/cosine; // in 1/64th range, so 64 equals one
+
+		float tan = 64*sine/cosine; // in 1/64th range, so 64 equals one
 		//avoid division by zero later on
 		if (tan == 0) {
-			tan = 1;
+			tan = 0.01;
 		}
 
-		int cosineInteger = fx2int(lu_cos(luAngle)); //scaled up by 64
+		//return tan;
+
+		float cosineInteger = fx2float(lu_cos(luAngle)); //scaled up by 64
 		
+		//return cosine*100;
 		/*
 		if (cosineInteger == 0) {
 			cosineInteger = 1;
 		}
 		*/
 		
-		int horizontalDistance = -1;
+		float horizontalDistance = -1;
 
-		int verticalDistance = -1;
+		float verticalDistance = -1;
 
 
 		/*
@@ -292,9 +194,9 @@ int castGrid(int x, int y, int direction) {
 		*/
 		
 		//initial coordinate to check for horizontal walls
-		int tx, ty;
+		float tx, ty;
 		//lengths of further steps that will be taken for checking collisions
-		int dx, dy;
+		float dx, dy;
 		if (rayAngle >= 0 && rayAngle < 180) {
 			ty = y / TILESIZE * TILESIZE -1;
 			dy = -TILESIZE;
@@ -351,9 +253,9 @@ int castGrid(int x, int y, int direction) {
 		*/
 		
 		//initial coordinate to check for horizontal walls
-		int txh, tyh;
+		float txh, tyh;
 		//lengths of further steps that will be taken for checking collisions
-		int dxh, dyh;
+		float dxh, dyh;
 
 		if (rayAngle >= 90 && rayAngle < 270) {
 			txh = x / TILESIZE * TILESIZE -1;
@@ -456,7 +358,7 @@ int main(void)
 	int x = 2*64;//96;//2*64;//
 	int y = 2*64;//224;//2*64;//
 
-	int direction = 240; //315, 0,0
+	int direction = 260; //315, 0,0
 
 	initMap();
 	
