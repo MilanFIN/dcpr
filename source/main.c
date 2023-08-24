@@ -1,8 +1,8 @@
 #include <tonc.h>
 
 const float PI = 3.1415;
-const int MAPSIZE = 5;
-int MAP[5][5] = {0};
+const int MAPSIZE = 4;
+int MAP[4][4] = {0};
 const int SCREENHEIGHT = 160;
 const int SCREENWIDTH = 240;
 const int CASTEDRAYS = 240;
@@ -18,6 +18,8 @@ void initMap() {
 	MAP[3][3] = 1;
 	MAP[5][3] = 3;
 	*/
+
+	//MAP[2][2] = 1;
 
 	for(int i = 0; i < MAPSIZE; i++) {
 		MAP[0][i] = 1;
@@ -220,16 +222,12 @@ int castGrid2(FIXED x, FIXED y, int direction) {
 	}
 }
 
-void drawWall(int i, int y, int aY, float sine, int type) {
+void drawWall(int i, int distance, int type) {
 
-	int distance = (aY - y) / sine;
-	
-	if (distance < 0) {
-		distance = -distance;
-	}
-	int wallHeight = 160;// / distance;
-	int halfHeight = wallHeight / 4;
-	//m3_line(i, 0, i, 80-halfHeight, RGB15(0,0,0));
+	int wallHeight = fx2int(fxmul(fxdiv(int2fx(8), int2fx(distance)), int2fx(10)));//160;// / distance;
+	wallHeight = CLAMP(wallHeight, 10, 160);
+	int halfHeight = wallHeight / 2;
+	m3_line(i, 0, i, 80-halfHeight, RGB15(0,0,0));
 
 	if (type == 1) {
 		m3_line(i, 80-halfHeight, i, 80 + halfHeight, RGB15(0,0,16));
@@ -243,7 +241,7 @@ void drawWall(int i, int y, int aY, float sine, int type) {
 	if (type == 4) {
 		m3_line(i, 80-halfHeight, i, 80 + halfHeight, RGB15(16,0,0));
 	}
-	//m3_line(i, 80+ halfHeight, i, 160, RGB15(0,0,0));
+	m3_line(i, 80+ halfHeight, i, 160, RGB15(0,0,0));
 
 
 }
@@ -276,6 +274,18 @@ int castGrid(int x, int y, int direction) {
 			tan = 1;
 		}
 
+		int cosineInteger = fx2int(lu_cos(luAngle)); //scaled up by 64
+		
+		/*
+		if (cosineInteger == 0) {
+			cosineInteger = 1;
+		}
+		*/
+		
+		int horizontalDistance = -1;
+
+		int verticalDistance = -1;
+
 
 		/*
 		this part checks for horizontal walls on the 2d map
@@ -296,40 +306,50 @@ int castGrid(int x, int y, int direction) {
 		tx = x + (y-ty)*64/tan; //64 to correct for tan scaling
    		dx = TILESIZE*64/tan; //64 to correct for tan scaling
 
-		int initX = tx / TILESIZE;
-		int initY = ty / TILESIZE;
+		int initX = CLAMP(tx / TILESIZE, 0, MAPSIZE);
+		int initY = CLAMP(ty / TILESIZE, 0, MAPSIZE);
+
 		
-		if (initX >= 0 && initX < MAPSIZE && initY >= 0 && initY < MAPSIZE) {
 
-			if (MAP[initX][initY] != 0) {
-				drawWall(i, y, ty, sine, MAP[initX][initY]);
+		if (MAP[initX][initY] != 0) {
+			horizontalDistance = (x - tx) / cosineInteger;
+			if (horizontalDistance < 0) {
+				horizontalDistance = -horizontalDistance;
 			}
-			else {
-				//step tx & ty up in steps of dx & dy 
-				for (int j = 0; j < 20; j++) {
-					tx += dx;
-					ty += dy;
-					int nextX = tx / TILESIZE;
-					int nextY = ty / TILESIZE;
-					if (nextX < 0 || nextX >= MAPSIZE || nextY < 0 || nextY >= MAPSIZE) {
-						break;
+			//drawWall(i, horizontalDistance, MAP[initX][initY]);
+		}
+		
+		else {
+			//step tx & ty up in steps of dx & dy 
+			for (int j = 0; j < 20; j++) {
+				tx += dx;
+				ty += dy;
+				initX = CLAMP(tx / TILESIZE, 0, MAPSIZE);
+				initY = CLAMP(ty / TILESIZE, 0, MAPSIZE);
+				if (MAP[initX][initY] != 0) {
+					//drawWall(i, horizontalDistance, MAP[initX][initY]);
+					horizontalDistance = (x - tx) / cosineInteger;
+					if (horizontalDistance < 0) {
+						horizontalDistance = -horizontalDistance;
 					}
-					if (MAP[nextX][nextY] != 0) {
-						drawWall(i, y, ty, sine, MAP[nextX][nextY]);
-						break;
-					}
+					break;
 				}
-
 			}
-			
 
 		}
+		
+		
+
+		
+		
+		
+
 
 
 		/*
 		this part checks for vertical walls on the 2d map
 		*/
-		/*
+		
 		//initial coordinate to check for horizontal walls
 		int txh, tyh;
 		//lengths of further steps that will be taken for checking collisions
@@ -347,35 +367,68 @@ int castGrid(int x, int y, int direction) {
    		dyh = TILESIZE*tan/64; //64 to correct for tan scaling
 
 
-		int initXH = txh / TILESIZE;
-		int initYH = tyh / TILESIZE;
-		if (initXH >= 0 && initXH < MAPSIZE && initYH >= 0 && initYH < MAPSIZE) {
+		int initXH = CLAMP(txh / TILESIZE, 0, MAPSIZE);
+		int initYH = CLAMP(tyh / TILESIZE, 0, MAPSIZE);
+
+		//return initYH;
+
+		//return MAP[initXH][initYH];
+
+
+		
 			if (MAP[initXH][initYH] != 0) {
-				drawWall(i, y, tyh, sine, MAP[initXH][initYH]);
+
+				verticalDistance = (x - txh) / cosineInteger;
+				if (verticalDistance < 0) {
+						verticalDistance = -verticalDistance;
+				}
+
+				//drawWall(i, verticalDistance, MAP[initXH][initYH]);
 			}
 			
-			else {
+			else if (dyh > 0 && dyh < 9999){
 				//step tx & ty up in steps of dx & dy 
 				for (int j = 0; j < 20; j++) {
+
 					txh += dxh;
 					tyh += dyh;
-					int nextX = txh / TILESIZE;
-					int nextY = tyh / TILESIZE;
-					if (nextX < 0 || nextX >= MAPSIZE || nextY < 0 || nextY >= MAPSIZE) {
-						break;
-					}
-					if (MAP[nextX][nextY] != 0) {
-						drawWall(i, y, tyh, sine, MAP[nextX][nextY]);
+
+					initXH = CLAMP(txh / TILESIZE, 0, MAPSIZE);
+					initYH = CLAMP(tyh / TILESIZE, 0, MAPSIZE);
+
+					if (MAP[initXH][initYH] != 0) {
+						verticalDistance = (x - txh) / cosineInteger;
+						if (verticalDistance < 0) {
+							verticalDistance = -verticalDistance;
+						}
+						//drawWall(i, verticalDistance, MAP[initXH][initYH]);
 						break;
 					}
 				}
 
 			}
-		}
-		*/
-
 
 		
+		
+		
+		
+
+		//return verticalDistance;
+		//return initYH;
+		//return MAP[0][2];
+
+
+		if (verticalDistance >= 0 && (verticalDistance <= horizontalDistance || horizontalDistance < 0)) {
+			drawWall(i, verticalDistance, MAP[initXH][initYH]);
+		}
+		
+		else if (horizontalDistance >= 0 && (horizontalDistance < verticalDistance || verticalDistance < 0)) {
+			drawWall(i, horizontalDistance, MAP[initX][initY]);
+		}
+		else {
+			m3_line(i, 0, i, 160, RGB15(0,0,0));
+		}
+
 
 
 
@@ -385,6 +438,10 @@ int castGrid(int x, int y, int direction) {
 		if (fx2int(angle) > 360) {
 			angle = fxsub(angle, int2fx(360));
 		}
+
+
+		//return;
+
 	}
 
 }
@@ -396,17 +453,17 @@ int main(void)
 	//FIXED x = float2fx(3);
 	//FIXED y = float2fx(3);
 
-	int x = 96;//2*64;//
-	int y = 224;//2*64;//
+	int x = 2*64;//96;//2*64;//
+	int y = 2*64;//224;//2*64;//
 
-	int direction = 0; //315, 0,0
+	int direction = 240; //315, 0,0
 
 	initMap();
 	
 	
 	REG_DISPCNT= DCNT_MODE3 | DCNT_BG2;
 		
-
+		
 	/*
 	REG_DISPCNT = DCNT_MODE0 | DCNT_BG0 | DCNT_OBJ | DCNT_OBJ_1D;
 	irq_init(NULL);
@@ -420,15 +477,15 @@ int main(void)
 	char str[8];
 	sprintf(str, "%d", test); //65536
 	tte_write(str);
-	
 	*/
+	
 	
 	
 	while (1) {
 		
 		
 		castGrid(x, y, direction);
-		direction += 1;
+		direction += 2;
 		//x = fxadd(x, float2fx(0.1));
 		//y = fxadd(y, float2fx(0.1));
 		if (direction >= 360) {
@@ -438,7 +495,6 @@ int main(void)
 		
 		
 		
-
 		//VBlankIntrWait();
 	}
 }
