@@ -6,12 +6,12 @@ const int MAPSIZE = 8;
 int MAP[8][8] = {
         {1, 1, 1, 1, 1, 1, 1, 1},
         {1, 0, 0, 0, 0, 0, 0, 1},
-        {2, 0, 0, 3, 3, 0, 0, 1},
-        {2, 0, 0, 3, 3, 0, 0, 1},
-        {2, 0, 0, 0, 0, 0, 0, 1},
-        {2, 0, 0, 3, 3, 0, 0, 1},
-        {2, 0, 0, 0, 0, 0, 0, 1},
-        {0, 1, 1, 1, 1, 1, 1, 1}
+        {1, 0, 0, 3, 3, 0, 0, 1},
+        {1, 0, 0, 3, 3, 0, 0, 1},
+        {1, 0, 0, 0, 0, 0, 0, 1},
+        {1, 0, 0, 3, 3, 0, 0, 1},
+        {1, 0, 0, 0, 0, 0, 0, 1},
+        {1, 1, 1, 1, 1, 1, 1, 1}
     };
 
 
@@ -77,27 +77,27 @@ void drawWall(int i, FIXED distance, int type, int vertical) {
 		brightness = brightness >> 1;
 	}
 	
-	m3_line(i, 0, i, 80-halfHeight, RGB15(8,8,8));
-	m3_line(i+1, 0, i+1, 80-halfHeight, RGB15(8,8,8));
+	m3_vline(i, 0, 80-halfHeight, RGB15(8,8,8));
+	m3_vline(i+1, 0, 80-halfHeight, RGB15(8,8,8));
 
 	if (type == 1) {
-		m3_line(i, 80-halfHeight, i, 80 + halfHeight, RGB15(0,0,brightness));
-		m3_line(i+1, 80-halfHeight, i+1, 80 + halfHeight, RGB15(0,0,brightness));
+		m3_vline(i, 80-halfHeight, 80 + halfHeight, RGB15(0,0,brightness));
+		m3_vline(i+1, 80-halfHeight, 80 + halfHeight, RGB15(0,0,brightness));
 	}
 	else if (type == 2) {
-		m3_line(i, 80-halfHeight, i, 80 + halfHeight, RGB15(0,brightness,0));
-		m3_line(i+1, 80-halfHeight, i+1, 80 + halfHeight, RGB15(0,brightness,0));
+		m3_vline(i, 80-halfHeight, 80 + halfHeight, RGB15(0,brightness,0));
+		m3_vline(i+1, 80-halfHeight, 80 + halfHeight, RGB15(0,brightness,0));
 	}
 	else if (type == 3) {
-		m3_line(i, 80-halfHeight, i, 80 + halfHeight, RGB15(brightness,brightness,0));
-		m3_line(i+1, 80-halfHeight, i+1, 80 + halfHeight, RGB15(brightness,brightness,0));
+		m3_vline(i, 80-halfHeight, 80 + halfHeight, RGB15(brightness,brightness,0));
+		m3_vline(i+1, 80-halfHeight, 80 + halfHeight, RGB15(brightness,brightness,0));
 	}
 	else if (type == 4) {
-		m3_line(i, 80-halfHeight, i, 80 + halfHeight, RGB15(brightness,0,0));
-		m3_line(i+1, 80-halfHeight, i+1, 80 + halfHeight, RGB15(brightness,0,0));
+		m3_vline(i, 80-halfHeight, 80 + halfHeight, RGB15(brightness,0,0));
+		m3_vline(i+1, 80-halfHeight, 80 + halfHeight, RGB15(brightness,0,0));
 	}
-	m3_line(i, 80+ halfHeight, i, 160, RGB15(3,3,3));
-	m3_line(i+1, 80+ halfHeight, i+1, 160, RGB15(3,3,3));
+	m3_vline(i, 80+ halfHeight, 160, RGB15(3,3,3));
+	m3_vline(i+1, 80+ halfHeight, 160, RGB15(3,3,3));
 
 
 }
@@ -295,8 +295,8 @@ int castGrid(FIXED fixedX, FIXED fixedY, int direction) {
 
 		}
 		else {
-			m3_line(2*i, 0, 2*i, 160, RGB15(0,0,0));
-			m3_line(2*i+1, 0, 2*i+1, 160, RGB15(0,0,0));
+			m3_vline(2*i, 0, 160, RGB15(0,0,0));
+			m3_vline(2*i+1, 0, 160, RGB15(0,0,0));
 
 		}
 		
