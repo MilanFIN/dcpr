@@ -360,6 +360,17 @@ int castGrid(FIXED fixedX, FIXED fixedY, int direction) {
 
 }
 
+INLINE bool collisionCheck(FIXED x, FIXED y) {
+	int gridX = fx2int(x) >> 6;
+	int gridY = fx2int(y) >> 6;
+	if (MAP[gridX][gridY] != 0) {
+		return true;
+	}
+	else {
+		return false;
+	}
+}
+
 
 void move(int direction, FIXED *x, FIXED *y, int type) {
 	
@@ -373,26 +384,34 @@ void move(int direction, FIXED *x, FIXED *y, int type) {
 	FIXED sine = lu_sin(luAngle);
 	FIXED cosine = lu_cos(luAngle);
 
+	FIXED newX;
+	FIXED newY;
 
 	if (type == 0) { //left
-	//fxadd(x, fxmul(x, sine));
-		*x = fxadd(*x, fxmul(SPEED, sine));
-		*y = fxadd(*y, fxmul(SPEED, cosine));
+		newX = fxadd(*x, fxmul(SPEED, sine));
+		newY = fxadd(*y, fxmul(SPEED, cosine));
 	}
-	else if (type == 1) {
-		*x = fxsub(*x, fxmul(SPEED, sine));
-		*y = fxsub(*y, fxmul(SPEED, cosine));
-	}
-	
-	else if (type == 2) {
-		*x = fxadd(*x, fxmul(SPEED, cosine));
-		*y = fxsub(*y, fxmul(SPEED, sine));
-	}
-	else if (type == 3) {
-		*x = fxsub(*x, fxmul(SPEED, cosine));
-		*y = fxadd(*y, fxmul(SPEED, sine));
+	else if (type == 1) { //right
+		newX = fxsub(*x, fxmul(SPEED, sine));
+		newY = fxsub(*y, fxmul(SPEED, cosine));
 	}
 	
+	else if (type == 2) { //up
+		newX = fxadd(*x, fxmul(SPEED, cosine));
+		newY = fxsub(*y, fxmul(SPEED, sine));
+	}
+	else if (type == 3) { //down
+		newX = fxsub(*x, fxmul(SPEED, cosine));
+		newY = fxadd(*y, fxmul(SPEED, sine));
+	}
+
+	if (!collisionCheck(newX, *y)) {
+		*x = newX;
+	}
+	if (!collisionCheck(*x, newY)) {
+		*y = newY;
+	}
+
 
 }
 
