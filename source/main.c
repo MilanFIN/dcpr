@@ -24,6 +24,48 @@ const int TILESIZE = 64; //8
 const int MAXDEPTH = TILESIZE * 10;
 const int DISTANCETOVIEWPORT = 255; //half of width / tan(half of fov)
 
+
+volatile unsigned short* palette = (volatile unsigned short*) 0x5000000;
+int nextPaletteIndex = 0;
+
+
+INLINE void m4_dual_plot(int x, int y, u8 clrid)
+{
+	vid_page[(y*M4_WIDTH+x)>>1] = (clrid << 8) | clrid;
+}
+
+INLINE void m4_dual_vline(int x, int y1, int y2, u8 clrid) {
+	for (int i = y1; i <= y2; i++) {
+		m4_dual_plot(x, i, clrid);
+	}
+}
+
+
+void loadColorToPalette(COLOR c) {
+	palette[nextPaletteIndex] = c;
+	nextPaletteIndex++;
+}
+
+void initPalette() {
+	loadColorToPalette(RGB15(0,0,0));
+	loadColorToPalette(RGB15(3,3,3));
+	loadColorToPalette(RGB15(8,8,8));
+	loadColorToPalette(RGB15(16,16,16));
+	loadColorToPalette(RGB15(8,0,0));
+	loadColorToPalette(RGB15(16,0,0));
+	loadColorToPalette(RGB15(0,8,0));
+	loadColorToPalette(RGB15(0,16,0));
+	loadColorToPalette(RGB15(0,0,8));
+	loadColorToPalette(RGB15(0,0,16));
+	loadColorToPalette(RGB15(8,8,0));
+	loadColorToPalette(RGB15(16,16,0));
+
+	//loadColorToPalette(RGB15(16,16,16));
+	//loadColorToPalette(RGB15(16,16,16));
+
+}
+
+
 void initMap() {
 
 	/*
@@ -76,28 +118,30 @@ void drawWall(int i, FIXED distance, int type, int vertical) {
 	if (vertical) {
 		brightness = brightness >> 1;
 	}
-	
-	m3_vline(i, 0, 80-halfHeight, RGB15(8,8,8));
-	m3_vline(i+1, 0, 80-halfHeight, RGB15(8,8,8));
 
+	m4_dual_vline(i, 0, 80-halfHeight, 2);
+
+	int color = 0;
+	
 	if (type == 1) {
-		m3_vline(i, 80-halfHeight, 80 + halfHeight, RGB15(0,0,brightness));
-		m3_vline(i+1, 80-halfHeight, 80 + halfHeight, RGB15(0,0,brightness));
+		color = 4;
 	}
 	else if (type == 2) {
-		m3_vline(i, 80-halfHeight, 80 + halfHeight, RGB15(0,brightness,0));
-		m3_vline(i+1, 80-halfHeight, 80 + halfHeight, RGB15(0,brightness,0));
+		color = 6;
 	}
 	else if (type == 3) {
-		m3_vline(i, 80-halfHeight, 80 + halfHeight, RGB15(brightness,brightness,0));
-		m3_vline(i+1, 80-halfHeight, 80 + halfHeight, RGB15(brightness,brightness,0));
+		color = 8;
 	}
 	else if (type == 4) {
-		m3_vline(i, 80-halfHeight, 80 + halfHeight, RGB15(brightness,0,0));
-		m3_vline(i+1, 80-halfHeight, 80 + halfHeight, RGB15(brightness,0,0));
+		color = 10;
 	}
-	m3_vline(i, 80+ halfHeight, 160, RGB15(3,3,3));
-	m3_vline(i+1, 80+ halfHeight, 160, RGB15(3,3,3));
+	if (!vertical) {
+		color++;
+	}
+	//the actual wall
+	m4_dual_vline(i, 80-halfHeight, 80 + halfHeight, color);
+
+	m4_dual_vline(i, 80+ halfHeight, 160, 1);
 
 
 }
@@ -295,8 +339,7 @@ int castGrid(FIXED fixedX, FIXED fixedY, int direction) {
 
 		}
 		else {
-			m3_vline(2*i, 0, 160, RGB15(0,0,0));
-			m3_vline(2*i+1, 0, 160, RGB15(0,0,0));
+			m4_dual_vline(2*i, 0, 160, 0);
 
 		}
 		
@@ -368,7 +411,7 @@ int main(void)
 	
 	
 	REG_DISPCNT= DCNT_MODE3 | DCNT_BG2;
-		
+
 		
 	/*
 	REG_DISPCNT = DCNT_MODE0 | DCNT_BG0 | DCNT_OBJ | DCNT_OBJ_1D;
@@ -385,7 +428,11 @@ int main(void)
 	tte_write(str);
 	*/
 	
-	
+	REG_DISPCNT= DCNT_MODE4 | DCNT_BG2;
+
+
+	initPalette();
+
 	
 	while (1) {
 		
@@ -417,11 +464,9 @@ int main(void)
 		
 
 		castGrid(x, y, direction);
-		//direction += 3;
-		//x = fxadd(x, float2fx(0.1));
-		//y = fxadd(y, float2fx(0.1));
 		
-		
+		vid_flip(); 
+
 		
 		
 		//VBlankIntrWait();
