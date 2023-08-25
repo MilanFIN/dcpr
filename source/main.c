@@ -128,6 +128,15 @@ float floatAbs(float a) {
 	}
 }
 
+FIXED fixedAbs(FIXED a) {
+	if (fx2int(a) < 0) {
+		return fxsub(int2fx(0), a);
+	}
+	else {
+		return a;
+	}
+}
+
 
 void drawWall(int i, FIXED distance, int type) {
 
@@ -164,7 +173,9 @@ int castGrid(int x, int y, int direction) {
 	}
 	FIXED angle = int2fx(positiveAngle % 360);
 	const FIXED FIXEDTILESIZE = int2fx(TILESIZE);
-
+	
+	const FIXED fixedY = int2fx(y);
+	const FIXED fixedX = int2fx(x);
 
 	for (int i = 0; i < CASTEDRAYS; i++) {
 
@@ -219,7 +230,7 @@ int castGrid(int x, int y, int direction) {
 		*/
 		
 		//initial coordinate to check for horizontal walls
-		float tx;
+		FIXED tx;
 		FIXED ty;
 		//lengths of further steps that will be taken for checking collisions
 		FIXED dx;
@@ -232,17 +243,23 @@ int castGrid(int x, int y, int direction) {
 			ty = int2fx(y / TILESIZE * TILESIZE + TILESIZE);
 			dy = FIXEDTILESIZE;
 		}
-		tx = x + fx2float(fxmul(fxdiv(float2fx(floatAbs(y- fx2float(ty))), tan), int2fx(xDir))); //64 to correct for tan scaling
-   		dx = fxmul((fxdiv(FIXEDTILESIZE, tan)), int2fx(xDir)); //64 to correct for tan scaling
+		//tx = x + fx2float(fxmul(fxdiv(float2fx(floatAbs(y- fx2float(ty))), tan), int2fx(xDir)));
+		//tx = x + fx2float(fxmul(fxdiv(fixedAbs(fxsub(fixedY,  ty)), tan), int2fx(xDir)));
+		tx = (fxadd(fixedX, (fxmul(fxdiv(fixedAbs(fxsub(fixedY,  ty)), tan), int2fx(xDir)))));
+   		dx = fxmul((fxdiv(FIXEDTILESIZE, tan)), int2fx(xDir));
 
-		int initX = ((int)tx) / TILESIZE;
-		int initY = (fx2int(ty)) / TILESIZE;
+		
+
+		//FIXED tx2 = float2fx(tx);
+
+		int initX = fx2int(tx) / TILESIZE;
+		int initY = fx2int(ty) / TILESIZE;
 
 
 
 
 		if (MAP[initX][initY] != 0) {
-			horizontalDistance = float2fx(floatAbs((x - tx) / cosineInteger));
+			horizontalDistance = float2fx(floatAbs((x - fx2float(tx)) / cosineInteger));
 		}
 		
 		else {
@@ -250,12 +267,13 @@ int castGrid(int x, int y, int direction) {
 			for (int j = 0; j < 20; j++) {
 				//tx += dx;
 				//ty += dy;
-				tx = fx2float(fxadd(float2fx(tx), dx));
+				tx = fxadd((tx), dx);
 				ty = fxadd(ty, dy);
-				initX = ((int)tx) / TILESIZE;
+				
+				initX = (fx2int(tx)) / TILESIZE;
 				initY = (fx2int(ty)) / TILESIZE;
 				if (MAP[initX][initY] != 0) {
-					horizontalDistance = float2fx(floatAbs((x - tx) / cosineInteger));
+					horizontalDistance = float2fx(floatAbs((x - fx2float(tx)) / cosineInteger));
 					break;
 				}
 			}
