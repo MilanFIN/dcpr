@@ -218,8 +218,9 @@ int castGrid(int x, int y, int direction) {
 
 
 
-		float cosineInteger = fx2float(lu_cos(luAngle));
-		
+		float cosineFloat = fx2float(lu_cos(luAngle));
+		FIXED cosineFixed = (lu_cos(luAngle));
+
 		FIXED horizontalDistance = int2fx(-1);
 
 		FIXED verticalDistance = int2fx(-1);
@@ -259,7 +260,8 @@ int castGrid(int x, int y, int direction) {
 
 
 		if (MAP[initX][initY] != 0) {
-			horizontalDistance = float2fx(floatAbs((x - fx2float(tx)) / cosineInteger));
+			//horizontalDistance = float2fx(floatAbs((x - fx2float(tx)) / cosineFloat));
+			horizontalDistance = float2fx(floatAbs(fx2float(fxsub(fixedX, tx)) / cosineFloat));
 		}
 		
 		else {
@@ -273,7 +275,8 @@ int castGrid(int x, int y, int direction) {
 				initX = (fx2int(tx)) / TILESIZE;
 				initY = (fx2int(ty)) / TILESIZE;
 				if (MAP[initX][initY] != 0) {
-					horizontalDistance = float2fx(floatAbs((x - fx2float(tx)) / cosineInteger));
+					//horizontalDistance = float2fx(floatAbs((x - fx2float(tx)) / cosineFloat));
+					horizontalDistance = float2fx(floatAbs(fx2float(fxsub(fixedX, tx)) / cosineFloat));
 					break;
 				}
 			}
@@ -321,7 +324,7 @@ int castGrid(int x, int y, int direction) {
 		
 			if (MAP[initXH][initYH] != 0) {
 
-				verticalDistance = float2fx(floatAbs((x - txh) / cosineInteger));
+				verticalDistance = float2fx(floatAbs((x - txh) / cosineFloat));
 
 			}
 			else {
@@ -335,7 +338,7 @@ int castGrid(int x, int y, int direction) {
 					initYH = ((int)tyh) / TILESIZE;
 
 					if (MAP[initXH][initYH] != 0) {
-						verticalDistance = float2fx(floatAbs((x - txh) / cosineInteger));
+						verticalDistance = float2fx(floatAbs((x - txh) / cosineFloat));
 						break;
 					}
 				}
