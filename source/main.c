@@ -129,12 +129,12 @@ float floatAbs(float a) {
 }
 
 
-void drawWall(int i, float distance, int type) {
+void drawWall(int i, FIXED distance, int type) {
 
-	int wallHeight = fx2int(fxmul(fxdiv(int2fx(32), float2fx(distance)), int2fx(10)));//160;// / distance;
+	int wallHeight = fx2int(fxmul(fxdiv(int2fx(32), distance), int2fx(10)));//160;// / distance;
 	wallHeight = CLAMP(wallHeight, 1, 160);
 	int halfHeight = wallHeight / 2;
-	m3_line(i, 0, i, 80-halfHeight, RGB15(0,0,0));
+	m3_line(i, 0, i, 80-halfHeight, RGB15(8,8,8));
 
 	if (type == 1) {
 		m3_line(i, 80-halfHeight, i, 80 + halfHeight, RGB15(0,0,16));
@@ -148,7 +148,7 @@ void drawWall(int i, float distance, int type) {
 	if (type == 4) {
 		m3_line(i, 80-halfHeight, i, 80 + halfHeight, RGB15(16,0,0));
 	}
-	m3_line(i, 80+ halfHeight, i, 160, RGB15(0,0,0));
+	m3_line(i, 80+ halfHeight, i, 160, RGB15(3,3,3));
 
 
 }
@@ -163,6 +163,8 @@ int castGrid(int x, int y, int direction) {
 		positiveAngle = 360 + positiveAngle;
 	}
 	FIXED angle = int2fx(positiveAngle % 360);
+	const FIXED FIXEDTILESIZE = int2fx(TILESIZE);
+
 
 	for (int i = 0; i < CASTEDRAYS; i++) {
 
@@ -196,26 +198,20 @@ int castGrid(int x, int y, int direction) {
 		FIXED sine = lu_sin(luAngle);
 		FIXED cosine = lu_cos(luAngle);
 
-		float tan = fx2float(fxdiv(sine, cosine)); // in 1/64th range, so 64 equals one
+		FIXED tan = fxdiv(sine, cosine);
 		//avoid division by zero later on
 		if (rayAngle == 0) {
-			tan = 0.01;
+			tan = float2fx(0.01);
 		}
 
 
 
 
-		float cosineInteger = fx2float(lu_cos(luAngle)); //should be scaled by 64
+		float cosineInteger = fx2float(lu_cos(luAngle));
 		
-		/*
-		if (cosineInteger == 0) {
-			cosineInteger = 1;
-		}
-		*/
-		
-		float horizontalDistance = -1;
+		FIXED horizontalDistance = int2fx(-1);
 
-		float verticalDistance = -1;
+		FIXED verticalDistance = int2fx(-1);
 
 
 		/*
@@ -223,42 +219,43 @@ int castGrid(int x, int y, int direction) {
 		*/
 		
 		//initial coordinate to check for horizontal walls
-		float tx, ty;
+		float tx;
+		FIXED ty;
 		//lengths of further steps that will be taken for checking collisions
-		float dx, dy;
+		FIXED dx;
+		FIXED dy;
 		if (rayAngle >= 0 && rayAngle < 180) {
-			ty = y / TILESIZE * TILESIZE -1;
-			dy = -TILESIZE;
+			ty = int2fx(y / TILESIZE * TILESIZE -1);
+			dy = fxsub(int2fx(0), FIXEDTILESIZE);
 		}
 		else {
-			ty = y / TILESIZE * TILESIZE + TILESIZE;
-			dy = TILESIZE;
+			ty = int2fx(y / TILESIZE * TILESIZE + TILESIZE);
+			dy = FIXEDTILESIZE;
 		}
-		tx = x + floatAbs(y-ty)/tan*xDir; //64 to correct for tan scaling
-   		dx = TILESIZE/tan*xDir; //64 to correct for tan scaling
+		tx = x + fx2float(fxmul(fxdiv(float2fx(floatAbs(y- fx2float(ty))), tan), int2fx(xDir))); //64 to correct for tan scaling
+   		dx = fxmul((fxdiv(FIXEDTILESIZE, tan)), int2fx(xDir)); //64 to correct for tan scaling
 
-		int initX = tx / TILESIZE;
-		int initY = ty / TILESIZE;
+		int initX = ((int)tx) / TILESIZE;
+		int initY = (fx2int(ty)) / TILESIZE;
 
-		//return initY;
 
 
 
 		if (MAP[initX][initY] != 0) {
-			horizontalDistance = floatAbs((x - tx) / cosineInteger);
-			//drawWall(i, horizontalDistance, MAP[initX][initY]);
+			horizontalDistance = float2fx(floatAbs((x - tx) / cosineInteger));
 		}
 		
 		else {
 			//step tx & ty up in steps of dx & dy 
 			for (int j = 0; j < 20; j++) {
-				tx += dx;
-				ty += dy;
-				initX = tx / TILESIZE;
-				initY = ty / TILESIZE;
+				//tx += dx;
+				//ty += dy;
+				tx = fx2float(fxadd(float2fx(tx), dx));
+				ty = fxadd(ty, dy);
+				initX = ((int)tx) / TILESIZE;
+				initY = (fx2int(ty)) / TILESIZE;
 				if (MAP[initX][initY] != 0) {
-					//drawWall(i, horizontalDistance, MAP[initX][initY]);
-					horizontalDistance = floatAbs((x - tx) / cosineInteger);
+					horizontalDistance = float2fx(floatAbs((x - tx) / cosineInteger));
 					break;
 				}
 			}
@@ -277,6 +274,7 @@ int castGrid(int x, int y, int direction) {
 		this part checks for vertical walls on the 2d map
 		*/
 		
+		int scaledTan = fx2int(fxmul(tan, 1024));
 		//initial coordinate to check for horizontal walls
 		float txh, tyh;
 		//lengths of further steps that will be taken for checking collisions
@@ -290,12 +288,12 @@ int castGrid(int x, int y, int direction) {
 			txh = x / TILESIZE * TILESIZE + TILESIZE;
 			dxh = TILESIZE;
 		}
-		tyh = y + floatAbs(x-txh)*tan*yDir; //64 to correct for tan scaling
-   		dyh = TILESIZE*tan*yDir; //64 to correct for tan scaling
+		tyh = y + fx2float(fxmul(float2fx(floatAbs(x-txh)), tan))*yDir; //64 to correct for tan scaling
+   		dyh = fx2float(fxmul(FIXEDTILESIZE, tan))*yDir; //64 to correct for tan scaling
 
 
-		int initXH = txh / TILESIZE;
-		int initYH = tyh / TILESIZE;
+		int initXH = ((int)txh) / TILESIZE;
+		int initYH = ((int)tyh) / TILESIZE;
 
 
 		//return tan*100;
@@ -305,9 +303,8 @@ int castGrid(int x, int y, int direction) {
 		
 			if (MAP[initXH][initYH] != 0) {
 
-				verticalDistance = floatAbs((x - txh) / cosineInteger);
+				verticalDistance = float2fx(floatAbs((x - txh) / cosineInteger));
 
-				//drawWall(i, verticalDistance, MAP[initXH][initYH]);
 			}
 			else {
 				//step tx & ty up in steps of dx & dy 
@@ -316,12 +313,11 @@ int castGrid(int x, int y, int direction) {
 					txh += dxh;
 					tyh += dyh;
 
-					initXH = txh / TILESIZE;
-					initYH = tyh / TILESIZE;
+					initXH = ((int)txh) / TILESIZE;
+					initYH = ((int)tyh) / TILESIZE;
 
 					if (MAP[initXH][initYH] != 0) {
-						verticalDistance = floatAbs((x - txh) / cosineInteger);
-						//drawWall(i, verticalDistance, MAP[initXH][initYH]);
+						verticalDistance = float2fx(floatAbs((x - txh) / cosineInteger));
 						break;
 					}
 				}
