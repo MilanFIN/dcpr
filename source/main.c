@@ -17,8 +17,8 @@ int MAP[8][8] = {
 
 const int SCREENHEIGHT = 160;
 const int SCREENWIDTH = 240;
-const int CASTEDRAYS = 240;
-const int FOV = 90;
+const int CASTEDRAYS = 120;
+const int FOV = 60;
 const int HALFFOV = 30;
 const int TILESIZE = 64; //8
 const int MAXDEPTH = TILESIZE * 10;
@@ -47,92 +47,7 @@ void initMap() {
 }
 
 
-void castRays(FIXED x, FIXED y, int direction) {
-	const FIXED PI2 = int2fx(0x10000 >> 1);//float2fx(2*PI);
-
-	const FIXED STEPANGLE = fxdiv(int2fx(FOV), int2fx(CASTEDRAYS));
-	int positiveAngle = direction - FOV/2;
-	if (positiveAngle < 0) {
-		positiveAngle = 360 + positiveAngle;
-	}
-	FIXED angle = int2fx(positiveAngle % 360);
-	const FIXED FIXEDTILESIZE = int2fx(TILESIZE);
-
-	for (int i = 0; i < CASTEDRAYS; i++) {
-		for (int depth = 0; depth < MAXDEPTH; depth++) {
-
-			int luAngle = 0;
-			if (angle != 0) {
-				luAngle = fxmul(PI2, fxdiv(angle, int2fx(360))) >> 7;
-
-			}
-
-			FIXED moveX = fxdiv(fxmul(lu_sin(luAngle), int2fx(depth)), int2fx(16));
-            FIXED targetX = fxsub(fxmul(x, int2fx(TILESIZE)), moveX);
-            FIXED tileX = fxdiv(targetX, FIXEDTILESIZE); 
-			
-			FIXED luCos = lu_cos(luAngle);
-			FIXED moveY = fxdiv(fxmul(luCos, int2fx(depth)), int2fx(16));
-            FIXED targetY = fxsub(fxmul(y, int2fx(TILESIZE)), moveY);
-            FIXED tileY = fxdiv(targetY, FIXEDTILESIZE); 
-
-			int tileXi = fx2int(tileX);
-			int tileYi = fx2int(tileY);
-			CLAMP(tileXi, 0, 7);
-			CLAMP(tileYi, 0, 7);
-
-			if (MAP[tileYi][tileXi] != 0)
-			{
-				int wallHeight = 160;
-				if (depth != 0) {
-					wallHeight = 160-6*depth;
-					wallHeight = CLAMP(TILESIZE * DISTANCETOVIEWPORT / (depth), 0, 160);
-
-				}
-				int halfHeight = wallHeight >> 1;
-
-				int brightness = 15;
-				/*
-				if ( targetX - fxmul(tileX, FIXEDTILESIZE) == 0) {
-					brightness *= 0.5;
-				}
-				*/
-
-				if (MAP[tileYi][tileXi] == 1) {
-					m3_line(i, 0, i, 80-halfHeight, RGB15(16,16,16));
-					m3_line(i, 80-halfHeight, i, 80+halfHeight, RGB15(brightness,0,0));
-					m3_line(i, 80+halfHeight, i, 160, RGB15(5,5,5));
-					break;
-				}					
-				if (MAP[tileYi][tileXi] == 2) {
-					m3_line(i, 0, i, 80-halfHeight, RGB15(16,16,16));
-					m3_line(i, 80-halfHeight, i, 80+halfHeight, RGB15(0,brightness,0));
-					m3_line(i, 80+halfHeight, i, 160, RGB15(5,5,5));
-					break;
-				}
-				if (MAP[tileYi][tileXi] == 3) {
-					m3_line(i, 0, i, 80-halfHeight, RGB15(16,16,16));
-					m3_line(i, 80-halfHeight, i, 80+halfHeight, RGB15(0,0,brightness));
-					m3_line(i, 80+halfHeight, i, 160, RGB15(5,5,5));
-					break;
-				}
-
-			}
-
-			
-			if (depth +1 == MAXDEPTH) {
-				m3_line(i, 0, i, 160, RGB15(0,0,0));
-
-			}
-			
-			
-		}
-		angle = fxadd(angle, STEPANGLE);
-
-	}
-}
-
-float floatAbs(float a) {
+inline float floatAbs(float a) {
 	if (a < 0.0) {
 		return -a;
 	}
@@ -141,7 +56,7 @@ float floatAbs(float a) {
 	}
 }
 
-FIXED fixedAbs(FIXED a) {
+inline FIXED fixedAbs(FIXED a) {
 	if (a < 0) {
 		return fxsub(int2fx(0), a);
 	}
@@ -153,7 +68,7 @@ FIXED fixedAbs(FIXED a) {
 
 void drawWall(int i, FIXED distance, int type, int vertical) {
 
-	int wallHeight = fx2int(fxmul(fxdiv(int2fx(32), distance), int2fx(10)));//160;// / distance;
+	int wallHeight = fx2int(fxmul(fxdiv(int2fx(8), distance), int2fx(32))) * 2;//160;// / distance;
 	wallHeight = CLAMP(wallHeight, 1, 160);
 	int halfHeight = wallHeight / 2;
 
@@ -161,22 +76,28 @@ void drawWall(int i, FIXED distance, int type, int vertical) {
 	if (vertical) {
 		brightness = brightness >> 1;
 	}
-
-
+	
 	m3_line(i, 0, i, 80-halfHeight, RGB15(8,8,8));
+	m3_line(i+1, 0, i+1, 80-halfHeight, RGB15(8,8,8));
+
 	if (type == 1) {
 		m3_line(i, 80-halfHeight, i, 80 + halfHeight, RGB15(0,0,brightness));
+		m3_line(i+1, 80-halfHeight, i+1, 80 + halfHeight, RGB15(0,0,brightness));
 	}
-	if (type == 2) {
+	else if (type == 2) {
 		m3_line(i, 80-halfHeight, i, 80 + halfHeight, RGB15(0,brightness,0));
+		m3_line(i+1, 80-halfHeight, i+1, 80 + halfHeight, RGB15(0,brightness,0));
 	}
-	if (type == 3) {
+	else if (type == 3) {
 		m3_line(i, 80-halfHeight, i, 80 + halfHeight, RGB15(brightness,brightness,0));
+		m3_line(i+1, 80-halfHeight, i+1, 80 + halfHeight, RGB15(brightness,brightness,0));
 	}
-	if (type == 4) {
+	else if (type == 4) {
 		m3_line(i, 80-halfHeight, i, 80 + halfHeight, RGB15(brightness,0,0));
+		m3_line(i+1, 80-halfHeight, i+1, 80 + halfHeight, RGB15(brightness,0,0));
 	}
 	m3_line(i, 80+ halfHeight, i, 160, RGB15(3,3,3));
+	m3_line(i+1, 80+ halfHeight, i+1, 160, RGB15(3,3,3));
 
 
 }
@@ -196,7 +117,7 @@ int castGrid(FIXED fixedX, FIXED fixedY, int direction) {
 	const x = fx2int(fixedX);
 	const y = fx2int(fixedY);
 
-	for (int i = 0; i < CASTEDRAYS; i++) {
+	for (int i= 0; i < CASTEDRAYS; i++) {
 
 		int luAngle = fxmul64(PI2, fxdiv(angle, int2fx(360))) >> 6;
 		int rayAngle = fx2int(angle);
@@ -223,7 +144,7 @@ int castGrid(FIXED fixedX, FIXED fixedY, int direction) {
 		FIXED sine = lu_sin(luAngle);
 		FIXED cosine = lu_cos(luAngle);
 
-		
+		//to avoid scenarios where cosine or sine being near zero results in artifacts
 		if ((rayAngle < 100 && rayAngle > 85) || (rayAngle > 260 && rayAngle < 275)) {
 			cosine = int2fx(1);
 		}
@@ -361,17 +282,24 @@ int castGrid(FIXED fixedX, FIXED fixedY, int direction) {
 		}
 		
 		
+		
 		if (verticalDistance >= 0 && (verticalDistance <= horizontalDistance || horizontalDistance < 0)) {
-			drawWall(i, verticalDistance, MAP[initXH][initYH], 1);
+			drawWall(2*i, verticalDistance, MAP[initXH][initYH], 1);
+			//drawWall(2*i+1, verticalDistance, MAP[initXH][initYH], 1);
+
 		}
 		
 		else if (horizontalDistance >= 0 && (horizontalDistance < verticalDistance || verticalDistance < 0)) {
-			drawWall(i, horizontalDistance, MAP[initX][initY], 0);
+			drawWall(2*i, horizontalDistance, MAP[initX][initY], 0);
+			//drawWall(2*i+1, horizontalDistance, MAP[initX][initY], 0);
+
 		}
 		else {
-			m3_line(i, 0, i, 160, RGB15(0,0,0));
-		}
+			m3_line(2*i, 0, 2*i, 160, RGB15(0,0,0));
+			m3_line(2*i+1, 0, 2*i+1, 160, RGB15(0,0,0));
 
+		}
+		
 
 
 
@@ -386,12 +314,13 @@ int castGrid(FIXED fixedX, FIXED fixedY, int direction) {
 
 	}
 
+
 }
 
 
 void move(int direction, FIXED *x, FIXED *y, int type) {
 	
-	FIXED SPEED = int2fx(1);
+	FIXED SPEED = 128;
 	const FIXED PI2 = int2fx(0x10000 >> 1);
 	const FIXED ZERO = int2fx(0);
 
