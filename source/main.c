@@ -2,11 +2,23 @@
 
 const float PI = 3.1415;
 const int MAPSIZE = 8;
-int MAP[8][8] = {0};
+
+int MAP[8][8] = {
+        {1, 1, 1, 1, 1, 1, 1, 1},
+        {1, 0, 0, 0, 0, 0, 0, 1},
+        {2, 0, 0, 0, 0, 0, 0, 1},
+        {2, 0, 0, 0, 0, 0, 0, 1},
+        {2, 0, 0, 0, 0, 0, 0, 1},
+        {2, 0, 0, 0, 0, 0, 0, 1},
+        {2, 0, 0, 0, 0, 0, 0, 1},
+        {0, 1, 1, 1, 1, 1, 1, 1}
+    };
+
+
 const int SCREENHEIGHT = 160;
 const int SCREENWIDTH = 240;
 const int CASTEDRAYS = 240;
-const int FOV = 60;
+const int FOV = 90;
 const int TILESIZE = 64; //8
 const int MAXDEPTH = TILESIZE * 10;
 const int DISTANCETOVIEWPORT = 255; //half of width / tan(half of fov)
@@ -129,7 +141,7 @@ float floatAbs(float a) {
 }
 
 FIXED fixedAbs(FIXED a) {
-	if (fx2int(a) < 0) {
+	if (a < 0) {
 		return fxsub(int2fx(0), a);
 	}
 	else {
@@ -138,31 +150,37 @@ FIXED fixedAbs(FIXED a) {
 }
 
 
-void drawWall(int i, FIXED distance, int type) {
+void drawWall(int i, FIXED distance, int type, int vertical) {
 
 	int wallHeight = fx2int(fxmul(fxdiv(int2fx(32), distance), int2fx(10)));//160;// / distance;
 	wallHeight = CLAMP(wallHeight, 1, 160);
 	int halfHeight = wallHeight / 2;
-	m3_line(i, 0, i, 80-halfHeight, RGB15(8,8,8));
 
+	int brightness = 16;
+	if (vertical) {
+		brightness = brightness >> 1;
+	}
+
+
+	m3_line(i, 0, i, 80-halfHeight, RGB15(8,8,8));
 	if (type == 1) {
-		m3_line(i, 80-halfHeight, i, 80 + halfHeight, RGB15(0,0,16));
+		m3_line(i, 80-halfHeight, i, 80 + halfHeight, RGB15(0,0,brightness));
 	}
 	if (type == 2) {
-		m3_line(i, 80-halfHeight, i, 80 + halfHeight, RGB15(0,16,0));
+		m3_line(i, 80-halfHeight, i, 80 + halfHeight, RGB15(0,brightness,0));
 	}
 	if (type == 3) {
-		m3_line(i, 80-halfHeight, i, 80 + halfHeight, RGB15(16,16,0));
+		m3_line(i, 80-halfHeight, i, 80 + halfHeight, RGB15(brightness,brightness,0));
 	}
 	if (type == 4) {
-		m3_line(i, 80-halfHeight, i, 80 + halfHeight, RGB15(16,0,0));
+		m3_line(i, 80-halfHeight, i, 80 + halfHeight, RGB15(brightness,0,0));
 	}
 	m3_line(i, 80+ halfHeight, i, 160, RGB15(3,3,3));
 
 
 }
 
-int castGrid(int x, int y, int direction) {
+int castGrid(FIXED fixedX, FIXED fixedY, int direction) {
 	const FIXED PI2 = int2fx(0x10000 >> 1);
 
 	const FIXED STEPANGLE = fxdiv64(int2fx(FOV), int2fx(CASTEDRAYS));
@@ -174,8 +192,8 @@ int castGrid(int x, int y, int direction) {
 	FIXED angle = int2fx(positiveAngle % 360);
 	const FIXED FIXEDTILESIZE = int2fx(TILESIZE);
 	
-	const FIXED fixedY = int2fx(y);
-	const FIXED fixedX = int2fx(x);
+	const x = fx2int(fixedX);
+	const y = fx2int(fixedY);
 
 	for (int i = 0; i < CASTEDRAYS; i++) {
 
@@ -205,9 +223,16 @@ int castGrid(int x, int y, int direction) {
 
 
 
-		//ugly floating point math, placeholder until 
 		FIXED sine = lu_sin(luAngle);
 		FIXED cosine = lu_cos(luAngle);
+
+		
+		if ((rayAngle < 100 && rayAngle > 85) || (rayAngle > 260 && rayAngle < 275)) {
+			cosine = int2fx(1);
+		}
+		if ((rayAngle >= 180 && rayAngle < 184) || (rayAngle >= 0 && rayAngle < 5) || rayAngle == 360) {
+			sine = int2fx(1);
+		}
 
 		FIXED tan = fxdiv(sine, cosine);
 		//avoid division by zero later on
@@ -217,9 +242,10 @@ int castGrid(int x, int y, int direction) {
 
 
 
+		//ugly floating point math, placeholder until fixed later on
+		//float cosineFloat = fx2float(lu_cos(luAngle));
 
-		float cosineFloat = fx2float(lu_cos(luAngle));
-		FIXED cosineFixed = (lu_cos(luAngle));
+		FIXED cosineAbs = fixedAbs(cosine);
 
 		FIXED horizontalDistance = int2fx(-1);
 
@@ -250,9 +276,6 @@ int castGrid(int x, int y, int direction) {
    		dx = fxmul((fxdiv(FIXEDTILESIZE, tan)), int2fx(xDir));
 
 		
-
-		//FIXED tx2 = float2fx(tx);
-
 		int initX = fx2int(tx) / TILESIZE;
 		int initY = fx2int(ty) / TILESIZE;
 
@@ -261,7 +284,8 @@ int castGrid(int x, int y, int direction) {
 
 		if (MAP[initX][initY] != 0) {
 			//horizontalDistance = float2fx(floatAbs((x - fx2float(tx)) / cosineFloat));
-			horizontalDistance = float2fx(floatAbs(fx2float(fxsub(fixedX, tx)) / cosineFloat));
+			//horizontalDistance = float2fx(floatAbs(fx2float(fxsub(fixedX, tx)) / cosineFloat));
+			horizontalDistance = fxdiv64(fixedAbs(fxsub(fixedX, tx)), cosineAbs);
 		}
 		
 		else {
@@ -276,7 +300,7 @@ int castGrid(int x, int y, int direction) {
 				initY = (fx2int(ty)) / TILESIZE;
 				if (MAP[initX][initY] != 0) {
 					//horizontalDistance = float2fx(floatAbs((x - fx2float(tx)) / cosineFloat));
-					horizontalDistance = float2fx(floatAbs(fx2float(fxsub(fixedX, tx)) / cosineFloat));
+			horizontalDistance = fxdiv64(fixedAbs(fxsub(fixedX, tx)), cosineAbs);
 					break;
 				}
 			}
@@ -319,7 +343,9 @@ int castGrid(int x, int y, int direction) {
 
 		if (MAP[initXH][initYH] != 0) {
 			//horizontalDistance = float2fx(floatAbs((x - fx2float(tx)) / cosineFloat));
-			verticalDistance = float2fx(floatAbs(fx2float(fxsub(fixedX, txh)) / cosineFloat));
+			//verticalDistance = float2fx(floatAbs(fx2float(fxsub(fixedX, txh)) / cosineFloat));
+			verticalDistance = fxdiv64(fixedAbs(fxsub(fixedX, txh)), cosineAbs);
+
 		}
 		
 		else {
@@ -334,7 +360,9 @@ int castGrid(int x, int y, int direction) {
 				initYH = (fx2int(tyh)) / TILESIZE;
 				if (MAP[initXH][initYH] != 0) {
 					//horizontalDistance = float2fx(floatAbs((x - fx2float(tx)) / cosineFloat));
-					verticalDistance = float2fx(floatAbs(fx2float(fxsub(fixedX, txh)) / cosineFloat));
+					//verticalDistance = float2fx(floatAbs(fx2float(fxsub(fixedX, txh)) / cosineFloat));
+					verticalDistance = fxdiv64(fixedAbs(fxsub(fixedX, txh)), cosineAbs);
+
 					break;
 				}
 			}
@@ -356,11 +384,11 @@ int castGrid(int x, int y, int direction) {
 
 
 		if (verticalDistance >= 0 && (verticalDistance <= horizontalDistance || horizontalDistance < 0)) {
-			drawWall(i, verticalDistance, MAP[initXH][initYH]);
+			drawWall(i, verticalDistance, MAP[initXH][initYH], 1);
 		}
 		
 		else if (horizontalDistance >= 0 && (horizontalDistance < verticalDistance || verticalDistance < 0)) {
-			drawWall(i, horizontalDistance, MAP[initX][initY]);
+			drawWall(i, horizontalDistance, MAP[initX][initY], 0);
 		}
 		else {
 			m3_line(i, 0, i, 160, RGB15(0,0,0));
@@ -383,18 +411,53 @@ int castGrid(int x, int y, int direction) {
 }
 
 
+void move(int direction, FIXED *x, FIXED *y, int type) {
+	
+	FIXED SPEED = int2fx(1);
+	const FIXED PI2 = int2fx(0x10000 >> 1);
+	const FIXED ZERO = int2fx(0);
+
+	FIXED angle = int2fx(direction % 360);
+
+	int luAngle = fxmul64(PI2, fxdiv(angle, int2fx(360))) >> 7;
+	FIXED sine = lu_sin(luAngle);
+	FIXED cosine = lu_cos(luAngle);
+
+
+	if (type == 0) { //left
+	//fxadd(x, fxmul(x, sine));
+		*x = fxadd(*x, fxmul(SPEED, sine));
+		*y = fxadd(*y, fxmul(SPEED, cosine));
+	}
+	else if (type == 1) {
+		*x = fxsub(*x, fxmul(SPEED, sine));
+		*y = fxsub(*y, fxmul(SPEED, cosine));
+	}
+	/*
+	else if (type == 2) {
+		*x = fxsub(*x, fxmul(SPEED, cosine));
+		*y = fxsub(*y, fxmul(SPEED, sine));
+	}
+	else if (type == 3) {
+		*x = fxadd(*x, fxmul(SPEED, cosine));
+		*y = fxadd(*y, fxmul(SPEED, sine));
+	}
+	*/
+
+}
+
 int main(void)
 {
 
 	//FIXED x = float2fx(3);
 	//FIXED y = float2fx(3);
 
-	int x = 2*64;//96;//2*64;//
-	int y = 2*64;//224;//2*64;//
+	int x = int2fx(4*64);//96;//2*64;//
+	int y = int2fx(4*64);//224;//2*64;//
 
-	int direction = 260; //315, 0,0
+	int direction = 0; //315, 0,0
 
-	initMap();
+	//initMap();
 	
 	
 	REG_DISPCNT= DCNT_MODE3 | DCNT_BG2;
@@ -418,15 +481,37 @@ int main(void)
 	
 	
 	while (1) {
-		
-		
-		castGrid(x, y, direction);
-		direction += 3;
-		//x = fxadd(x, float2fx(0.1));
-		//y = fxadd(y, float2fx(0.1));
+
+		key_poll();
+		if (key_held(KEY_LEFT)) {
+			move(direction, &x, &y, 0);
+		}
+		else if (key_held(KEY_RIGHT)) {
+			move(direction, &x, &y, 1);
+		}
+		if (key_held(KEY_UP)) {
+			move(direction, &x, &y, 2);
+		}
+		else if (key_held(KEY_DOWN)) {
+			move(direction, &x, &y, 3);
+		}
+		if (key_held(KEY_R)) {
+			direction += 4;
+		}
+		else if (key_held(KEY_L)) {
+			direction -= 4;
+		}
 		if (direction >= 360) {
 			direction = 0;
 		}
+		if (direction < 0) {
+			direction += 360;
+		}
+
+		castGrid(x, y, direction);
+		//direction += 3;
+		//x = fxadd(x, float2fx(0.1));
+		//y = fxadd(y, float2fx(0.1));
 		
 		
 		
