@@ -167,7 +167,7 @@ int castGrid(int x, int y, int direction) {
 
 	const FIXED STEPANGLE = fxdiv64(int2fx(FOV), int2fx(CASTEDRAYS));
 
-	int positiveAngle = direction;// - FOV/2;
+	int positiveAngle = direction - FOV/2;
 	if (positiveAngle < 0) {
 		positiveAngle = 360 + positiveAngle;
 	}
@@ -179,7 +179,7 @@ int castGrid(int x, int y, int direction) {
 
 	for (int i = 0; i < CASTEDRAYS; i++) {
 
-		int luAngle = fxmul64(PI2, fxdiv64(angle, int2fx(360))) >> 7;
+		int luAngle = fxmul64(PI2, fxdiv(angle, int2fx(360))) >> 7;
 		if (fx2int(luAngle) < 0) {
 			continue;
 		}
@@ -285,68 +285,68 @@ int castGrid(int x, int y, int direction) {
 		
 		
 
-		
-		
-		
-
-
-
 		/*
 		this part checks for vertical walls on the 2d map
 		*/
 		
-		int scaledTan = fx2int(fxmul(tan, 1024));
 		//initial coordinate to check for horizontal walls
-		float txh, tyh;
+		FIXED txh;
+		FIXED tyh;
 		//lengths of further steps that will be taken for checking collisions
-		float dxh, dyh;
-
+		FIXED dxh;
+		FIXED dyh;
 		if (rayAngle >= 90 && rayAngle < 270) {
-			txh = x / TILESIZE * TILESIZE -1;
-			dxh = -TILESIZE;
+			txh = int2fx(x / TILESIZE * TILESIZE -1);
+			dxh = fxsub(int2fx(0), FIXEDTILESIZE);
 		}
 		else {
-			txh = x / TILESIZE * TILESIZE + TILESIZE;
-			dxh = TILESIZE;
+			txh = int2fx(x / TILESIZE * TILESIZE + TILESIZE);
+			dxh = FIXEDTILESIZE;
 		}
-		tyh = y + fx2float(fxmul(float2fx(floatAbs(x-txh)), tan))*yDir; //64 to correct for tan scaling
-   		dyh = fx2float(fxmul(FIXEDTILESIZE, tan))*yDir; //64 to correct for tan scaling
-
-
-		int initXH = ((int)txh) / TILESIZE;
-		int initYH = ((int)tyh) / TILESIZE;
-
-
-		//return tan*100;
-		//return MAP[initXH][initYH];
-
+		//tx = x + fx2float(fxmul(fxdiv(float2fx(floatAbs(y- fx2float(ty))), tan), int2fx(xDir)));
+		//tx = x + fx2float(fxmul(fxdiv(fixedAbs(fxsub(fixedY,  ty)), tan), int2fx(xDir)));
+		tyh = (fxadd(fixedY, (fxmul(fxmul(fixedAbs(fxsub(fixedX,  txh)), tan), int2fx(yDir)))));
+   		dyh = fxmul((fxmul(FIXEDTILESIZE, tan)), int2fx(yDir));
 
 		
-			if (MAP[initXH][initYH] != 0) {
 
-				verticalDistance = float2fx(floatAbs((x - txh) / cosineFloat));
 
-			}
-			else {
-				//step tx & ty up in steps of dx & dy 
-				for (int j = 0; j < 20; j++) {
+		int initXH = fx2int(txh) / TILESIZE;
+		int initYH = fx2int(tyh) / TILESIZE;
 
-					txh += dxh;
-					tyh += dyh;
 
-					initXH = ((int)txh) / TILESIZE;
-					initYH = ((int)tyh) / TILESIZE;
 
-					if (MAP[initXH][initYH] != 0) {
-						verticalDistance = float2fx(floatAbs((x - txh) / cosineFloat));
-						break;
-					}
+
+		if (MAP[initXH][initYH] != 0) {
+			//horizontalDistance = float2fx(floatAbs((x - fx2float(tx)) / cosineFloat));
+			verticalDistance = float2fx(floatAbs(fx2float(fxsub(fixedX, txh)) / cosineFloat));
+		}
+		
+		else {
+			//step tx & ty up in steps of dx & dy 
+			for (int j = 0; j < 20; j++) {
+				//tx += dx;
+				//ty += dy;
+				txh = fxadd(txh, dxh);
+				tyh = fxadd(tyh, dyh);
+				
+				initXH = (fx2int(txh)) / TILESIZE;
+				initYH = (fx2int(tyh)) / TILESIZE;
+				if (MAP[initXH][initYH] != 0) {
+					//horizontalDistance = float2fx(floatAbs((x - fx2float(tx)) / cosineFloat));
+					verticalDistance = float2fx(floatAbs(fx2float(fxsub(fixedX, txh)) / cosineFloat));
+					break;
 				}
-
 			}
 
+		}
 		
 		
+
+		
+		
+		
+
 		
 		
 
@@ -392,7 +392,7 @@ int main(void)
 	int x = 2*64;//96;//2*64;//
 	int y = 2*64;//224;//2*64;//
 
-	int direction = 230; //315, 0,0
+	int direction = 260; //315, 0,0
 
 	initMap();
 	
