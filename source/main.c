@@ -245,18 +245,7 @@ int castGrid(FIXED fixedX, FIXED fixedY, int direction) {
 		if (rayAngle == 0) {
 			tan = float2fx(0.1);
 		}
-		/*
-		if (rayAngle == 244) {
-			tan = int2fx(2);
-		}
-		*/
-		/*
-		if (rayAngle == 257) {
-			tan = float2fx(4.33);
-
-		}
-		*/
-		
+				
 		
 		FIXED cosineAbs = fixedAbs(cosine);
 
@@ -385,7 +374,7 @@ int castGrid(FIXED fixedX, FIXED fixedY, int direction) {
 		//return fx2int(fxmul(int2fx(100), horizontalDistance));
 
 		
-		if (verticalDistance >= 0 && (verticalDistance < horizontalDistance || horizontalDistance < 0)) {
+		if (verticalDistance >= 0 && (verticalDistance <= horizontalDistance || horizontalDistance < 0)) {
 			drawWall(2*i, verticalDistance, MAP[initXH][initYH], 1);
 			//drawWall(2*i+1, verticalDistance, MAP[initXH][initYH], 1);
 
@@ -482,7 +471,7 @@ int main(void)
 	int x = int2fx(2*64);//96;//2*64;//
 	int y = int2fx(2*64);//224;//2*64;//
 
-	int direction = 91; //244, //257
+	int direction = 255; //244, //257
 
 	//initMap();
 	
