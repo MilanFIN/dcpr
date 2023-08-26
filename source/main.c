@@ -25,6 +25,9 @@ const int MAXDEPTH = TILESIZE * 10;
 const int DISTANCETOVIEWPORT = 255; //half of width / tan(half of fov)
 
 
+FIXED LU_TAN[360] = {0};
+
+
 volatile unsigned short* palette = (volatile unsigned short*) 0x5000000;
 int nextPaletteIndex = 0;
 
@@ -107,6 +110,29 @@ inline FIXED fixedAbs(FIXED a) {
 	}
 }
 
+float fastTan(float x) {
+  //return x / (1- 4/(PI*PI) * x*x);
+  
+  static const float pisqby4 = 2.4674011002723397f;
+  static const float adjpisqby4 = 2.471688400562703f;
+  static const float adj1minus8bypisq = 0.189759681063053f;
+  float xsq = x * x;
+  return x * (adjpisqby4 - adj1minus8bypisq * xsq) / (pisqby4 - xsq);  
+}
+
+
+
+void initLuTan() {
+
+
+	for (int i = 0; i < 91; i++) {
+		LU_TAN[i] = float2fx(fastTan(i*PI/180));
+	}
+    //LU_TAN[0] = float2fx(tanf(1.0));
+	
+
+
+}
 
 void drawWall(int i, FIXED distance, int type, int vertical) {
 
@@ -177,6 +203,7 @@ int castGrid(FIXED fixedX, FIXED fixedY, int direction) {
 		else if (rayAngle >= 180 && rayAngle < 270) {
 			xDir = -1;
 			yDir = 1;
+
 		}
 		else if (rayAngle >= 270) {
 			xDir = -1;
@@ -213,7 +240,7 @@ int castGrid(FIXED fixedX, FIXED fixedY, int direction) {
 			sine = int2fx(1);
 		}
 
-		FIXED tan = fxdiv64(sine, cosine);
+		FIXED tan = fxdiv64(sine, cosine); //FIXED
 		//avoid division by zero later on
 		if (rayAngle == 0) {
 			tan = float2fx(0.1);
@@ -221,6 +248,12 @@ int castGrid(FIXED fixedX, FIXED fixedY, int direction) {
 		/*
 		if (rayAngle == 244) {
 			tan = int2fx(2);
+		}
+		*/
+		/*
+		if (rayAngle == 257) {
+			tan = float2fx(4.33);
+
 		}
 		*/
 		
@@ -349,7 +382,7 @@ int castGrid(FIXED fixedX, FIXED fixedY, int direction) {
 
 		}
 		
-		return fx2int(fxmul(int2fx(100), tan));
+		//return fx2int(fxmul(int2fx(100), horizontalDistance));
 
 		
 		if (verticalDistance >= 0 && (verticalDistance < horizontalDistance || horizontalDistance < 0)) {
@@ -449,16 +482,17 @@ int main(void)
 	int x = int2fx(2*64);//96;//2*64;//
 	int y = int2fx(2*64);//224;//2*64;//
 
-	int direction = 244; //315, 0,0
+	int direction = 91; //244, //257
 
 	//initMap();
 	
 	
 	REG_DISPCNT= DCNT_MODE4 | DCNT_BG2;
 	initPalette();
+	initLuTan();
 
 		
-	
+	/*
 	REG_DISPCNT = DCNT_MODE0 | DCNT_BG0 | DCNT_OBJ | DCNT_OBJ_1D;
 	irq_init(NULL);
 	irq_enable(II_VBLANK);
@@ -466,12 +500,12 @@ int main(void)
 	tte_init_chr4c_default(0, BG_CBB(0) | BG_SBB(31));
 	tte_set_pos(92, 68);
 
-	int test = castGrid(x, y, direction);
+	int test = fx2int(fxmul(int2fx(100), LU_TAN[10]));//castGrid(x, y, direction);
 
 	char str[8];
 	sprintf(str, "%d", test); //65536
 	tte_write(str);
-	
+	*/
 	
 
 
@@ -505,7 +539,7 @@ int main(void)
 			direction += 360;
 		}
 		
-
+		
 		castGrid(x, y, direction);
 		
 		vid_flip(); 
