@@ -29,7 +29,8 @@ const FIXED SPEED = TILESIZE; //equal to tilesize results in relatively smooth m
 
 
 
-FIXED LU_TAN[360] = {0};
+FIXED tan_lut[720] = {0};
+FIXED inv_tan_lut[720] = {0};
 
 
 volatile unsigned short* palette = (volatile unsigned short*) 0x5000000;
@@ -126,16 +127,45 @@ float fastTan(float x) {
 
 
 
-void initLuTan() {
+void initTanLu() {
+	const FIXED PI2 = int2fx(0x10000 >> 1);
 
+	for (int i = 0; i < 720; i++) {
+		
 
-	for (int i = 0; i < 91; i++) {
-		LU_TAN[i] = float2fx(fastTan(i*PI/180));
+		const FIXED angle = int2fx(i);
+		const rayAngle = fx2int(fxdiv64(angle, int2fx(2)));
+		const FIXED luAngle = fxmul64(PI2, fxdiv64(angle, int2fx(720))) >> 7;
+		FIXED sine = lu_sin(luAngle);
+		FIXED cosine = lu_cos(luAngle);
+
+		//sanitizing sin and cos to avoid artifacts 
+		if ((rayAngle < 90 && rayAngle > 87) || (rayAngle >= 270 && rayAngle < 273)) {
+			cosine = 1;//float2fx(0.1);
+		}
+		else if ((rayAngle >= 90 && rayAngle < 93) || (rayAngle < 270 && rayAngle > 267)) {
+			cosine = -1;//float2fx(-0.1);
+		}
+		else if ((rayAngle >= 180 && rayAngle < 183) || (rayAngle < 360 && rayAngle > 357)) {
+			sine = -1;//float2fx(-0.1);
+		}
+		else if ((rayAngle < 180 && rayAngle > 177) || (rayAngle >= 0 && rayAngle < 3)) {
+			sine = 1;//float2fx(0.1);
+		}
+
+		FIXED tan = fxdiv64(sine, cosine); 
+
+		tan = CLAMP(tan, int2fx(-50), int2fx(50));
+		
+
+		tan_lut[i] = tan;
+		
 	}
-    //LU_TAN[0] = float2fx(tanf(1.0));
-	
 
+}
 
+FIXED lu_tan(FIXED a) {
+	return lu_lerp32(tan_lut, fxadd(a, a), 8);
 }
 
 void drawWall(int i, FIXED distance, int type, int vertical) {
@@ -190,7 +220,7 @@ int castGrid(FIXED fixedX, FIXED fixedY, int direction) {
 
 	for (int i= 0; i < CASTEDRAYS; i++) {
 		//upscaling to account for previous scaling
-		int luAngle = fxmul(PI2, fxdiv(angle, int2fx(360))) >> 7;
+		FIXED luAngle = fxmul(PI2, fxdiv(angle, int2fx(360))) >> 7;
 		int rayAngle = fx2int(angle);
 		int xDir, yDir;
 		if (rayAngle >= 0 && rayAngle < 90) {
@@ -233,9 +263,18 @@ int castGrid(FIXED fixedX, FIXED fixedY, int direction) {
 			sine = 1;//float2fx(0.1);
 		}
 
-		FIXED tan = fxdiv(sine, cosine); //FIXED
-		//avoid division by zero later on
-		
+		FIXED tan;
+
+
+		if (rayAngle > 359) {
+			//edge case due to angle format conversions
+			tan = fxdiv(sine, cosine);
+		}
+		else {
+			tan = lu_tan(angle);
+		}
+
+
 		FIXED cosineAbs = fixedAbs(cosine);
 		FIXED sineAbs = fixedAbs(sine);
 
@@ -459,14 +498,14 @@ int main(void)
 	int x = int2fx(2*TILESIZE);//96;//2*64;//
 	int y = int2fx(2*TILESIZE);//224;//2*64;//
 
-	int direction = 255; //244, //257
+	int direction = 359; //244, //257
 
 	//initMap();
 	
 	
 	REG_DISPCNT= DCNT_MODE4 | DCNT_BG2;
 	initPalette();
-	//initLuTan();
+	initTanLu();
 
 		
 	/*
@@ -477,14 +516,18 @@ int main(void)
 	tte_init_chr4c_default(0, BG_CBB(0) | BG_SBB(31));
 	tte_set_pos(92, 68);
 
-	int test = fx2int(fxmul(int2fx(100), LU_TAN[10]));//castGrid(x, y, direction);
+	FIXED test = lu_tan(int2fx(50));//lu_lerp32(LU_TAN, int2fx(50), 8);
+
+
+	test = fx2int(fxmul(test, int2fx(100)));
+	// fx2int(fxmul(int2fx(100), LU_TAN[10]));//castGrid(x, y, direction);
 
 	char str[8];
 	sprintf(str, "%d", test); //65536
 	tte_write(str);
 	*/
 	
-
+	
 
 
 	
