@@ -30,7 +30,7 @@ const FIXED SPEED = TILESIZE; //equal to tilesize results in relatively smooth m
 
 
 FIXED tan_lut[720] = {0};
-FIXED inv_tan_lut[720] = {0};
+FIXED inverse_tan_lut[720] = {0};
 
 
 volatile unsigned short* palette = (volatile unsigned short*) 0x5000000;
@@ -68,33 +68,10 @@ void initPalette() {
 	loadColorToPalette(RGB15(8,8,0));
 	loadColorToPalette(RGB15(16,16,0));
 
-	//loadColorToPalette(RGB15(16,16,16));
-	//loadColorToPalette(RGB15(16,16,16));
 
 }
 
 
-void initMap() {
-
-	/*
-	MAP[4][3] = 2;
-	MAP[3][3] = 1;
-	MAP[5][3] = 3;
-	*/
-
-	//MAP[2][2] = 1;
-
-	for(int i = 0; i < MAPSIZE; i++) {
-		MAP[0][i] = 1;
-		MAP[MAPSIZE-1][i] = 2;
-		MAP[i][0] = 3;
-		MAP[i][MAPSIZE-1] = 4;
-		for (int j = 0; j < 8; j++) {
-			//MAP[i][j] = 1;
-		}
-	}
-	
-}
 
 
 inline float floatAbs(float a) {
@@ -116,7 +93,6 @@ inline FIXED fixedAbs(FIXED a) {
 }
 
 float fastTan(float x) {
-  //return x / (1- 4/(PI*PI) * x*x);
   
   static const float pisqby4 = 2.4674011002723397f;
   static const float adjpisqby4 = 2.471688400562703f;
@@ -155,10 +131,14 @@ void initTanLu() {
 
 		FIXED tan = fxdiv64(sine, cosine); 
 
+		FIXED inverseTan = fxdiv(int2fx(1), tan);
+
 		tan = CLAMP(tan, int2fx(-50), int2fx(50));
-		
+		inverseTan = CLAMP(inverseTan, int2fx(-50), int2fx(50));
+
 
 		tan_lut[i] = tan;
+		inverse_tan_lut[i] = inverseTan;
 		
 	}
 
@@ -168,11 +148,16 @@ FIXED lu_tan(FIXED a) {
 	return lu_lerp32(tan_lut, fxadd(a, a), 8);
 }
 
+FIXED lu_inverse_tan(FIXED a) {
+	return lu_lerp32(inverse_tan_lut, fxadd(a, a), 8);
+}
+
+
 void drawWall(int i, FIXED distance, int type, int vertical) {
 
-	int wallHeight = fx2int(fxmul(fxdiv(int2fx(TILESIZE/4), distance), int2fx(32))) ;//160;// / distance;
+	int wallHeight = fx2int(fxdiv(int2fx(TILESIZE >> 2), distance) << 5) ;
 	wallHeight = CLAMP(wallHeight, 1, 160);
-	int halfHeight = wallHeight / 2;
+	int halfHeight = (wallHeight >> 1);
 
 	m4_dual_vline(i, 0, 80-halfHeight, 2);
 
@@ -264,8 +249,6 @@ int castGrid(FIXED fixedX, FIXED fixedY, int direction) {
 		}
 
 		FIXED tan;
-
-
 		if (rayAngle > 359) {
 			//edge case due to angle format conversions
 			tan = fxdiv(sine, cosine);
@@ -273,6 +256,7 @@ int castGrid(FIXED fixedX, FIXED fixedY, int direction) {
 		else {
 			tan = lu_tan(angle);
 		}
+		FIXED inverseTan = lu_inverse_tan(angle); //fxdiv(int2fx(1), tan);
 
 
 		FIXED cosineAbs = fixedAbs(cosine);
@@ -305,11 +289,11 @@ int castGrid(FIXED fixedX, FIXED fixedY, int direction) {
 		//tx = x + fx2float(fxmul(fxdiv(float2fx(floatAbs(y- fx2float(ty))), tan), int2fx(xDir)));
 		//tx = x + fx2float(fxmul(fxdiv(fixedAbs(fxsub(fixedY,  ty)), tan), int2fx(xDir)));
 		tx = (fxadd(fixedX, (fxmul(fxdiv(fixedAbs(fxsub(fixedY,  ty)), tan), int2fx(xDir)))));
-   		dx = fxmul((fxdiv(FIXEDTILESIZE, tan)), int2fx(xDir));
+   		dx = fxmul(fxmul(FIXEDTILESIZE, inverseTan), int2fx(xDir));
 
 		
 
-		int initX = fx2int(tx) >> TILESHIFTER; //bit shifting equals dividing by TILESIZE (64)
+		int initX = fx2int(tx) >> TILESHIFTER; //bit shifting equals dividing by TILESIZE 
 		int initY = fx2int(ty) >> TILESHIFTER;
 
 		if (MAP[initX][initY] != 0) {
@@ -326,7 +310,7 @@ int castGrid(FIXED fixedX, FIXED fixedY, int direction) {
 				tx = fxadd((tx), dx);
 				ty = fxadd(ty, dy);
 				
-				initX = (fx2int(tx)) >> TILESHIFTER;// bit shifting equals dividing by tilesize (64)
+				initX = (fx2int(tx)) >> TILESHIFTER;// bit shifting equals dividing by tilesize 
 				initY = (fx2int(ty)) >> TILESHIFTER; 
 				if (MAP[initX][initY] != 0) {
 					//horizontalDistance = float2fx(floatAbs((x - fx2float(tx)) / cosineFloat));
@@ -366,7 +350,7 @@ int castGrid(FIXED fixedX, FIXED fixedY, int direction) {
 		
 
 
-		int initXH = fx2int(txh) >> TILESHIFTER;// bit shifting equals dividing by tilesize (64)
+		int initXH = fx2int(txh) >> TILESHIFTER;// bit shifting equals dividing by tilesize 
 		int initYH = fx2int(tyh) >> TILESHIFTER; 
 
 
@@ -387,7 +371,7 @@ int castGrid(FIXED fixedX, FIXED fixedY, int direction) {
 				txh = fxadd(txh, dxh);
 				tyh = fxadd(tyh, dyh);
 						
-				initXH = fx2int(txh) >> TILESHIFTER;// bit shifting equals dividing by tilesize (64)
+				initXH = fx2int(txh) >> TILESHIFTER;// bit shifting equals dividing by tilesize
 				initYH = fx2int(tyh) >> TILESHIFTER; 
 				if (MAP[initXH][initYH] != 0) {
 					//horizontalDistance = float2fx(floatAbs((x - fx2float(tx)) / cosineFloat));
