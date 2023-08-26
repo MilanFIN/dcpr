@@ -173,7 +173,7 @@ void drawWall(int i, FIXED distance, int type, int vertical) {
 }
 
 int castGrid(FIXED fixedX, FIXED fixedY, int direction) {
-	const FIXED PI2 = int2fx(0x10000 >> 2);
+	const FIXED PI2 = int2fx(0x10000 >> 1);
 
 	const FIXED STEPANGLE = fxdiv(int2fx(FOV), int2fx(CASTEDRAYS));
 
@@ -189,7 +189,7 @@ int castGrid(FIXED fixedX, FIXED fixedY, int direction) {
 
 	for (int i= 0; i < CASTEDRAYS; i++) {
 
-		int luAngle = fxmul64(PI2, fxdiv(angle, int2fx(360))) >> 6;
+		int luAngle = fxmul64(PI2, fxdiv(angle, int2fx(360))) >> 7;
 		int rayAngle = fx2int(angle);
 		int xDir, yDir;
 		if (rayAngle >= 0 && rayAngle < 90) {
@@ -227,17 +227,17 @@ int castGrid(FIXED fixedX, FIXED fixedY, int direction) {
 		*/
 
 		if ((rayAngle < 90 && rayAngle > 87) || (rayAngle >= 270 && rayAngle < 273)) {
-			cosine = int2fx(1);
+			cosine = 1;//float2fx(0.1);
 		}
 		else if ((rayAngle >= 90 && rayAngle < 93) || (rayAngle < 270 && rayAngle > 267)) {
-			cosine = int2fx(-1);
+			cosine = -1;//float2fx(-0.1);
 		}
 
 		else if ((rayAngle >= 180 && rayAngle < 183) || (rayAngle < 360 && rayAngle > 357)) {
-			sine = int2fx(-1);
+			sine = -1;//float2fx(-0.1);
 		}
 		else if ((rayAngle < 180 && rayAngle > 177) || (rayAngle >= 0 && rayAngle < 3)) {
-			sine = int2fx(1);
+			sine = 1;//float2fx(0.1);
 		}
 
 		FIXED tan = fxdiv64(sine, cosine); //FIXED
@@ -248,6 +248,7 @@ int castGrid(FIXED fixedX, FIXED fixedY, int direction) {
 				
 		
 		FIXED cosineAbs = fixedAbs(cosine);
+		FIXED sineAbs = fixedAbs(sine);
 
 		FIXED horizontalDistance = int2fx(-1);
 
@@ -286,7 +287,7 @@ int castGrid(FIXED fixedX, FIXED fixedY, int direction) {
 		if (MAP[initX][initY] != 0) {
 			//horizontalDistance = float2fx(floatAbs((x - fx2float(tx)) / cosineFloat));
 			//horizontalDistance = float2fx(floatAbs(fx2float(fxsub(fixedX, tx)) / cosineFloat));
-			horizontalDistance = fxdiv(fixedAbs(fxsub(fixedX, tx)), cosineAbs);
+			horizontalDistance = fxdiv(fixedAbs(fxsub(fixedY, ty)), sineAbs);
 		}
 		
 		else {
@@ -301,7 +302,7 @@ int castGrid(FIXED fixedX, FIXED fixedY, int direction) {
 				initY = (fx2int(ty)) >> 6; 
 				if (MAP[initX][initY] != 0) {
 					//horizontalDistance = float2fx(floatAbs((x - fx2float(tx)) / cosineFloat));
-					horizontalDistance = fxdiv(fixedAbs(fxsub(fixedX, tx)), cosineAbs);
+					horizontalDistance = fxdiv(fixedAbs(fxsub(fixedY, ty)), sineAbs);
 					break;
 				}
 			}
