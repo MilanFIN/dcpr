@@ -1,5 +1,11 @@
 #include <tonc.h>
 
+#define TILESIZE 1024
+#define SCREENHEIGHT 160
+#define SCREENWIDTH 240
+#define FOV 60
+
+
 const float PI = 3.1415;
 const int MAPSIZE = 8;
 
@@ -15,14 +21,12 @@ int MAP[8][8] = {
     };
 
 
-const int SCREENHEIGHT = 160;
-const int SCREENWIDTH = 240;
-const int CASTEDRAYS = 120;
-const int FOV = 60;
-const int HALFFOV = 30;
-const int TILESIZE = 64; //8
-const int MAXDEPTH = TILESIZE * 10;
-const int DISTANCETOVIEWPORT = 255; //half of width / tan(half of fov)
+const int CASTEDRAYS = SCREEN_WIDTH / 2;
+const int HALFFOV = FOV / 2;
+const int TILESHIFTER = log2(TILESIZE); 
+const FIXED FIXEDTILESIZE = TILESIZE * 256; // equal to int2fx(TILESIZE);
+const FIXED SPEED = TILESIZE; //equal to tilesize results in relatively smooth movement
+
 
 
 FIXED LU_TAN[360] = {0};
@@ -136,14 +140,9 @@ void initLuTan() {
 
 void drawWall(int i, FIXED distance, int type, int vertical) {
 
-	int wallHeight = fx2int(fxmul(fxdiv(int2fx(8), distance), int2fx(32))) * 2;//160;// / distance;
+	int wallHeight = fx2int(fxmul(fxdiv(int2fx(TILESIZE/4), distance), int2fx(32))) ;//160;// / distance;
 	wallHeight = CLAMP(wallHeight, 1, 160);
 	int halfHeight = wallHeight / 2;
-
-	int brightness = 16;
-	if (vertical) {
-		brightness = brightness >> 1;
-	}
 
 	m4_dual_vline(i, 0, 80-halfHeight, 2);
 
@@ -173,23 +172,25 @@ void drawWall(int i, FIXED distance, int type, int vertical) {
 }
 
 int castGrid(FIXED fixedX, FIXED fixedY, int direction) {
+	//pi2 equivalent for calling lu_sin & cos
+	//must be scaled down to avoid overflow later
 	const FIXED PI2 = int2fx(0x10000 >> 1);
 
 	const FIXED STEPANGLE = fxdiv(int2fx(FOV), int2fx(CASTEDRAYS));
 
-	int positiveAngle = direction;// - HALFFOV;
+	int positiveAngle = direction - HALFFOV;
 	if (positiveAngle < 0) {
-		positiveAngle = 360 + positiveAngle;
+		positiveAngle += 360;
 	}
+
 	FIXED angle = int2fx(positiveAngle);
-	const FIXED FIXEDTILESIZE = int2fx(TILESIZE);
 	
 	const x = fx2int(fixedX);
 	const y = fx2int(fixedY);
 
 	for (int i= 0; i < CASTEDRAYS; i++) {
-
-		int luAngle = fxmul64(PI2, fxdiv(angle, int2fx(360))) >> 7;
+		//upscaling to account for previous scaling
+		int luAngle = fxmul(PI2, fxdiv(angle, int2fx(360))) >> 7;
 		int rayAngle = fx2int(angle);
 		int xDir, yDir;
 		if (rayAngle >= 0 && rayAngle < 90) {
@@ -217,14 +218,7 @@ int castGrid(FIXED fixedX, FIXED fixedY, int direction) {
 
 
 		//to avoid scenarios where cosine or sine being near zero results in artifacts
-		/*
-		if ((rayAngle < 95 && rayAngle > 85) || (rayAngle > 265 && rayAngle < 275)) {
-			cosine = int2fx(1);
-		}
-		if ((rayAngle >= 180 && rayAngle < 184) || (rayAngle >= 0 && rayAngle < 5) || rayAngle == 360) {
-			sine = int2fx(1);
-		}
-		*/
+
 
 		if ((rayAngle < 90 && rayAngle > 87) || (rayAngle >= 270 && rayAngle < 273)) {
 			cosine = 1;//float2fx(0.1);
@@ -232,7 +226,6 @@ int castGrid(FIXED fixedX, FIXED fixedY, int direction) {
 		else if ((rayAngle >= 90 && rayAngle < 93) || (rayAngle < 270 && rayAngle > 267)) {
 			cosine = -1;//float2fx(-0.1);
 		}
-
 		else if ((rayAngle >= 180 && rayAngle < 183) || (rayAngle < 360 && rayAngle > 357)) {
 			sine = -1;//float2fx(-0.1);
 		}
@@ -240,12 +233,8 @@ int castGrid(FIXED fixedX, FIXED fixedY, int direction) {
 			sine = 1;//float2fx(0.1);
 		}
 
-		FIXED tan = fxdiv64(sine, cosine); //FIXED
+		FIXED tan = fxdiv(sine, cosine); //FIXED
 		//avoid division by zero later on
-		if (rayAngle == 0) {
-			tan = float2fx(0.1);
-		}
-				
 		
 		FIXED cosineAbs = fixedAbs(cosine);
 		FIXED sineAbs = fixedAbs(sine);
@@ -267,22 +256,22 @@ int castGrid(FIXED fixedX, FIXED fixedY, int direction) {
 		FIXED dy;
 		//if (rayAngle >= 0 && rayAngle < 180) {
 		if (xDir == 1) {
-			ty = int2fx(((y >> 6) << 6) -1); //bit shift by 6 equals div/mul by tilesize
+			ty = int2fx(((y >> TILESHIFTER) * TILESIZE) -1); //bit shift by 6 equals div/mul by tilesize
 			dy = fxsub(int2fx(0), FIXEDTILESIZE);
 		}
 		else {
-			ty = int2fx(((y >> 6) << 6) + TILESIZE);
+			ty = int2fx(((y >> TILESHIFTER) * TILESIZE) + TILESIZE);
 			dy = FIXEDTILESIZE;
 		}
 		//tx = x + fx2float(fxmul(fxdiv(float2fx(floatAbs(y- fx2float(ty))), tan), int2fx(xDir)));
 		//tx = x + fx2float(fxmul(fxdiv(fixedAbs(fxsub(fixedY,  ty)), tan), int2fx(xDir)));
 		tx = (fxadd(fixedX, (fxmul(fxdiv(fixedAbs(fxsub(fixedY,  ty)), tan), int2fx(xDir)))));
-   		dx = fxmul((fxdiv64(FIXEDTILESIZE, tan)), int2fx(xDir));
+   		dx = fxmul((fxdiv(FIXEDTILESIZE, tan)), int2fx(xDir));
 
 		
 
-		int initX = fx2int(tx) >> 6; //bit shifting equals dividing by TILESIZE (64)
-		int initY = fx2int(ty) >> 6;
+		int initX = fx2int(tx) >> TILESHIFTER; //bit shifting equals dividing by TILESIZE (64)
+		int initY = fx2int(ty) >> TILESHIFTER;
 
 		if (MAP[initX][initY] != 0) {
 			//horizontalDistance = float2fx(floatAbs((x - fx2float(tx)) / cosineFloat));
@@ -298,8 +287,8 @@ int castGrid(FIXED fixedX, FIXED fixedY, int direction) {
 				tx = fxadd((tx), dx);
 				ty = fxadd(ty, dy);
 				
-				initX = (fx2int(tx)) >> 6;// bit shifting equals dividing by tilesize (64)
-				initY = (fx2int(ty)) >> 6; 
+				initX = (fx2int(tx)) >> TILESHIFTER;// bit shifting equals dividing by tilesize (64)
+				initY = (fx2int(ty)) >> TILESHIFTER; 
 				if (MAP[initX][initY] != 0) {
 					//horizontalDistance = float2fx(floatAbs((x - fx2float(tx)) / cosineFloat));
 					horizontalDistance = fxdiv(fixedAbs(fxsub(fixedY, ty)), sineAbs);
@@ -323,23 +312,23 @@ int castGrid(FIXED fixedX, FIXED fixedY, int direction) {
 		FIXED dyh;
 		//if (rayAngle >= 90 && rayAngle < 270) {
 		if (yDir == 1) {
-			txh = int2fx(((x >> 6) << 6) -1); //bit shifting by 6 equals div/mul by TILESIZE
+			txh = int2fx(((x >> TILESHIFTER) * TILESIZE) -1); //bit shifting by 6 equals div/mul by TILESIZE
 			dxh = fxsub(int2fx(0), FIXEDTILESIZE);
 		}
 		else {
-			txh = int2fx(((x >> 6) << 6) + TILESIZE);
+			txh = int2fx(((x >> TILESHIFTER) * TILESIZE) + TILESIZE);
 			dxh = FIXEDTILESIZE;
 		}
 		//tx = x + fx2float(fxmul(fxdiv(float2fx(floatAbs(y- fx2float(ty))), tan), int2fx(xDir)));
 		//tx = x + fx2float(fxmul(fxdiv(fixedAbs(fxsub(fixedY,  ty)), tan), int2fx(xDir)));
 		tyh = (fxadd(fixedY, (fxmul(fxmul(fixedAbs(fxsub(fixedX,  txh)), tan), int2fx(yDir)))));
-   		dyh = fxmul((fxmul64(FIXEDTILESIZE, tan)), int2fx(yDir));
+   		dyh = fxmul((fxmul(FIXEDTILESIZE, tan)), int2fx(yDir));
 
 		
 
 
-		int initXH = fx2int(txh) >> 6;// bit shifting equals dividing by tilesize (64)
-		int initYH = fx2int(tyh) >> 6; 
+		int initXH = fx2int(txh) >> TILESHIFTER;// bit shifting equals dividing by tilesize (64)
+		int initYH = fx2int(tyh) >> TILESHIFTER; 
 
 
 
@@ -359,8 +348,8 @@ int castGrid(FIXED fixedX, FIXED fixedY, int direction) {
 				txh = fxadd(txh, dxh);
 				tyh = fxadd(tyh, dyh);
 						
-				initXH = fx2int(txh) >> 6;// bit shifting equals dividing by tilesize (64)
-				initYH = fx2int(tyh) >> 6; 
+				initXH = fx2int(txh) >> TILESHIFTER;// bit shifting equals dividing by tilesize (64)
+				initYH = fx2int(tyh) >> TILESHIFTER; 
 				if (MAP[initXH][initYH] != 0) {
 					//horizontalDistance = float2fx(floatAbs((x - fx2float(tx)) / cosineFloat));
 					//verticalDistance = float2fx(floatAbs(fx2float(fxsub(fixedX, txh)) / cosineFloat));
@@ -409,8 +398,8 @@ int castGrid(FIXED fixedX, FIXED fixedY, int direction) {
 }
 
 INLINE bool collisionCheck(FIXED x, FIXED y) {
-	int gridX = fx2int(x) >> 6;
-	int gridY = fx2int(y) >> 6;
+	int gridX = fx2int(x) >> TILESHIFTER;
+	int gridY = fx2int(y) >> TILESHIFTER;
 	if (MAP[gridX][gridY] != 0) {
 		return true;
 	}
@@ -422,42 +411,40 @@ INLINE bool collisionCheck(FIXED x, FIXED y) {
 
 void move(int direction, FIXED *x, FIXED *y, int type) {
 	
-	FIXED SPEED = 128;
 	const FIXED PI2 = int2fx(0x10000 >> 1);
-	const FIXED ZERO = int2fx(0);
 
 	FIXED angle = int2fx(direction % 360);
 
-	int luAngle = fxmul64(PI2, fxdiv(angle, int2fx(360))) >> 7;
+	int luAngle = fxmul(PI2, fxdiv(angle, int2fx(360))) >> 7;
 	FIXED sine = lu_sin(luAngle);
 	FIXED cosine = lu_cos(luAngle);
 
-	FIXED newX;
-	FIXED newY;
+	FIXED xChange;
+	FIXED yChange;
 
 	if (type == 0) { //left
-		newX = fxadd(*x, fxmul(SPEED, sine));
-		newY = fxadd(*y, fxmul(SPEED, cosine));
+		xChange = fxmul(SPEED, sine);
+		yChange = fxmul(SPEED, cosine);
 	}
 	else if (type == 1) { //right
-		newX = fxsub(*x, fxmul(SPEED, sine));
-		newY = fxsub(*y, fxmul(SPEED, cosine));
+		xChange = fxsub(0, fxmul(SPEED, sine));
+		yChange = fxsub(0, fxmul(SPEED, cosine));
 	}
 	
 	else if (type == 2) { //up
-		newX = fxadd(*x, fxmul(SPEED, cosine));
-		newY = fxsub(*y, fxmul(SPEED, sine));
+		xChange = fxmul(SPEED, cosine);
+		yChange = fxsub(0, fxmul(SPEED, sine));
 	}
 	else if (type == 3) { //down
-		newX = fxsub(*x, fxmul(SPEED, cosine));
-		newY = fxadd(*y, fxmul(SPEED, sine));
+		xChange = fxsub(0, fxmul(SPEED, cosine));
+		yChange = fxmul(SPEED, sine);
 	}
 
-	if (!collisionCheck(newX, *y)) {
-		*x = newX;
+	if (!collisionCheck(fxadd(*x, fxadd(xChange, xChange)), *y)) {
+		*x = fxadd(*x, xChange);
 	}
-	if (!collisionCheck(*x, newY)) {
-		*y = newY;
+	if (!collisionCheck(*x, fxadd(*y, fxadd(yChange, yChange)))) {
+		*y = fxadd(*y, yChange);
 	}
 
 
@@ -469,8 +456,8 @@ int main(void)
 	//FIXED x = float2fx(3);
 	//FIXED y = float2fx(3);
 
-	int x = int2fx(2*64);//96;//2*64;//
-	int y = int2fx(2*64);//224;//2*64;//
+	int x = int2fx(2*TILESIZE);//96;//2*64;//
+	int y = int2fx(2*TILESIZE);//224;//2*64;//
 
 	int direction = 255; //244, //257
 
@@ -479,7 +466,7 @@ int main(void)
 	
 	REG_DISPCNT= DCNT_MODE4 | DCNT_BG2;
 	initPalette();
-	initLuTan();
+	//initLuTan();
 
 		
 	/*
