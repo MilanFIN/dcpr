@@ -1,6 +1,6 @@
 #include <tonc.h>
 
-#define TILESIZE 1024
+#define TILESIZE 1
 #define SCREENHEIGHT 160
 #define SCREENWIDTH 240
 #define FOV 60
@@ -10,14 +10,14 @@ const float PI = 3.1415;
 const int MAPSIZE = 8;
 
 int MAP[8][8] = {
-        {1, 1, 1, 1, 1, 1, 1, 1},
-        {1, 0, 0, 0, 0, 0, 0, 1},
-        {1, 0, 0, 3, 3, 0, 0, 1},
-        {1, 0, 0, 3, 3, 0, 0, 1},
-        {1, 0, 0, 0, 0, 0, 0, 1},
-        {1, 0, 0, 3, 3, 0, 0, 1},
-        {1, 0, 0, 0, 0, 0, 0, 1},
-        {1, 1, 1, 1, 1, 1, 1, 1}
+        {1, 2, 1, 2, 1, 2, 2, 1},
+        {2, 0, 0, 0, 0, 0, 0, 2},
+        {2, 0, 0, 0, 0, 0, 0, 2},
+        {2, 0, 0, 0, 0, 0, 0, 2},
+        {2, 0, 0, 0, 0, 0, 0, 2},
+        {2, 0, 0, 0, 0, 0, 0, 2},
+        {2, 0, 0, 0, 0, 0, 0, 2},
+        {1, 3, 1, 3, 1, 3, 3, 3}
     };
 
 
@@ -27,10 +27,11 @@ const int TILESHIFTER = log2(TILESIZE);
 const FIXED FIXEDTILESIZE = TILESIZE * 256; // equal to int2fx(TILESIZE);
 const FIXED SPEED = TILESIZE; //equal to tilesize results in relatively smooth movement
 
+float x, y;
+float dirX, dirY;
+float planeX, planeY;
 
 
-FIXED tan_lut[720] = {0};
-FIXED inverse_tan_lut[720] = {0};
 
 
 volatile unsigned short* palette = (volatile unsigned short*) 0x5000000;
@@ -92,70 +93,10 @@ inline FIXED fixedAbs(FIXED a) {
 	}
 }
 
-float fastTan(float x) {
-  
-  static const float pisqby4 = 2.4674011002723397f;
-  static const float adjpisqby4 = 2.471688400562703f;
-  static const float adj1minus8bypisq = 0.189759681063053f;
-  float xsq = x * x;
-  return x * (adjpisqby4 - adj1minus8bypisq * xsq) / (pisqby4 - xsq);  
-}
 
+void drawWall(int i, float distance, int type, int vertical) {
 
-
-void initTanLu() {
-	const FIXED PI2 = int2fx(0x10000 >> 1);
-
-	for (int i = 0; i < 720; i++) {
-		
-
-		const FIXED angle = int2fx(i);
-		const rayAngle = fx2int(fxdiv64(angle, int2fx(2)));
-		const FIXED luAngle = fxmul64(PI2, fxdiv64(angle, int2fx(720))) >> 7;
-		FIXED sine = lu_sin(luAngle);
-		FIXED cosine = lu_cos(luAngle);
-
-		//sanitizing sin and cos to avoid artifacts 
-		if ((rayAngle < 90 && rayAngle > 87) || (rayAngle >= 270 && rayAngle < 273)) {
-			cosine = 1;//float2fx(0.1);
-		}
-		else if ((rayAngle >= 90 && rayAngle < 93) || (rayAngle < 270 && rayAngle > 267)) {
-			cosine = -1;//float2fx(-0.1);
-		}
-		else if ((rayAngle >= 180 && rayAngle < 183) || (rayAngle < 360 && rayAngle > 357)) {
-			sine = -1;//float2fx(-0.1);
-		}
-		else if ((rayAngle < 180 && rayAngle > 177) || (rayAngle >= 0 && rayAngle < 3)) {
-			sine = 1;//float2fx(0.1);
-		}
-
-		FIXED tan = fxdiv64(sine, cosine); 
-
-		FIXED inverseTan = fxdiv(int2fx(1), tan);
-
-		tan = CLAMP(tan, int2fx(-50), int2fx(50));
-		inverseTan = CLAMP(inverseTan, int2fx(-50), int2fx(50));
-
-
-		tan_lut[i] = tan;
-		inverse_tan_lut[i] = inverseTan;
-		
-	}
-
-}
-
-FIXED lu_tan(FIXED a) {
-	return lu_lerp32(tan_lut, fxadd(a, a), 8);
-}
-
-FIXED lu_inverse_tan(FIXED a) {
-	return lu_lerp32(inverse_tan_lut, fxadd(a, a), 8);
-}
-
-
-void drawWall(int i, FIXED distance, int type, int vertical) {
-
-	int wallHeight = fx2int(fxdiv(int2fx(TILESIZE >> 2), distance) << 5) ;
+	int wallHeight = 160*TILESIZE/distance;//fx2int(fxdiv(int2fx(TILESIZE >> 2), distance) << 5) ;
 	wallHeight = CLAMP(wallHeight, 1, 160);
 	int halfHeight = (wallHeight >> 1);
 
@@ -186,288 +127,111 @@ void drawWall(int i, FIXED distance, int type, int vertical) {
 
 }
 
-int castGrid(FIXED fixedX, FIXED fixedY, int direction) {
+int castGrid() {
 	//pi2 equivalent for calling lu_sin & cos
 	//must be scaled down to avoid overflow later
-	const FIXED PI2 = int2fx(0x10000 >> 1);
-
-	const FIXED STEPANGLE = fxdiv(int2fx(FOV), int2fx(CASTEDRAYS));
-
-	int positiveAngle = direction - HALFFOV;
-	if (positiveAngle < 0) {
-		positiveAngle += 360;
-	}
-
-	FIXED angle = int2fx(positiveAngle);
-	
-	const x = fx2int(fixedX);
-	const y = fx2int(fixedY);
 
 	for (int i= 0; i < CASTEDRAYS; i++) {
-		//upscaling to account for previous scaling
-		FIXED luAngle = fxmul(PI2, fxdiv(angle, int2fx(360))) >> 7;
-		int rayAngle = fx2int(angle);
-		int xDir, yDir;
-		if (rayAngle >= 0 && rayAngle < 90) {
-			xDir = 1;
-			yDir = -1;
-		}
-		else if (rayAngle >= 90 && rayAngle < 180) {
-			xDir = 1;
-			yDir = 1;
-		}
-		else if (rayAngle >= 180 && rayAngle < 270) {
-			xDir = -1;
-			yDir = 1;
-
-		}
-		else if (rayAngle >= 270) {
-			xDir = -1;
-			yDir = -1;
-		}
 
 
+		float cameraX = 2 * i / (float) CASTEDRAYS - 1; //x-coordinate in camera space
+		float rayDirX = (dirX + (planeX * cameraX));
+    	float rayDirY = (dirY + (planeY * cameraX));
+		
+		
+		int mapX = x;
+		int mapY = y;
 
-		FIXED sine = lu_sin(luAngle);
-		FIXED cosine = lu_cos(luAngle);
+		float sideDistX;
+		float sideDistY;
 
-
-		//to avoid scenarios where cosine or sine being near zero results in artifacts
-
-
-		if ((rayAngle < 90 && rayAngle > 87) || (rayAngle >= 270 && rayAngle < 273)) {
-			cosine = 1;//float2fx(0.1);
-		}
-		else if ((rayAngle >= 90 && rayAngle < 93) || (rayAngle < 270 && rayAngle > 267)) {
-			cosine = -1;//float2fx(-0.1);
-		}
-		else if ((rayAngle >= 180 && rayAngle < 183) || (rayAngle < 360 && rayAngle > 357)) {
-			sine = -1;//float2fx(-0.1);
-		}
-		else if ((rayAngle < 180 && rayAngle > 177) || (rayAngle >= 0 && rayAngle < 3)) {
-			sine = 1;//float2fx(0.1);
-		}
-
-		FIXED tan;
-		if (rayAngle > 359) {
-			//edge case due to angle format conversions
-			tan = fxdiv(sine, cosine);
+		float deltaDistX; 
+		float deltaDistY;
+		if (rayDirX == 0) {
+			deltaDistX = (1e30);
 		}
 		else {
-			tan = lu_tan(angle);
+			deltaDistX = floatAbs((TILESIZE) / rayDirX);
 		}
-		FIXED inverseTan = lu_inverse_tan(angle); //fxdiv(int2fx(1), tan);
 
-
-		FIXED cosineAbs = fixedAbs(cosine);
-		FIXED sineAbs = fixedAbs(sine);
-
-		FIXED horizontalDistance = int2fx(-1);
-
-		FIXED verticalDistance = int2fx(-1);
-
-
-		/*
-		this part checks for horizontal walls on the 2d map
-		*/
-		
-		//initial coordinate to check for horizontal walls
-		FIXED tx;
-		FIXED ty;
-		//lengths of further steps that will be taken for checking collisions
-		FIXED dx;
-		FIXED dy;
-		//if (rayAngle >= 0 && rayAngle < 180) {
-		if (xDir == 1) {
-			ty = int2fx(((y >> TILESHIFTER) * TILESIZE) -1); //bit shift by 6 equals div/mul by tilesize
-			dy = fxsub(int2fx(0), FIXEDTILESIZE);
+		if (rayDirY == 0) {
+			deltaDistY = (1e30);
 		}
 		else {
-			ty = int2fx(((y >> TILESHIFTER) * TILESIZE) + TILESIZE);
-			dy = FIXEDTILESIZE;
+			deltaDistY = floatAbs((TILESIZE) / rayDirY);
 		}
-		//tx = x + fx2float(fxmul(fxdiv(float2fx(floatAbs(y- fx2float(ty))), tan), int2fx(xDir)));
-		//tx = x + fx2float(fxmul(fxdiv(fixedAbs(fxsub(fixedY,  ty)), tan), int2fx(xDir)));
-		tx = (fxadd(fixedX, (fxmul(fxdiv(fixedAbs(fxsub(fixedY,  ty)), tan), int2fx(xDir)))));
-   		dx = fxmul(fxmul(FIXEDTILESIZE, inverseTan), int2fx(xDir));
 
-		
+		float perpWallDistance;
 
-		int initX = fx2int(tx) >> TILESHIFTER; //bit shifting equals dividing by TILESIZE 
-		int initY = fx2int(ty) >> TILESHIFTER;
+		float stepX;
+		float stepY;
 
-		if (MAP[initX][initY] != 0) {
-			//horizontalDistance = float2fx(floatAbs((x - fx2float(tx)) / cosineFloat));
-			//horizontalDistance = float2fx(floatAbs(fx2float(fxsub(fixedX, tx)) / cosineFloat));
-			horizontalDistance = fxdiv(fixedAbs(fxsub(fixedY, ty)), sineAbs);
+		int side;
+
+		if(rayDirX < 0) {
+			stepX = (-TILESIZE);
+			sideDistX = (x - mapX) * deltaDistX;
 		}
-		
 		else {
-			//step tx & ty up in steps of dx & dy 
-			for (int j = 0; j < 10; j++) {
-				//tx += dx;
-				//ty += dy;
-				tx = fxadd((tx), dx);
-				ty = fxadd(ty, dy);
-				
-				initX = (fx2int(tx)) >> TILESHIFTER;// bit shifting equals dividing by tilesize 
-				initY = (fx2int(ty)) >> TILESHIFTER; 
-				if (MAP[initX][initY] != 0) {
-					//horizontalDistance = float2fx(floatAbs((x - fx2float(tx)) / cosineFloat));
-					horizontalDistance = fxdiv(fixedAbs(fxsub(fixedY, ty)), sineAbs);
-					break;
-				}
+			stepX = (TILESIZE);
+			sideDistX = ((mapX + 1.0) - x) * deltaDistX;
+		}
+		if(rayDirY < 0) {
+			stepY = -TILESIZE;
+			sideDistY = (y - mapY) * deltaDistY;
+		}
+		else {
+			stepY = TILESIZE;
+			sideDistY = ((mapY + 1.0) - y) * deltaDistY;
+		}
+
+	
+		int hit = 0;
+		int xCell;
+		int yCell;
+		for (int j = 0; j < 100; j++) {
+			if(sideDistX < sideDistY) {
+				sideDistX += deltaDistX;
+				mapX += stepX;
+				side = 0;
+			}
+			else {
+				sideDistY += deltaDistY;
+				mapY += stepY;
+				side = 1;
 			}
 
-		}
-		
-		
-
-		/*
-		this part checks for vertical walls on the 2d map
-		*/
-		
-		//initial coordinate to check for horizontal walls
-		FIXED txh;
-		FIXED tyh;
-		//lengths of further steps that will be taken for checking collisions
-		FIXED dxh;
-		FIXED dyh;
-		//if (rayAngle >= 90 && rayAngle < 270) {
-		if (yDir == 1) {
-			txh = int2fx(((x >> TILESHIFTER) * TILESIZE) -1); //bit shifting by 6 equals div/mul by TILESIZE
-			dxh = fxsub(int2fx(0), FIXEDTILESIZE);
-		}
-		else {
-			txh = int2fx(((x >> TILESHIFTER) * TILESIZE) + TILESIZE);
-			dxh = FIXEDTILESIZE;
-		}
-		//tx = x + fx2float(fxmul(fxdiv(float2fx(floatAbs(y- fx2float(ty))), tan), int2fx(xDir)));
-		//tx = x + fx2float(fxmul(fxdiv(fixedAbs(fxsub(fixedY,  ty)), tan), int2fx(xDir)));
-		tyh = (fxadd(fixedY, (fxmul(fxmul(fixedAbs(fxsub(fixedX,  txh)), tan), int2fx(yDir)))));
-   		dyh = fxmul((fxmul(FIXEDTILESIZE, tan)), int2fx(yDir));
-
-		
-
-
-		int initXH = fx2int(txh) >> TILESHIFTER;// bit shifting equals dividing by tilesize 
-		int initYH = fx2int(tyh) >> TILESHIFTER; 
-
-
-
-
-		if (MAP[initXH][initYH] != 0) {
-			//horizontalDistance = float2fx(floatAbs((x - fx2float(tx)) / cosineFloat));
-			//verticalDistance = float2fx(floatAbs(fx2float(fxsub(fixedX, txh)) / cosineFloat));
-			verticalDistance = fxdiv(fixedAbs(fxsub(fixedX, txh)), cosineAbs);
-
-		}
-		
-		else {
-			//step tx & ty up in steps of dx & dy 
-			for (int j = 0; j < 10; j++) {
-				//tx += dx;
-				//ty += dy;
-				txh = fxadd(txh, dxh);
-				tyh = fxadd(tyh, dyh);
-						
-				initXH = fx2int(txh) >> TILESHIFTER;// bit shifting equals dividing by tilesize
-				initYH = fx2int(tyh) >> TILESHIFTER; 
-				if (MAP[initXH][initYH] != 0) {
-					//horizontalDistance = float2fx(floatAbs((x - fx2float(tx)) / cosineFloat));
-					//verticalDistance = float2fx(floatAbs(fx2float(fxsub(fixedX, txh)) / cosineFloat));
-					verticalDistance = fxdiv(fixedAbs(fxsub(fixedX, txh)), cosineAbs);
-
-					break;
-				}
+			int currentXCell = (mapX) / TILESIZE;
+			int currentYCell = (mapY) / TILESIZE;
+        	if(MAP[currentXCell][currentYCell] > 0) {
+				xCell = currentXCell;
+				yCell = currentYCell;
+				hit = 1;
+				break;
 			}
 
-		}
-		
-		//return fx2int(fxmul(int2fx(100), horizontalDistance));
-
-		
-		if (verticalDistance >= 0 && (verticalDistance <= horizontalDistance || horizontalDistance < 0)) {
-			drawWall(2*i, verticalDistance, MAP[initXH][initYH], 1);
-			//drawWall(2*i+1, verticalDistance, MAP[initXH][initYH], 1);
 
 		}
-		
-		else if (horizontalDistance >= 0 && (horizontalDistance < verticalDistance || verticalDistance < 0)) {
-			drawWall(2*i, horizontalDistance, MAP[initX][initY], 0);
-			//drawWall(2*i+1, horizontalDistance, MAP[initX][initY], 0);
+
+		if (hit) {
+			if(side == 0) perpWallDistance = (sideDistX - deltaDistX);
+			else          perpWallDistance = (sideDistY - deltaDistY);
+
+			drawWall(2*i, perpWallDistance, MAP[xCell][yCell], side);
 
 		}
 		else {
 			m4_dual_vline(2*i, 0, 160, 0);
-
-		}
-		
-
-
-
-
-
-		angle = fxadd(angle, STEPANGLE);
-		if (fx2int(angle) > 360) {
-			angle = fxsub(angle, int2fx(360));
 		}
 
 
 
-	}
 
 
-}
-
-INLINE bool collisionCheck(FIXED x, FIXED y) {
-	int gridX = fx2int(x) >> TILESHIFTER;
-	int gridY = fx2int(y) >> TILESHIFTER;
-	if (MAP[gridX][gridY] != 0) {
-		return true;
-	}
-	else {
-		return false;
-	}
-}
 
 
-void move(int direction, FIXED *x, FIXED *y, int type) {
-	
-	const FIXED PI2 = int2fx(0x10000 >> 1);
 
-	FIXED angle = int2fx(direction % 360);
 
-	int luAngle = fxmul(PI2, fxdiv(angle, int2fx(360))) >> 7;
-	FIXED sine = lu_sin(luAngle);
-	FIXED cosine = lu_cos(luAngle);
-
-	FIXED xChange;
-	FIXED yChange;
-
-	if (type == 0) { //left
-		xChange = fxmul(SPEED, sine);
-		yChange = fxmul(SPEED, cosine);
-	}
-	else if (type == 1) { //right
-		xChange = fxsub(0, fxmul(SPEED, sine));
-		yChange = fxsub(0, fxmul(SPEED, cosine));
-	}
-	
-	else if (type == 2) { //up
-		xChange = fxmul(SPEED, cosine);
-		yChange = fxsub(0, fxmul(SPEED, sine));
-	}
-	else if (type == 3) { //down
-		xChange = fxsub(0, fxmul(SPEED, cosine));
-		yChange = fxmul(SPEED, sine);
-	}
-
-	if (!collisionCheck(fxadd(*x, fxadd(xChange, xChange)), *y)) {
-		*x = fxadd(*x, xChange);
-	}
-	if (!collisionCheck(*x, fxadd(*y, fxadd(yChange, yChange)))) {
-		*y = fxadd(*y, yChange);
 	}
 
 
@@ -476,20 +240,24 @@ void move(int direction, FIXED *x, FIXED *y, int type) {
 int main(void)
 {
 
-	//FIXED x = float2fx(3);
-	//FIXED y = float2fx(3);
 
-	int x = int2fx(2*TILESIZE);//96;//2*64;//
-	int y = int2fx(2*TILESIZE);//224;//2*64;//
 
-	int direction = 359; //244, //257
+	x = 4*TILESIZE;//96;//2*64;//
+	y = 4*TILESIZE;//224;//2*64;//
 
-	//initMap();
+	dirX = 1;
+	dirY = 0;
+
+	planeX = 0;
+	planeY = 0.66;
+
+
+	int rotSpeed = 1;
+
 	
 	
 	REG_DISPCNT= DCNT_MODE4 | DCNT_BG2;
 	initPalette();
-	initTanLu();
 
 		
 	/*
@@ -500,11 +268,8 @@ int main(void)
 	tte_init_chr4c_default(0, BG_CBB(0) | BG_SBB(31));
 	tte_set_pos(92, 68);
 
-	FIXED test = lu_tan(int2fx(50));//lu_lerp32(LU_TAN, int2fx(50), 8);
+	FIXED test = castGrid();
 
-
-	test = fx2int(fxmul(test, int2fx(100)));
-	// fx2int(fxmul(int2fx(100), LU_TAN[10]));//castGrid(x, y, direction);
 
 	char str[8];
 	sprintf(str, "%d", test); //65536
@@ -516,35 +281,23 @@ int main(void)
 
 	
 	while (1) {
+		/*
+		if (dirX != 0) {
+			dirX = 0;
+			dirY = -1;
+			planeX = 0.66;
+			planeY = 0;
+		}
+		else {
+			dirX = 1;
+			dirY = 0;
+			planeX = 0;
+			planeY = 0.66;
+		}
+		*/
+			
 		
-		key_poll();
-		if (key_held(KEY_LEFT)) {
-			move(direction, &x, &y, 0);
-		}
-		else if (key_held(KEY_RIGHT)) {
-			move(direction, &x, &y, 1);
-		}
-		if (key_held(KEY_UP)) {
-			move(direction, &x, &y, 2);
-		}
-		else if (key_held(KEY_DOWN)) {
-			move(direction, &x, &y, 3);
-		}
-		if (key_held(KEY_R)) {
-			direction += 5;
-		}
-		else if (key_held(KEY_L)) {
-			direction -= 5;
-		}
-		if (direction >= 360) {
-			direction = 0;
-		}
-		if (direction < 0) {
-			direction += 360;
-		}
-		
-		
-		castGrid(x, y, direction);
+		castGrid();
 		
 		vid_flip(); 
 		
