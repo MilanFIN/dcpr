@@ -30,7 +30,7 @@ const FIXED SPEED = TILESIZE; //equal to tilesize results in relatively smooth m
 float x, y;
 float dirX, dirY;
 float planeX, planeY;
-
+int direction;
 
 
 
@@ -237,22 +237,43 @@ int castGrid() {
 
 }
 
+
+int updateDirection() {
+
+	FIXED viewPlaneMultiplier = 168;
+
+	const FIXED PI2 = int2fx(0x10000 >> 1);
+	FIXED angle = int2fx(direction);
+	FIXED luAngle = fxmul64(PI2, fxdiv(angle, int2fx(360))) >> 7;
+
+	FIXED cosine = lu_cos(luAngle);
+	FIXED sine = lu_sin(luAngle);
+
+	dirX = fx2float(fxdiv(cosine, int2fx(16)));
+	dirY = fx2float(-fxdiv(sine, int2fx(16)));
+
+	planeY = fx2float(fxdiv(fxmul(cosine, viewPlaneMultiplier) ,int2fx(16)));
+	planeX = fx2float(fxdiv(fxmul(sine, viewPlaneMultiplier) ,int2fx(16)));
+
+	//return planeX * 100.0;//(fxmul(dirX, int2fx(100)));
+
+
+
+}
+
 int main(void)
 {
-
 
 
 	x = 4*TILESIZE;//96;//2*64;//
 	y = 4*TILESIZE;//224;//2*64;//
 
+	direction = 45;
+
 	dirX = 1;
-	dirY = 0;
-
-	planeX = 0;
+	dirY = -1;
+	planeX = 0.66;
 	planeY = 0.66;
-
-
-	int rotSpeed = 1;
 
 	
 	
@@ -268,7 +289,7 @@ int main(void)
 	tte_init_chr4c_default(0, BG_CBB(0) | BG_SBB(31));
 	tte_set_pos(92, 68);
 
-	FIXED test = castGrid();
+	FIXED test = updateDirection();
 
 
 	char str[8];
@@ -281,24 +302,15 @@ int main(void)
 
 	
 	while (1) {
-		/*
-		if (dirX != 0) {
-			dirX = 0;
-			dirY = -1;
-			planeX = 0.66;
-			planeY = 0;
+
+		
+		direction += 2;
+		if (direction >= 360) {
+			direction = 0;
 		}
-		else {
-			dirX = 1;
-			dirY = 0;
-			planeX = 0;
-			planeY = 0.66;
-		}
-		*/
-			
+ 		updateDirection();
 		
 		castGrid();
-		
 		vid_flip(); 
 		
 		
