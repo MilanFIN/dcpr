@@ -1,3 +1,4 @@
+
 #include <tonc.h>
 
 #define TILESIZE 1
@@ -10,26 +11,26 @@ const float PI = 3.1415;
 const int MAPSIZE = 8;
 
 int MAP[8][8] = {
-        {1, 2, 1, 2, 1, 2, 2, 1},
-        {2, 0, 0, 0, 0, 0, 0, 2},
-        {2, 0, 0, 0, 0, 0, 0, 2},
-        {2, 0, 0, 0, 0, 0, 0, 2},
-        {2, 0, 0, 0, 0, 0, 0, 2},
-        {2, 0, 0, 0, 0, 0, 0, 2},
-        {2, 0, 0, 0, 0, 0, 0, 2},
-        {1, 3, 1, 3, 1, 3, 3, 3}
+        {1, 1, 1, 1, 1, 1, 1, 1},
+        {1, 0, 0, 0, 0, 0, 0, 1},
+        {1, 0, 0, 0, 0, 0, 0, 1},
+        {1, 0, 0, 0, 0, 0, 0, 1},
+        {1, 0, 3, 0, 3, 0, 0, 1},
+        {1, 0, 3, 0, 3, 0, 0, 1},
+        {1, 0, 0, 0, 0, 0, 0, 1},
+        {1, 1, 1, 1, 1, 1, 1, 1}
     };
 
+FIXED CAMERAX_LU[SCREENWIDTH / 2] = {0};
 
 const int CASTEDRAYS = SCREEN_WIDTH / 2;
 const int HALFFOV = FOV / 2;
 const int TILESHIFTER = log2(TILESIZE); 
 const FIXED FIXEDTILESIZE = TILESIZE * 256; // equal to int2fx(TILESIZE);
-const FIXED SPEED = TILESIZE; //equal to tilesize results in relatively smooth movement
 
-float x, y;
-float dirX, dirY;
-float planeX, planeY;
+FIXED x, y;
+FIXED dirX, dirY;
+FIXED planeX, planeY;
 int direction;
 
 
@@ -72,6 +73,13 @@ void initPalette() {
 
 }
 
+void initCameraXLu() {
+	for (int i = 0; i < CASTEDRAYS; i++) {
+		CAMERAX_LU[i] = fxsub(fxdiv(int2fx(2 * i) ,int2fx(CASTEDRAYS )) , int2fx(1));
+
+	}
+}
+
 
 
 
@@ -96,7 +104,7 @@ inline FIXED fixedAbs(FIXED a) {
 
 void drawWall(int i, float distance, int type, int vertical) {
 
-	int wallHeight = 160*TILESIZE/distance;//fx2int(fxdiv(int2fx(TILESIZE >> 2), distance) << 5) ;
+	int wallHeight = 160/distance;
 	wallHeight = CLAMP(wallHeight, 1, 160);
 	int halfHeight = (wallHeight >> 1);
 
@@ -131,58 +139,60 @@ int castGrid() {
 	//pi2 equivalent for calling lu_sin & cos
 	//must be scaled down to avoid overflow later
 
+
 	for (int i= 0; i < CASTEDRAYS; i++) {
 
 
-		float cameraX = 2 * i / (float) CASTEDRAYS - 1; //x-coordinate in camera space
-		float rayDirX = (dirX + (planeX * cameraX));
-    	float rayDirY = (dirY + (planeY * cameraX));
+		const FIXED cameraX = CAMERAX_LU[i]; //x-coordinate in camera space
+		const FIXED rayDirX = fxadd(dirX, fxmul(planeX, cameraX));
+    	const FIXED rayDirY = fxadd(dirY, fxmul(planeY, cameraX));
 		
 		
-		int mapX = x;
-		int mapY = y;
+		FIXED mapX = int2fx(fx2int(x));
+		FIXED mapY = int2fx(fx2int(y));
+		//int2fx(fx2int(y));
 
-		float sideDistX;
-		float sideDistY;
+		FIXED sideDistX;
+		FIXED sideDistY;
 
-		float deltaDistX; 
-		float deltaDistY;
+		FIXED deltaDistX; 
+		FIXED deltaDistY;
 		if (rayDirX == 0) {
-			deltaDistX = (1e30);
+			deltaDistX = int2fx(1024);
 		}
 		else {
-			deltaDistX = floatAbs((TILESIZE) / rayDirX);
+			deltaDistX = fixedAbs(fxdiv(int2fx(1), rayDirX));
 		}
 
 		if (rayDirY == 0) {
-			deltaDistY = (1e30);
+			deltaDistY = int2fx(1024);
 		}
 		else {
-			deltaDistY = floatAbs((TILESIZE) / rayDirY);
+			deltaDistY = fixedAbs(fxdiv(int2fx(1), rayDirY));
 		}
 
 		float perpWallDistance;
 
-		float stepX;
-		float stepY;
+		FIXED stepX;
+		FIXED stepY;
 
 		int side;
 
 		if(rayDirX < 0) {
-			stepX = (-TILESIZE);
-			sideDistX = (x - mapX) * deltaDistX;
+			stepX = int2fx(-1);
+			sideDistX = fxmul(fxsub(x, mapX) , deltaDistX);
 		}
 		else {
-			stepX = (TILESIZE);
-			sideDistX = ((mapX + 1.0) - x) * deltaDistX;
+			stepX = int2fx(1);
+			sideDistX = fxmul(fxsub(fxadd(mapX, int2fx(1.0)), x), deltaDistX);
 		}
 		if(rayDirY < 0) {
-			stepY = -TILESIZE;
-			sideDistY = (y - mapY) * deltaDistY;
+			stepY = int2fx(-1);
+			sideDistY = fxmul(fxsub(y, mapY), deltaDistY);
 		}
 		else {
-			stepY = TILESIZE;
-			sideDistY = ((mapY + 1.0) - y) * deltaDistY;
+			stepY = int2fx(1);
+			sideDistY = fxmul(fxsub(fxadd(mapY, int2fx(1.0)), y), deltaDistY);
 		}
 
 	
@@ -191,18 +201,18 @@ int castGrid() {
 		int yCell;
 		for (int j = 0; j < 100; j++) {
 			if(sideDistX < sideDistY) {
-				sideDistX += deltaDistX;
-				mapX += stepX;
+				sideDistX = fxadd(sideDistX, deltaDistX);
+				mapX = fxadd(mapX, stepX);
 				side = 0;
 			}
 			else {
-				sideDistY += deltaDistY;
-				mapY += stepY;
+				sideDistY = fxadd(sideDistY, deltaDistY);
+				mapY = fxadd(mapY, stepY);
 				side = 1;
 			}
 
-			int currentXCell = (mapX) / TILESIZE;
-			int currentYCell = (mapY) / TILESIZE;
+			int currentXCell = fx2int(mapX);
+			int currentYCell = fx2int(mapY); 
         	if(MAP[currentXCell][currentYCell] > 0) {
 				xCell = currentXCell;
 				yCell = currentYCell;
@@ -214,8 +224,8 @@ int castGrid() {
 		}
 
 		if (hit) {
-			if(side == 0) perpWallDistance = (sideDistX - deltaDistX);
-			else          perpWallDistance = (sideDistY - deltaDistY);
+			if(side == 0) perpWallDistance = fx2float(fxsub(sideDistX, deltaDistX));
+			else          perpWallDistance = fx2float(fxsub(sideDistY, deltaDistY));
 
 			drawWall(2*i, perpWallDistance, MAP[xCell][yCell], side);
 
@@ -243,20 +253,60 @@ int updateDirection() {
 	FIXED viewPlaneMultiplier = 168;
 
 	const FIXED PI2 = int2fx(0x10000 >> 1);
-	FIXED angle = int2fx(direction);
-	FIXED luAngle = fxmul64(PI2, fxdiv(angle, int2fx(360))) >> 7;
+	FIXED luAngle = fxmul64(PI2, fxdiv(direction, int2fx(360))) >> 7;
 
 	FIXED cosine = lu_cos(luAngle);
 	FIXED sine = lu_sin(luAngle);
 
-	dirX = fx2float(fxdiv(cosine, int2fx(16)));
-	dirY = fx2float(-fxdiv(sine, int2fx(16)));
+	dirX = (fxdiv(cosine, int2fx(16)));
+	dirY = (-fxdiv(sine, int2fx(16)));
 
-	planeY = fx2float(fxdiv(fxmul(cosine, viewPlaneMultiplier) ,int2fx(16)));
-	planeX = fx2float(fxdiv(fxmul(sine, viewPlaneMultiplier) ,int2fx(16)));
+	planeY = (fxdiv(fxmul(cosine, viewPlaneMultiplier) ,int2fx(16)));
+	planeX = (fxdiv(fxmul(sine, viewPlaneMultiplier) ,int2fx(16)));
 
 	//return planeX * 100.0;//(fxmul(dirX, int2fx(100)));
 
+
+
+}
+
+bool collisionCheck(FIXED x, FIXED y) {
+	if (MAP[fx2int(x)][fx2int(y)] != 0) {
+		return true;
+	}
+	else {
+		return false;
+	}
+}
+
+void move(int type) {
+	const FIXED SPEED = float2fx(0.1); 
+	FIXED moveX = 0;
+	FIXED moveY = 0;
+
+	if (type == 0) { //left1
+		moveX = fxmul(dirY, SPEED);
+		moveY = -fxmul(dirX, SPEED);
+	}
+	else if (type == 1) { //right
+		moveX = -fxmul(dirY, SPEED);
+		moveY = fxmul(dirX, SPEED);
+	}
+	else if (type == 2) { //forward
+		moveX = fxmul(dirX, SPEED);
+		moveY = fxmul(dirY, SPEED);
+	}
+	else { //back
+		moveX = -fxmul(dirX, SPEED);
+		moveY = -fxmul(dirY, SPEED);
+	}
+
+	if (!collisionCheck(fxadd(x, fxadd(moveX, moveX)), y)) {
+		x = fxadd(x, moveX);
+	}
+	if (!collisionCheck(x, fxadd(y, fxadd(moveY, moveY)))) {
+		y = fxadd(y, moveY);
+	}
 
 
 }
@@ -265,19 +315,15 @@ int main(void)
 {
 
 
-	x = 4*TILESIZE;//96;//2*64;//
-	y = 4*TILESIZE;//224;//2*64;//
+	x = int2fx(2);//96;//2*64;//
+	y = int2fx(2);//224;//2*64;//
 
-	direction = 45;
-
-	dirX = 1;
-	dirY = -1;
-	planeX = 0.66;
-	planeY = 0.66;
+	direction = 0;
 
 	
 	
 	REG_DISPCNT= DCNT_MODE4 | DCNT_BG2;
+	initCameraXLu();
 	initPalette();
 
 		
@@ -304,12 +350,35 @@ int main(void)
 	while (1) {
 
 		
-		direction += 2;
-		if (direction >= 360) {
+		key_poll();
+		if (key_held(KEY_LEFT)) {
+			move(0);
+		}
+		else if (key_held(KEY_RIGHT)) {
+			move(1);
+		}
+		if (key_held(KEY_UP)) {
+			move(2);
+		}
+		else if (key_held(KEY_DOWN)) {
+			move(3);
+		}
+		if (key_held(KEY_R)) {
+			direction -= int2fx(3);
+		}
+		else if (key_held(KEY_L)) {
+			direction += int2fx(3);
+		}
+		if (fx2int(direction) >= 360) {
 			direction = 0;
 		}
+		if (fx2int(direction) < 0) {
+			direction += int2fx(360);
+		}
  		updateDirection();
-		
+		//x = fxadd(x, 1);
+		//y = fxadd(y, 4);
+
 		castGrid();
 		vid_flip(); 
 		
