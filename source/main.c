@@ -1,5 +1,6 @@
 
 #include <tonc.h>
+#include "textures.h"
 
 #define TILESIZE 1
 #define SCREENHEIGHT 160
@@ -10,20 +11,22 @@
 const float PI = 3.1415;
 const int MAPSIZE = 8;
 
-int MAP[8][8] = {
-        {1, 1, 1, 1, 1, 1, 1, 1},
-        {1, 0, 0, 0, 0, 0, 0, 1},
-        {1, 0, 0, 0, 0, 0, 0, 1},
-        {1, 0, 0, 0, 0, 0, 0, 1},
-        {1, 0, 3, 0, 3, 0, 0, 1},
-        {1, 0, 3, 0, 3, 0, 0, 1},
-        {1, 0, 0, 0, 0, 0, 0, 1},
-        {1, 1, 1, 1, 1, 1, 1, 1}
+int MAP[8*8] = {
+        1, 1, 1, 1, 1, 1, 1, 1,
+        1, 0, 0, 0, 0, 0, 0, 1,
+        1, 0, 0, 0, 0, 0, 0, 1,
+        1, 0, 0, 0, 0, 0, 0, 1,
+        1, 0, 3, 0, 3, 0, 0, 1,
+        1, 0, 3, 0, 3, 0, 0, 1,
+        1, 0, 0, 0, 0, 0, 0, 1,
+        1, 1, 1, 1, 1, 1, 1, 1
     };
 
 FIXED CAMERAX_LU[SCREENWIDTH / 2] = {0};
+FIXED TEXTURESTEP_LU[SCREENHEIGHT] = {0};
 
-const int CASTEDRAYS = SCREEN_WIDTH / 2;
+
+const int CASTEDRAYS = SCREENWIDTH / 2;
 const int HALFFOV = FOV / 2;
 const int TILESHIFTER = log2(TILESIZE); 
 const FIXED FIXEDTILESIZE = TILESIZE * 256; // equal to int2fx(TILESIZE);
@@ -42,12 +45,28 @@ int nextPaletteIndex = 0;
 INLINE void m4_dual_plot(int x, int y, u8 clrid)
 {
 	vid_page[(y*M4_WIDTH+x)>>1] = (clrid << 8) | clrid;
+	//vid_page[(y*M4_WIDTH+x+2)>>1] = (clrid << 8) | clrid;
+
 }
 
 INLINE void m4_dual_vline(int x, int y1, int y2, u8 clrid) {
 	for (int i = y1; i <= y2; i++) {
 		m4_dual_plot(x, i, clrid);
 	}
+}
+
+INLINE void m4_textured_dual_line(int x, int y1, int y2, int height, int vertical, int column) {
+	const FIXED step = TEXTURESTEP_LU[height];
+	//const FIXED step = fxdiv(int2fx(TEXTURESIZE), int2fx(height));
+	//
+	FIXED textureY = 0;
+	//textureY = fxadd(textureY, int2fx(4));
+	for (y1; y1 < y2; y1++) {
+		const color = TEXTURE[fx2int(textureY) * TEXTURESIZE  + column] - vertical;
+		m4_dual_plot(x, y1, color);
+		textureY = fxadd(textureY, step);
+	}
+	
 }
 
 
@@ -80,6 +99,11 @@ void initCameraXLu() {
 	}
 }
 
+void initTextureStepLu() {
+	for (int i = 0; i < SCREENHEIGHT; i++) {
+		TEXTURESTEP_LU[i] = fxdiv(int2fx(TEXTURESIZE), int2fx(i));
+	}
+}
 
 
 
@@ -102,9 +126,9 @@ inline FIXED fixedAbs(FIXED a) {
 }
 
 
-void drawWall(int i, float distance, int type, int vertical) {
+void drawWall(int i, FIXED distance, int type, int vertical, int textureColumn) {
 
-	int wallHeight = 160/distance;
+	int wallHeight = fx2int(fxdiv(int2fx(160) , distance));
 	wallHeight = CLAMP(wallHeight, 1, 160);
 	int halfHeight = (wallHeight >> 1);
 
@@ -112,6 +136,8 @@ void drawWall(int i, float distance, int type, int vertical) {
 
 	int color = 0;
 	
+
+	/*
 	if (type == 1) {
 		color = 4;
 	}
@@ -127,8 +153,9 @@ void drawWall(int i, float distance, int type, int vertical) {
 	if (!vertical) {
 		color++;
 	}
+	*/
 	//the actual wall
-	m4_dual_vline(i, 80-halfHeight, 80 + halfHeight, color);
+	m4_textured_dual_line(i, 80-halfHeight, 80 + halfHeight, wallHeight, vertical, textureColumn);
 
 	m4_dual_vline(i, 80+ halfHeight, 160, 1);
 
@@ -171,7 +198,6 @@ int castGrid() {
 			deltaDistY = fixedAbs(fxdiv(int2fx(1), rayDirY));
 		}
 
-		float perpWallDistance;
 
 		FIXED stepX;
 		FIXED stepY;
@@ -213,7 +239,7 @@ int castGrid() {
 
 			int currentXCell = fx2int(mapX);
 			int currentYCell = fx2int(mapY); 
-        	if(MAP[currentXCell][currentYCell] > 0) {
+        	if(MAP[currentXCell*MAPSIZE + currentYCell] > 0) {
 				xCell = currentXCell;
 				yCell = currentYCell;
 				hit = 1;
@@ -223,11 +249,34 @@ int castGrid() {
 
 		}
 
-		if (hit) {
-			if(side == 0) perpWallDistance = fx2float(fxsub(sideDistX, deltaDistX));
-			else          perpWallDistance = fx2float(fxsub(sideDistY, deltaDistY));
+		FIXED perpWallDistance;
+		int textureColumn;
+		FIXED wallPos;
 
-			drawWall(2*i, perpWallDistance, MAP[xCell][yCell], side);
+		if (hit) {
+			//horizontal
+			if(side == 0) {
+				perpWallDistance = fxsub(sideDistX, deltaDistX);
+				wallPos = fxadd(y, fxmul(perpWallDistance, rayDirY));
+			}
+			//vertical
+			else {
+				perpWallDistance = fxsub(sideDistY, deltaDistY);
+				wallPos = fxadd(x, fxmul(perpWallDistance, rayDirX));
+			}          
+
+			wallPos = fxsub(wallPos, int2fx(fx2int(wallPos)));
+			textureColumn = fx2int(fxmul(wallPos, int2fx(TEXTURESIZE)));
+
+			//if (i > 100)	return textureColumn;
+			//fx2int(fxmul(wallPos, int2fx(100)));
+
+
+			if (textureColumn < 0) {
+				textureColumn = TEXTURESIZE - textureColumn;
+			}
+
+			drawWall(2*i, perpWallDistance, MAP[xCell*MAPSIZE + yCell], side, textureColumn);
 
 		}
 		else {
@@ -253,7 +302,7 @@ int updateDirection() {
 	FIXED viewPlaneMultiplier = 168;
 
 	const FIXED PI2 = int2fx(0x10000 >> 1);
-	FIXED luAngle = fxmul64(PI2, fxdiv(direction, int2fx(360))) >> 7;
+	FIXED luAngle = fxmul(PI2, fxdiv(direction, int2fx(360))) >> 7;
 
 	FIXED cosine = lu_cos(luAngle);
 	FIXED sine = lu_sin(luAngle);
@@ -271,7 +320,7 @@ int updateDirection() {
 }
 
 bool collisionCheck(FIXED x, FIXED y) {
-	if (MAP[fx2int(x)][fx2int(y)] != 0) {
+	if (MAP[fx2int(x) * MAPSIZE + fx2int(y)] != 0) {
 		return true;
 	}
 	else {
@@ -324,26 +373,28 @@ int main(void)
 	
 	REG_DISPCNT= DCNT_MODE4 | DCNT_BG2;
 	initCameraXLu();
+	initTextureStepLu();
 	initPalette();
 
 		
 	/*
 	REG_DISPCNT = DCNT_MODE0 | DCNT_BG0 | DCNT_OBJ | DCNT_OBJ_1D;
+	updateDirection();
+
 	irq_init(NULL);
 	irq_enable(II_VBLANK);
 
 	tte_init_chr4c_default(0, BG_CBB(0) | BG_SBB(31));
 	tte_set_pos(92, 68);
 
-	FIXED test = updateDirection();
+	FIXED test = castGrid();
 
 
 	char str[8];
 	sprintf(str, "%d", test); //65536
 	tte_write(str);
+	
 	*/
-	
-	
 
 
 	
@@ -381,7 +432,7 @@ int main(void)
 
 		castGrid();
 		vid_flip(); 
-		
+
 		
 		
 		//VBlankIntrWait();
