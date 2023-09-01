@@ -16,8 +16,8 @@ int MAP[8*8] = {
         1, 0, 0, 0, 0, 0, 0, 1,
         1, 0, 0, 0, 0, 0, 0, 1,
         1, 0, 0, 0, 0, 0, 0, 1,
-        1, 0, 3, 0, 3, 0, 0, 1,
-        1, 0, 3, 0, 3, 0, 0, 1,
+        1, 0, 0, 2, 1, 1, 0, 1,
+        1, 0, 0, 1, 1, 1, 0, 1,
         1, 0, 0, 0, 0, 0, 0, 1,
         1, 1, 1, 1, 1, 1, 1, 1
     };
@@ -55,14 +55,14 @@ INLINE void m4_dual_vline(int x, int y1, int y2, u8 clrid) {
 	}
 }
 
-INLINE void m4_textured_dual_line(int x, int y1, int y2, int height, int vertical, int column) {
+INLINE void m4_textured_dual_line(int x, int y1, int y2, int height, int type, int vertical, int column) {
 	const FIXED step = TEXTURESTEP_LU[height];
 	//const FIXED step = fxdiv(int2fx(TEXTURESIZE), int2fx(height));
 	//
 	FIXED textureY = 0;
 	//textureY = fxadd(textureY, int2fx(4));
 	for (y1; y1 < y2; y1++) {
-		const color = TEXTURE[fx2int(textureY) * TEXTURESIZE  + column] - vertical;
+		const color = TEXTURES[(type-1) * 256 + fx2int(textureY) * TEXTURESIZE  + column] - vertical;
 		m4_dual_plot(x, y1, color);
 		textureY = fxadd(textureY, step);
 	}
@@ -77,7 +77,30 @@ void loadColorToPalette(COLOR c) {
 
 void initPalette() {
 	loadColorToPalette(RGB15(0,0,0));
-	loadColorToPalette(RGB15(3,3,3));
+	loadColorToPalette(RGB15(2,2,2));
+	loadColorToPalette(RGB15(4,4,4));
+	loadColorToPalette(RGB15(6,6,6));
+	loadColorToPalette(RGB15(8,8,8));
+	loadColorToPalette(RGB15(10,10,10));
+	loadColorToPalette(RGB15(12,12,12));
+	loadColorToPalette(RGB15(14,14,14));
+
+	//shades of brown
+	loadColorToPalette(RGB15(8, 2, 0));
+	loadColorToPalette(RGB15(10, 4, 0));
+	loadColorToPalette(RGB15(12, 6, 0));
+	loadColorToPalette(RGB15(14, 8, 0));
+
+	//shades of yellow
+	loadColorToPalette(RGB15(6,6,0));
+	loadColorToPalette(RGB15(8,8,0));
+	loadColorToPalette(RGB15(10,10,0));
+	loadColorToPalette(RGB15(12,12,0));
+
+
+	//loadColorToPalette(RGB15(5,5,5));
+
+	/*
 	loadColorToPalette(RGB15(8,8,8));
 	loadColorToPalette(RGB15(16,16,16));
 	loadColorToPalette(RGB15(8,0,0));
@@ -88,6 +111,7 @@ void initPalette() {
 	loadColorToPalette(RGB15(0,0,16));
 	loadColorToPalette(RGB15(8,8,0));
 	loadColorToPalette(RGB15(16,16,0));
+	*/
 
 
 }
@@ -132,7 +156,7 @@ void drawWall(int i, FIXED distance, int type, int vertical, int textureColumn) 
 	wallHeight = CLAMP(wallHeight, 1, 160);
 	int halfHeight = (wallHeight >> 1);
 
-	m4_dual_vline(i, 0, 80-halfHeight, 2);
+	m4_dual_vline(i, 0, 80-halfHeight, 1);
 
 	int color = 0;
 	
@@ -155,9 +179,9 @@ void drawWall(int i, FIXED distance, int type, int vertical, int textureColumn) 
 	}
 	*/
 	//the actual wall
-	m4_textured_dual_line(i, 80-halfHeight, 80 + halfHeight, wallHeight, vertical, textureColumn);
+	m4_textured_dual_line(i, 80-halfHeight, 80 + halfHeight, wallHeight, type, vertical, textureColumn);
 
-	m4_dual_vline(i, 80+ halfHeight, 160, 1);
+	m4_dual_vline(i, 80+ halfHeight, 160, 4);
 
 
 }
@@ -271,10 +295,13 @@ int castGrid() {
 			//if (i > 100)	return textureColumn;
 			//fx2int(fxmul(wallPos, int2fx(100)));
 
-
+			/*
 			if (textureColumn < 0) {
-				textureColumn = TEXTURESIZE - textureColumn;
+				textureColumn = textureColumn + TEXTURESIZE;
 			}
+			*/
+			if(side == 0 && rayDirX < 0) textureColumn = TEXTURESIZE - textureColumn - 1;
+			if(side == 1 && rayDirY > 0) textureColumn = TEXTURESIZE - textureColumn - 1;
 
 			drawWall(2*i, perpWallDistance, MAP[xCell*MAPSIZE + yCell], side, textureColumn);
 
@@ -415,10 +442,10 @@ int main(void)
 			move(3);
 		}
 		if (key_held(KEY_R)) {
-			direction -= int2fx(3);
+			direction -= int2fx(5);
 		}
 		else if (key_held(KEY_L)) {
-			direction += int2fx(3);
+			direction += int2fx(5);
 		}
 		if (fx2int(direction) >= 360) {
 			direction = 0;
