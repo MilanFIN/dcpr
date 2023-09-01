@@ -1,11 +1,13 @@
 
 #include <tonc.h>
 #include "textures.h"
+#include "entity.h"
 
 #define TILESIZE 1
 #define SCREENHEIGHT 160
 #define SCREENWIDTH 240
 #define FOV 60
+#define MAXENTITYCOUNT 5
 
 
 const float PI = 3.1415;
@@ -16,10 +18,10 @@ int MAP[8*8] = {
         1, 0, 0, 0, 0, 0, 0, 1,
         1, 0, 0, 0, 0, 0, 0, 1,
         1, 0, 0, 0, 0, 0, 0, 1,
-        1, 0, 0, 2, 1, 1, 0, 1,
-        1, 0, 0, 1, 1, 1, 0, 1,
         1, 0, 0, 0, 0, 0, 0, 1,
-        1, 1, 1, 1, 1, 1, 1, 1
+        1, 0, 0, 0, 0, 0, 0, 1,
+        1, 0, 0, 0, 0, 0, 0, 1,
+        1, 1, 1, 2, 1, 1, 1, 1
     };
 
 FIXED CAMERAX_LU[SCREENWIDTH / 2] = {0};
@@ -36,6 +38,9 @@ FIXED dirX, dirY;
 FIXED planeX, planeY;
 int direction;
 
+struct Entity entities[MAXENTITYCOUNT];
+int entityOrder[MAXENTITYCOUNT] = {0, 1, 2, 3, 4, 5};
+FIXED zBuffer[SCREENWIDTH/2] = {0};
 
 
 volatile unsigned short* palette = (volatile unsigned short*) 0x5000000;
@@ -129,6 +134,14 @@ void initTextureStepLu() {
 	}
 }
 
+void initEntities() {
+	entities[0].active = true;
+	entities[0].x = int2fx(4);
+	entities[0].y = int2fx(4);
+	entities[0].type = 0;
+
+
+}
 
 
 inline float floatAbs(float a) {
@@ -186,7 +199,7 @@ void drawWall(int i, FIXED distance, int type, int vertical, int textureColumn) 
 
 }
 
-int castGrid() {
+int castRays() {
 	//pi2 equivalent for calling lu_sin & cos
 	//must be scaled down to avoid overflow later
 
@@ -196,7 +209,7 @@ int castGrid() {
 
 		const FIXED cameraX = CAMERAX_LU[i]; //x-coordinate in camera space
 		const FIXED rayDirX = fxadd(dirX, fxmul(planeX, cameraX));
-    	const FIXED rayDirY = fxadd(dirY, fxmul(planeY, cameraX));
+		const FIXED rayDirY = fxadd(dirY, fxmul(planeY, cameraX));
 		
 		
 		FIXED mapX = int2fx(fx2int(x));
@@ -292,16 +305,12 @@ int castGrid() {
 			wallPos = fxsub(wallPos, int2fx(fx2int(wallPos)));
 			textureColumn = fx2int(fxmul(wallPos, int2fx(TEXTURESIZE)));
 
-			//if (i > 100)	return textureColumn;
-			//fx2int(fxmul(wallPos, int2fx(100)));
 
-			/*
-			if (textureColumn < 0) {
-				textureColumn = textureColumn + TEXTURESIZE;
-			}
-			*/
 			if(side == 0 && rayDirX < 0) textureColumn = TEXTURESIZE - textureColumn - 1;
 			if(side == 1 && rayDirY > 0) textureColumn = TEXTURESIZE - textureColumn - 1;
+
+
+			zBuffer[i] = perpWallDistance;
 
 			drawWall(2*i, perpWallDistance, MAP[xCell*MAPSIZE + yCell], side, textureColumn);
 
@@ -309,22 +318,54 @@ int castGrid() {
 		else {
 			m4_dual_vline(2*i, 0, 160, 0);
 		}
-
-
-
-
-
-
-
-
-
 	}
-
-
 }
 
 
-int updateDirection() {
+int compareDistances(const void *v1, const void *v2)
+{
+    const struct Entity *u1 = v1;
+    const struct Entity *u2 = v2;
+    return u1->distance < u2->distance;
+}
+
+//sort algorithm
+//sort the sprites based on distance
+void sortEntities()
+{
+	//TODO: add some sorting method here, not needed with only one visible sprite
+}
+
+
+
+void drawSprites() {
+
+	//update distances to player 
+	for(int i = 0; i < MAXENTITYCOUNT; i++) {
+	  if (!entities[i].active) {
+		entities[i].distance = int2fx(1024);
+	  }
+	  else {
+      	entities[i].distance = fxmul(fxsub(x, entities[i].x), fxsub(x, entities[i].x)) + fxmul(fxsub(y, entities[i].y), fxsub(y, entities[i].y));
+	  }
+    }
+
+    sortEntities();
+
+	for(int i = 0; i < MAXENTITYCOUNT; i++) {
+		if (!entities[entityOrder[i]].active) {
+			continue;
+		}
+		FIXED entityX = fxsub(entities[entityOrder[i]].x, x);
+		FIXED entityY = fxsub(entities[entityOrder[i]].y, y);
+
+		FIXED invDet = fxdiv(int2fx(1), fxsub(fxmul(planeX, dirY), fxmul(dirX, planeY)));
+		FIXED transformX = fxmul(invDet , fxsub(fxmul(dirY, entityX), fxmul(dirX, entityY)));
+	}
+}
+
+
+void updateDirection() {
 
 	FIXED viewPlaneMultiplier = 168;
 
@@ -402,6 +443,7 @@ int main(void)
 	initCameraXLu();
 	initTextureStepLu();
 	initPalette();
+	initEntities();
 
 		
 	/*
@@ -414,7 +456,7 @@ int main(void)
 	tte_init_chr4c_default(0, BG_CBB(0) | BG_SBB(31));
 	tte_set_pos(92, 68);
 
-	FIXED test = castGrid();
+	FIXED test = castRays();
 
 
 	char str[8];
@@ -457,7 +499,8 @@ int main(void)
 		//x = fxadd(x, 1);
 		//y = fxadd(y, 4);
 
-		castGrid();
+		castRays();
+		drawSprites();
 		vid_flip(); 
 
 		
