@@ -62,16 +62,25 @@ INLINE void m4_dual_vline(int x, int y1, int y2, u8 clrid) {
 
 INLINE void m4_textured_dual_line(int x, int y1, int y2, int height, int type, int vertical, int column) {
 	const FIXED step = TEXTURESTEP_LU[height];
-	//const FIXED step = fxdiv(int2fx(TEXTURESIZE), int2fx(height));
-	//
 	FIXED textureY = 0;
-	//textureY = fxadd(textureY, int2fx(4));
 	for (y1; y1 < y2; y1++) {
 		const color = TEXTURES[(type-1) * 256 + fx2int(textureY) * TEXTURESIZE  + column] - vertical;
 		m4_dual_plot(x, y1, color);
 		textureY = fxadd(textureY, step);
 	}
-	
+}
+
+INLINE void m4_sprite_textured_dual_line(int x, int y1, int y2, int height, int type, int column) {
+	const FIXED step = TEXTURESTEP_LU[height];
+	FIXED textureY = 0;
+	for (y1; y1 < y2; y1++) {
+		const color = TEXTURES[(type-1) * 256 + fx2int(textureY) * TEXTURESIZE  + column];
+		if (color != 0) {
+			m4_dual_plot(x, y1, color);
+		}
+		textureY = fxadd(textureY, step);
+
+	}
 }
 
 
@@ -138,7 +147,7 @@ void initEntities() {
 	entities[0].active = true;
 	entities[0].x = int2fx(4);
 	entities[0].y = int2fx(4);
-	entities[0].type = 0;
+	entities[0].type = 1;
 
 
 }
@@ -361,6 +370,40 @@ void drawSprites() {
 
 		FIXED invDet = fxdiv(int2fx(1), fxsub(fxmul(planeX, dirY), fxmul(dirX, planeY)));
 		FIXED transformX = fxmul(invDet , fxsub(fxmul(dirY, entityX), fxmul(dirX, entityY)));
+		FIXED transformY = fxmul(invDet , fxadd(fxmul(-planeY, entityX),  fxmul(planeX, entityY)));
+
+		int spriteScreenX = fx2int(fxmul(int2fx(SCREENWIDTH >> 1), (fxadd(int2fx(1), fxdiv(transformX, transformY)))));
+
+
+
+		//calculate height of the sprite on screen
+		int spriteHeight = fixedAbs(fx2int(fxdiv(int2fx(SCREENHEIGHT), (transformY)))); //using 'transformY' instead of the real distance prevents fisheye
+		//calculate lowest and highest pixel to fill in current stripe
+		int drawStartY = -spriteHeight / 2 + SCREENHEIGHT / 2;
+		if(drawStartY < 0) drawStartY = 0;
+		int drawEndY = spriteHeight / 2 + SCREENHEIGHT / 2;
+		if(drawEndY >= SCREENHEIGHT) drawEndY = SCREENHEIGHT - 1;
+
+
+		//calculate width of the sprite
+		int spriteWidth = spriteHeight;
+		int drawStartX = -spriteWidth / 2 + spriteScreenX;
+		int drawEndX = spriteWidth / 2 + spriteScreenX;
+		drawStartX /= 2;
+		drawEndX /= 2;
+
+
+		FIXED horizontalTexFrag = fxdiv(int2fx(TEXTURESIZE), int2fx(spriteWidth));
+		FIXED i = 0;
+		for(int stripe = drawStartX; stripe < drawEndX; stripe++) {
+			if(transformY > 0 && stripe > 0 && stripe < SCREENWIDTH/2 && transformY < zBuffer[stripe]) {
+				int texX = fx2int(i);
+				m4_sprite_textured_dual_line(2*stripe, drawStartY, drawEndY, drawEndY-drawStartY, entities[entityOrder[i]].type , texX);				
+			}
+			i = fxadd(i, 2*horizontalTexFrag);
+		}
+
+
 	}
 }
 
