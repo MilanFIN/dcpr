@@ -9,6 +9,7 @@
 #define FOV 60
 #define MAXENTITYCOUNT 5
 
+//todo: fix black screen when direction == int2fx(45);
 
 const float PI = 3.1415;
 const int MAPSIZE = 8;
@@ -36,7 +37,7 @@ const FIXED FIXEDTILESIZE = TILESIZE * 256; // equal to int2fx(TILESIZE);
 FIXED x, y;
 FIXED dirX, dirY;
 FIXED planeX, planeY;
-int direction;
+FIXED direction;
 
 struct Entity entities[MAXENTITYCOUNT];
 int entityOrder[MAXENTITYCOUNT] = {0, 1, 2, 3, 4, 5};
@@ -71,6 +72,7 @@ INLINE void m4_textured_dual_line(int x, int y1, int y2, int height, int type, i
 }
 
 INLINE void m4_sprite_textured_dual_line(int x, int y1, int y2, int height, int type, int column) {
+
 	const FIXED step = TEXTURESTEP_LU[height];
 	FIXED textureY = 0;
 	for (y1; y1 < y2; y1++) {
@@ -150,6 +152,10 @@ void initEntities() {
 	entities[0].type = 1;
 
 
+	entities[1].active = true;
+	entities[1].x = int2fx(5);
+	entities[1].y = int2fx(5);
+	entities[1].type = 2;
 }
 
 
@@ -178,31 +184,14 @@ void drawWall(int i, FIXED distance, int type, int vertical, int textureColumn) 
 	wallHeight = CLAMP(wallHeight, 1, 160);
 	int halfHeight = (wallHeight >> 1);
 
+	//roof
 	m4_dual_vline(i, 0, 80-halfHeight, 1);
 
 	int color = 0;
 	
-
-	/*
-	if (type == 1) {
-		color = 4;
-	}
-	else if (type == 2) {
-		color = 6;
-	}
-	else if (type == 3) {
-		color = 8;
-	}
-	else if (type == 4) {
-		color = 10;
-	}
-	if (!vertical) {
-		color++;
-	}
-	*/
 	//the actual wall
 	m4_textured_dual_line(i, 80-halfHeight, 80 + halfHeight, wallHeight, type, vertical, textureColumn);
-
+	//floor
 	m4_dual_vline(i, 80+ halfHeight, 160, 4);
 
 
@@ -338,11 +327,70 @@ int compareDistances(const void *v1, const void *v2)
     return u1->distance < u2->distance;
 }
 
+// function to swap elements
+void swap(int *a, int *b) {
+  int t = *a;
+  *a = *b;
+  *b = t;
+}
+
+
+
+
+// function to find the partition position
+int partition(int array[], int low, int high) {
+  
+  // select the rightmost element as pivot
+  int pivot = entities[array[high]].distance;
+  
+  // pointer for greater element
+  int i = (low - 1);
+
+  // traverse each element of the array
+  // compare them with the pivot
+  for (int j = low; j < high; j++) {
+    if (entities[array[j]].distance >= pivot) {
+        
+      // if element smaller than pivot is found
+      // swap it with the greater element pointed by i
+      i++;
+      
+      // swap element at i with element at j
+      swap(&array[i], &array[j]);
+    }
+  }
+
+  // swap the pivot element with the greater element at i
+  swap(&array[i + 1], &array[high]);
+  
+  // return the partition point
+  return (i + 1);
+}
+
+
+void quickSort(int array[], int low, int high) {
+  if (low < high) {
+    
+    // find the pivot element such that
+    // elements smaller than pivot are on left of pivot
+    // elements greater than pivot are on right of pivot
+    int pi = partition(array, low, high);
+    
+    // recursive call on the left of pivot
+    quickSort(array, low, pi - 1);
+    
+    // recursive call on the right of pivot
+    quickSort(array, pi + 1, high);
+  }
+}
+
 //sort algorithm
 //sort the sprites based on distance
 void sortEntities()
 {
-	//TODO: add some sorting method here, not needed with only one visible sprite
+
+	quickSort(entityOrder, 0, MAXENTITYCOUNT - 1);
+
 }
 
 
@@ -361,8 +409,10 @@ void drawSprites() {
 
     sortEntities();
 
+
+
 	for(int i = 0; i < MAXENTITYCOUNT; i++) {
-		if (!entities[entityOrder[i]].active) {
+		if (!entities[entityOrder[i]].active || entities[entityOrder[i]].distance < 64) {
 			continue;
 		}
 		FIXED entityX = fxsub(entities[entityOrder[i]].x, x);
@@ -373,7 +423,6 @@ void drawSprites() {
 		FIXED transformY = fxmul(invDet , fxadd(fxmul(-planeY, entityX),  fxmul(planeX, entityY)));
 
 		int spriteScreenX = fx2int(fxmul(int2fx(SCREENWIDTH >> 1), (fxadd(int2fx(1), fxdiv(transformX, transformY)))));
-
 
 
 		//calculate height of the sprite on screen
@@ -392,13 +441,26 @@ void drawSprites() {
 		drawStartX /= 2;
 		drawEndX /= 2;
 
+		/*
+
+		if (i == 1) {
+			return;
+		}
+		if (fx2int(direction) == 45) {
+			return;
+		}
+		*/
+		
+
 
 		FIXED horizontalTexFrag = fxdiv(int2fx(TEXTURESIZE), int2fx(spriteWidth));
 		FIXED i = 0;
 		for(int stripe = drawStartX; stripe < drawEndX; stripe++) {
-			if(transformY > 0 && stripe > 0 && stripe < SCREENWIDTH/2 && transformY < zBuffer[stripe]) {
-				int texX = fx2int(i);
-				m4_sprite_textured_dual_line(2*stripe, drawStartY, drawEndY, drawEndY-drawStartY, entities[entityOrder[i]].type , texX);				
+			if (stripe >= 1 && stripe < SCREENWIDTH/2 ) {
+				if(transformY > 0 && transformY < zBuffer[stripe]) {
+					int texX = fx2int(i);
+					m4_sprite_textured_dual_line(2*stripe, drawStartY, drawEndY, drawEndY-drawStartY, entities[entityOrder[i]].type , texX);
+				}
 			}
 			i = fxadd(i, 2*horizontalTexFrag);
 		}
@@ -478,7 +540,7 @@ int main(void)
 	x = int2fx(2);//96;//2*64;//
 	y = int2fx(2);//224;//2*64;//
 
-	direction = 0;
+	direction = int2fx(0);//int2fx(45);
 
 	
 	
@@ -514,29 +576,29 @@ int main(void)
 
 		
 		key_poll();
-		if (key_held(KEY_LEFT)) {
+		if (key_is_down(KEY_LEFT)) {
 			move(0);
 		}
-		else if (key_held(KEY_RIGHT)) {
+		else if (key_is_down(KEY_RIGHT)) {
 			move(1);
 		}
-		if (key_held(KEY_UP)) {
+		if (key_is_down(KEY_UP)) {
 			move(2);
 		}
-		else if (key_held(KEY_DOWN)) {
+		else if (key_is_down(KEY_DOWN)) {
 			move(3);
 		}
-		if (key_held(KEY_R)) {
+		if (key_is_down(KEY_R)) {
 			direction -= int2fx(5);
 		}
-		else if (key_held(KEY_L)) {
+		else if (key_is_down(KEY_L)) {
 			direction += int2fx(5);
 		}
 		if (fx2int(direction) >= 360) {
-			direction = 0;
+			direction = fxsub(direction, int2fx(360));
 		}
 		if (fx2int(direction) < 0) {
-			direction += int2fx(360);
+			direction = fxadd(direction, int2fx(360));
 		}
  		updateDirection();
 		//x = fxadd(x, 1);
