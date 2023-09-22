@@ -395,7 +395,7 @@ void sortEntities()
 
 
 
-void drawSprites() {
+int drawSprites() {
 
 	//update distances to player 
 	for(int i = 0; i < MAXENTITYCOUNT; i++) {
@@ -422,6 +422,14 @@ void drawSprites() {
 		FIXED transformX = fxmul(invDet , fxsub(fxmul(dirY, entityX), fxmul(dirX, entityY)));
 		FIXED transformY = fxmul(invDet , fxadd(fxmul(-planeY, entityX),  fxmul(planeX, entityY)));
 
+		if (transformX == 0) {
+			transformX = 16;
+		}
+		if (transformY == 0) {
+			transformY = 16;
+		}
+
+
 		int spriteScreenX = fx2int(fxmul(int2fx(SCREENWIDTH >> 1), (fxadd(int2fx(1), fxdiv(transformX, transformY)))));
 
 
@@ -441,15 +449,7 @@ void drawSprites() {
 		drawStartX /= 2;
 		drawEndX /= 2;
 
-		/*
-
-		if (i == 1) {
-			return;
-		}
-		if (fx2int(direction) == 45) {
-			return;
-		}
-		*/
+		
 		
 
 
@@ -560,8 +560,8 @@ int main(void)
 
 	tte_init_chr4c_default(0, BG_CBB(0) | BG_SBB(31));
 	tte_set_pos(92, 68);
-
-	FIXED test = castRays();
+	castRays();
+	FIXED test = drawSprites();
 
 
 	char str[8];
@@ -569,6 +569,7 @@ int main(void)
 	tte_write(str);
 	
 	*/
+	
 
 
 	
@@ -607,7 +608,7 @@ int main(void)
 		castRays();
 		drawSprites();
 		vid_flip(); 
-
+		
 		
 		
 		//VBlankIntrWait();
