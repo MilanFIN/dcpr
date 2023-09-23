@@ -65,7 +65,7 @@ INLINE void m4_textured_dual_line(int x, int y1, int y2, int height, int type, i
 	const FIXED step = TEXTURESTEP_LU[height];
 	FIXED textureY = 0;
 	for (y1; y1 < y2; y1++) {
-		const color = TEXTURES[(type-1) * 256 + fx2int(textureY) * TEXTURESIZE  + column] - vertical;
+		const color = TEXTURES[(type-1) * 256 + fx2int(textureY) * TEXTURESIZE  + column];// - vertical;
 		m4_dual_plot(x, y1, color);
 		textureY = fxadd(textureY, step);
 	}
@@ -114,6 +114,7 @@ void initPalette() {
 	initShadeOfColor(1,0.5,0.5);
 	initShadeOfColor(0.5,1,0.5);
 	initShadeOfColor(0.5,0.5,1);
+	initShadeOfColor(1,0.6,0.3);
 
 	/*
 	loadColorToPalette(RGB15(0,0,0));
@@ -157,13 +158,16 @@ void initEntities() {
 	entities[0].active = true;
 	entities[0].x = int2fx(4);
 	entities[0].y = int2fx(4);
-	entities[0].type = 1;
+	entities[0].type = 2;
+	entities[0].scale = 128;
 
 
 	entities[1].active = true;
 	entities[1].x = int2fx(5);
 	entities[1].y = int2fx(5);
 	entities[1].type = 2;
+	entities[1].scale = 128;
+
 }
 
 
@@ -442,7 +446,7 @@ int drawSprites() {
 
 
 		//calculate height of the sprite on screen
-		int spriteHeight = fixedAbs(fx2int(fxdiv(int2fx(SCREENHEIGHT), (transformY)))); //using 'transformY' instead of the real distance prevents fisheye
+		int spriteHeight = fixedAbs(fx2int(fxdiv(fxmul(int2fx(SCREENHEIGHT), entities[entityOrder[i]].scale), (transformY)))); //using 'transformY' instead of the real distance prevents fisheye
 		//calculate lowest and highest pixel to fill in current stripe
 		int drawStartY = -spriteHeight / 2 + SCREENHEIGHT / 2;
 		if(drawStartY < 0) drawStartY = 0;
@@ -461,16 +465,23 @@ int drawSprites() {
 		
 
 
-		FIXED horizontalTexFrag = fxdiv(int2fx(TEXTURESIZE), int2fx(spriteWidth));
-		FIXED i = 0;
+		FIXED horizontalTexFrag = fxdiv(int2fx(2*TEXTURESIZE), int2fx(spriteWidth));
+		//starting from zero leads to artifacting on the very first vertical stripe
+		//instead first column set to 32/256 => 0.125
+		FIXED i = 32;
 		for(int stripe = drawStartX; stripe < drawEndX; stripe++) {
 			if (stripe >= 1 && stripe < SCREENWIDTH/2 ) {
 				if(transformY > 0 && transformY < zBuffer[stripe]) {
 					int texX = fx2int(i);
-					m4_sprite_textured_dual_line(2*stripe, drawStartY, drawEndY, drawEndY-drawStartY, entities[entityOrder[i]].type , texX);
+					//texX = 1;
+					//if (i != 0) {
+						m4_sprite_textured_dual_line(2*stripe, drawStartY, drawEndY, drawEndY-drawStartY, entities[entityOrder[i]].type , texX);
+
+					//}
+					//break;
 				}
 			}
-			i = fxadd(i, 2*horizontalTexFrag);
+			i = fxadd(i, horizontalTexFrag);
 		}
 
 

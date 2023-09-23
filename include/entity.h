@@ -5,4 +5,5 @@ struct Entity {
 	FIXED y;
 	int type;
 	FIXED distance;
+	FIXED scale;
 };
