@@ -22,7 +22,7 @@ int MAP[8*8] = {
         1, 0, 0, 0, 0, 0, 0, 1,
         1, 0, 0, 0, 0, 0, 0, 1,
         1, 0, 0, 0, 0, 0, 0, 1,
-        1, 1, 1, 2, 1, 1, 1, 1
+        1, 1, 1, 1, 1, 1, 1, 1
     };
 
 FIXED CAMERAX_LU[SCREENWIDTH / 2] = {0};
@@ -91,7 +91,31 @@ void loadColorToPalette(COLOR c) {
 	nextPaletteIndex++;
 }
 
+void initShadeOfColor(float r, float g, float b) {
+	for (int i = 0; i < 8; i+= 1) {
+	loadColorToPalette(RGB15(4*i*r,4*i*g,4*i*b));
+	}
+}
+
 void initPalette() {
+	initShadeOfColor(1,1,1);
+	initShadeOfColor(1,0,0);
+	initShadeOfColor(0,1,0);
+	initShadeOfColor(0,0,1);
+	initShadeOfColor(1,1,0);
+	initShadeOfColor(1,0,1);
+	initShadeOfColor(0,1,1);
+	initShadeOfColor(1,0.5,0);
+	initShadeOfColor(1,0,0.5);
+	initShadeOfColor(0,1,0.5);
+	initShadeOfColor(0,0.5,1);
+	initShadeOfColor(0.5,0,1);
+	initShadeOfColor(0.5,1,0);
+	initShadeOfColor(1,0.5,0.5);
+	initShadeOfColor(0.5,1,0.5);
+	initShadeOfColor(0.5,0.5,1);
+
+	/*
 	loadColorToPalette(RGB15(0,0,0));
 	loadColorToPalette(RGB15(2,2,2));
 	loadColorToPalette(RGB15(4,4,4));
@@ -112,23 +136,7 @@ void initPalette() {
 	loadColorToPalette(RGB15(8,8,0));
 	loadColorToPalette(RGB15(10,10,0));
 	loadColorToPalette(RGB15(12,12,0));
-
-
-	//loadColorToPalette(RGB15(5,5,5));
-
-	/*
-	loadColorToPalette(RGB15(8,8,8));
-	loadColorToPalette(RGB15(16,16,16));
-	loadColorToPalette(RGB15(8,0,0));
-	loadColorToPalette(RGB15(16,0,0));
-	loadColorToPalette(RGB15(0,8,0));
-	loadColorToPalette(RGB15(0,16,0));
-	loadColorToPalette(RGB15(0,0,8));
-	loadColorToPalette(RGB15(0,0,16));
-	loadColorToPalette(RGB15(8,8,0));
-	loadColorToPalette(RGB15(16,16,0));
 	*/
-
 
 }
 
