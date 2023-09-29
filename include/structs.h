@@ -7,3 +7,8 @@ struct Entity {
 	FIXED distance;
 	FIXED scale;
 };
+
+struct Player {
+	bool hasKey;
+	int hp;
+};

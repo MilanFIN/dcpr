@@ -1,10 +1,10 @@
 
 #include <tonc.h>
 #include "textures.h"
-#include "entity.h"
+#include "structs.h"
 
 #define TILESIZE 1
-#define SCREENHEIGHT 160
+#define SCREENHEIGHT 135
 #define SCREENWIDTH 240
 #define FOV 60
 #define MAXENTITYCOUNT 5
@@ -22,7 +22,7 @@ int MAP[8*8] = {
         1, 0, 0, 0, 0, 0, 0, 1,
         1, 0, 0, 0, 0, 0, 0, 1,
         1, 0, 0, 0, 0, 0, 0, 1,
-        1, 1, 1, 1, 1, 1, 1, 1
+        1, 1, 1, 1, 4, 1, 1, 1
     };
 
 FIXED CAMERAX_LU[SCREENWIDTH / 2] = {0};
@@ -33,6 +33,9 @@ const int CASTEDRAYS = SCREENWIDTH / 2;
 const int HALFFOV = FOV / 2;
 const int TILESHIFTER = log2(TILESIZE); 
 const FIXED FIXEDTILESIZE = TILESIZE * 256; // equal to int2fx(TILESIZE);
+const int HALFSCREENPOINT = SCREENHEIGHT / 2;
+const int HUDHEIGHT = 160-SCREENHEIGHT;
+
 
 FIXED x, y;
 FIXED dirX, dirY;
@@ -40,6 +43,8 @@ FIXED planeX, planeY;
 FIXED direction;
 
 struct Entity entities[MAXENTITYCOUNT];
+struct Player player;
+
 int entityOrder[MAXENTITYCOUNT] = {0, 1, 2, 3, 4, 5};
 FIXED zBuffer[SCREENWIDTH/2] = {0};
 
@@ -51,8 +56,6 @@ int nextPaletteIndex = 0;
 INLINE void m4_dual_plot(int x, int y, u8 clrid)
 {
 	vid_page[(y*M4_WIDTH+x)>>1] = (clrid << 8) | clrid;
-	//vid_page[(y*M4_WIDTH+x+2)>>1] = (clrid << 8) | clrid;
-
 }
 
 INLINE void m4_dual_vline(int x, int y1, int y2, u8 clrid) {
@@ -65,7 +68,7 @@ INLINE void m4_textured_dual_line(int x, int y1, int y2, int height, int type, i
 	const FIXED step = TEXTURESTEP_LU[height];
 	FIXED textureY = 0;
 	for (y1; y1 < y2; y1++) {
-		const color = TEXTURES[(type-1) * 256 + fx2int(textureY) * TEXTURESIZE  + column];// - vertical;
+		const color = TEXTURES[(type-1) * 256 + fx2int(textureY) * TEXTURESIZE  + column] - vertical;
 		m4_dual_plot(x, y1, color);
 		textureY = fxadd(textureY, step);
 	}
@@ -92,7 +95,7 @@ void loadColorToPalette(COLOR c) {
 }
 
 void initShadeOfColor(float r, float g, float b) {
-	for (int i = 0; i < 8; i+= 1) {
+	for (int i = 0; i < 8; i++) {
 	loadColorToPalette(RGB15(4*i*r,4*i*g,4*i*b));
 	}
 }
@@ -115,29 +118,6 @@ void initPalette() {
 	initShadeOfColor(0.5,1,0.5);
 	initShadeOfColor(0.5,0.5,1);
 	initShadeOfColor(1,0.6,0.3);
-
-	/*
-	loadColorToPalette(RGB15(0,0,0));
-	loadColorToPalette(RGB15(2,2,2));
-	loadColorToPalette(RGB15(4,4,4));
-	loadColorToPalette(RGB15(6,6,6));
-	loadColorToPalette(RGB15(8,8,8));
-	loadColorToPalette(RGB15(10,10,10));
-	loadColorToPalette(RGB15(12,12,12));
-	loadColorToPalette(RGB15(14,14,14));
-
-	//shades of brown
-	loadColorToPalette(RGB15(8, 2, 0));
-	loadColorToPalette(RGB15(10, 4, 0));
-	loadColorToPalette(RGB15(12, 6, 0));
-	loadColorToPalette(RGB15(14, 8, 0));
-
-	//shades of yellow
-	loadColorToPalette(RGB15(6,6,0));
-	loadColorToPalette(RGB15(8,8,0));
-	loadColorToPalette(RGB15(10,10,0));
-	loadColorToPalette(RGB15(12,12,0));
-	*/
 
 }
 
@@ -170,6 +150,28 @@ void initEntities() {
 
 }
 
+void initHud() {
+	for (int i = 0; i < CASTEDRAYS; i++) {
+		m4_dual_vline(2*i, 160-HUDHEIGHT, 160, 29);
+
+	}
+
+}
+
+void initLevel() {
+
+	player.hp = 100;
+	player.hasKey = false;
+
+	initEntities();
+
+	x = int2fx(2);//96;//2*64;//
+	y = int2fx(2);//224;//2*64;//
+
+	direction = int2fx(0);//int2fx(45);
+
+}
+
 
 inline float floatAbs(float a) {
 	if (a < 0.0) {
@@ -192,20 +194,112 @@ inline FIXED fixedAbs(FIXED a) {
 
 void drawWall(int i, FIXED distance, int type, int vertical, int textureColumn) {
 
-	int wallHeight = fx2int(fxdiv(int2fx(160) , distance));
-	wallHeight = CLAMP(wallHeight, 1, 160);
+	int wallHeight = fx2int(fxdiv(int2fx(SCREENHEIGHT) , distance));
+	wallHeight = CLAMP(wallHeight, 1, SCREENHEIGHT);
 	int halfHeight = (wallHeight >> 1);
 
 	//roof
-	m4_dual_vline(i, 0, 80-halfHeight, 1);
+	m4_dual_vline(i, 0, HALFSCREENPOINT-halfHeight, 1);
 
 	int color = 0;
 	
 	//the actual wall
-	m4_textured_dual_line(i, 80-halfHeight, 80 + halfHeight, wallHeight, type, vertical, textureColumn);
+	m4_textured_dual_line(i, HALFSCREENPOINT-halfHeight, HALFSCREENPOINT + halfHeight, wallHeight, type, vertical, textureColumn);
 	//floor
-	m4_dual_vline(i, 80+ halfHeight, 160, 4);
+	m4_dual_vline(i, HALFSCREENPOINT+ halfHeight, SCREENHEIGHT, 4);
 
+
+}
+
+
+int castRay(int targetType) {
+	const FIXED cameraX = CAMERAX_LU[CASTEDRAYS/2]; //x-coordinate in camera space
+	const FIXED rayDirX = fxadd(dirX, fxmul(planeX, cameraX));
+	const FIXED rayDirY = fxadd(dirY, fxmul(planeY, cameraX));
+
+	FIXED mapX = int2fx(fx2int(x));
+	FIXED mapY = int2fx(fx2int(y));
+
+	FIXED sideDistX;
+	FIXED sideDistY;
+
+	FIXED deltaDistX; 
+	FIXED deltaDistY;
+	if (rayDirX == 0) {
+		deltaDistX = int2fx(1024);
+	}
+	else {
+		deltaDistX = fixedAbs(fxdiv(int2fx(1), rayDirX));
+	}
+
+	if (rayDirY == 0) {
+		deltaDistY = int2fx(1024);
+	}
+	else {
+		deltaDistY = fixedAbs(fxdiv(int2fx(1), rayDirY));
+	}
+
+
+	FIXED stepX;
+	FIXED stepY;
+
+	int side;
+
+	if(rayDirX < 0) {
+		stepX = int2fx(-1);
+		sideDistX = fxmul(fxsub(x, mapX) , deltaDistX);
+	}
+	else {
+		stepX = int2fx(1);
+		sideDistX = fxmul(fxsub(fxadd(mapX, int2fx(1.0)), x), deltaDistX);
+	}
+	if(rayDirY < 0) {
+		stepY = int2fx(-1);
+		sideDistY = fxmul(fxsub(y, mapY), deltaDistY);
+	}
+	else {
+		stepY = int2fx(1);
+		sideDistY = fxmul(fxsub(fxadd(mapY, int2fx(1.0)), y), deltaDistY);
+	}
+
+
+	int hit = 0;
+	for (int j = 0; j < 100; j++) {
+		if(sideDistX < sideDistY) {
+			sideDistX = fxadd(sideDistX, deltaDistX);
+			mapX = fxadd(mapX, stepX);
+			side = 0;
+		}
+		else {
+			sideDistY = fxadd(sideDistY, deltaDistY);
+			mapY = fxadd(mapY, stepY);
+			side = 1;
+		}
+
+		int currentXCell = fx2int(mapX);
+		int currentYCell = fx2int(mapY); 
+		if(MAP[currentXCell*MAPSIZE + currentYCell] > 0) {
+			if (MAP[currentXCell*MAPSIZE + currentYCell] == targetType) {
+				hit = 1;
+			}
+			break;
+		}
+
+	}
+	
+	FIXED perpWallDistance = -256;
+
+	if (hit) {
+		if(side == 0) {
+			perpWallDistance = fxsub(sideDistX, deltaDistX);
+		}
+		//vertical
+		else {
+			perpWallDistance = fxsub(sideDistY, deltaDistY);
+		}
+	}
+
+	return fx2int(perpWallDistance);
 
 }
 
@@ -224,7 +318,6 @@ int castRays() {
 		
 		FIXED mapX = int2fx(fx2int(x));
 		FIXED mapY = int2fx(fx2int(y));
-		//int2fx(fx2int(y));
 
 		FIXED sideDistX;
 		FIXED sideDistY;
@@ -327,6 +420,15 @@ int castRays() {
 		}
 		else {
 			m4_dual_vline(2*i, 0, 160, 0);
+		}
+	}
+}
+
+int castForward() {
+	if (player.hasKey) {
+		int distance = castRay(4);
+		if (distance >= 0 && distance < 2) {
+			initLevel();
 		}
 	}
 }
@@ -461,29 +563,43 @@ int drawSprites() {
 		drawStartX /= 2;
 		drawEndX /= 2;
 
-		
-		
-
 
 		FIXED horizontalTexFrag = fxdiv(int2fx(2*TEXTURESIZE), int2fx(spriteWidth));
 		//starting from zero leads to artifacting on the very first vertical stripe
 		//instead first column set to 32/256 => 0.125
 		FIXED i = 32;
-		for(int stripe = drawStartX; stripe < drawEndX; stripe++) {
-			if (stripe >= 1 && stripe < SCREENWIDTH/2 ) {
-				if(transformY > 0 && transformY < zBuffer[stripe]) {
-					int texX = fx2int(i);
-					//texX = 1;
-					//if (i != 0) {
-						m4_sprite_textured_dual_line(2*stripe, drawStartY, drawEndY, drawEndY-drawStartY, entities[entityOrder[i]].type , texX);
-
-					//}
-					//break;
+		if (transformY > 0) {
+			for(int stripe = drawStartX; stripe < drawEndX; stripe++) {
+				if (stripe >= 0 && stripe < SCREENWIDTH/2 ) {
+					if(transformY < zBuffer[stripe]) {
+						int texX = fx2int(i);
+							m4_sprite_textured_dual_line(2*stripe, drawStartY, drawEndY, drawEndY-drawStartY, entities[entityOrder[i]].type , texX);
+					}
 				}
+				else if (stripe > SCREENWIDTH/2) {
+					break;
+				}
+				i = fxadd(i, horizontalTexFrag);
 			}
-			i = fxadd(i, horizontalTexFrag);
 		}
 
+
+
+	}
+}
+
+void checkSpriteCollisions() {
+	for(int i = 0; i < MAXENTITYCOUNT; i++) {
+		if (!entities[entityOrder[i]].active) {
+			continue;
+		}
+		int type = entities[entityOrder[i]].type;
+		if (type == 2) {
+			if (entities[entityOrder[i]].distance < 64) {
+				entities[entityOrder[i]].active = false;
+				player.hasKey = true;
+			}
+		}
 
 	}
 }
@@ -491,7 +607,7 @@ int drawSprites() {
 
 void updateDirection() {
 
-	FIXED viewPlaneMultiplier = 168;
+	FIXED viewPlaneMultiplier = 200;//168;
 
 	const FIXED PI2 = int2fx(0x10000 >> 1);
 	FIXED luAngle = fxmul(PI2, fxdiv(direction, int2fx(360))) >> 7;
@@ -556,10 +672,6 @@ int main(void)
 {
 
 
-	x = int2fx(2);//96;//2*64;//
-	y = int2fx(2);//224;//2*64;//
-
-	direction = int2fx(0);//int2fx(45);
 
 	
 	
@@ -567,8 +679,12 @@ int main(void)
 	initCameraXLu();
 	initTextureStepLu();
 	initPalette();
-	initEntities();
+	initHud();
+	vid_flip(); 
+	initHud();
 
+
+	initLevel();
 		
 	/*
 	REG_DISPCNT = DCNT_MODE0 | DCNT_BG0 | DCNT_OBJ | DCNT_OBJ_1D;
@@ -620,12 +736,18 @@ int main(void)
 		if (fx2int(direction) < 0) {
 			direction = fxadd(direction, int2fx(360));
 		}
+
+		if (key_hit(KEY_A)) {
+			castForward();
+		}
+
  		updateDirection();
 		//x = fxadd(x, 1);
 		//y = fxadd(y, 4);
 
 		castRays();
 		drawSprites();
+		checkSpriteCollisions();
 		vid_flip(); 
 		
 		
