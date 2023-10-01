@@ -145,7 +145,7 @@ void initEntities() {
 	entities[1].active = true;
 	entities[1].x = int2fx(5);
 	entities[1].y = int2fx(5);
-	entities[1].type = 2;
+	entities[1].type = 5;
 	entities[1].scale = 128;
 
 }
@@ -523,8 +523,6 @@ int drawSprites() {
 
     sortEntities();
 
-
-
 	for(int i = 0; i < MAXENTITYCOUNT; i++) {
 		if (!entities[entityOrder[i]].active || entities[entityOrder[i]].distance < 64) {
 			continue;
@@ -565,21 +563,23 @@ int drawSprites() {
 
 
 		FIXED horizontalTexFrag = fxdiv(int2fx(2*TEXTURESIZE), int2fx(spriteWidth));
+		//keeps track of which column of the texture should be drawn, (FIXED point fractional)
 		//starting from zero leads to artifacting on the very first vertical stripe
 		//instead first column set to 32/256 => 0.125
-		FIXED i = 32;
+		FIXED hTexPos = 32;
 		if (transformY > 0) {
 			for(int stripe = drawStartX; stripe < drawEndX; stripe++) {
 				if (stripe >= 0 && stripe < SCREENWIDTH/2 ) {
 					if(transformY < zBuffer[stripe]) {
-						int texX = fx2int(i);
-							m4_sprite_textured_dual_line(2*stripe, drawStartY, drawEndY, drawEndY-drawStartY, entities[entityOrder[i]].type , texX);
+						int texX = fx2int(hTexPos);
+						int type = entities[entityOrder[i]].type;
+						m4_sprite_textured_dual_line(2*stripe, drawStartY, drawEndY, drawEndY-drawStartY, type , texX);
 					}
 				}
 				else if (stripe > SCREENWIDTH/2) {
 					break;
 				}
-				i = fxadd(i, horizontalTexFrag);
+				hTexPos = fxadd(hTexPos, horizontalTexFrag);
 			}
 		}
 
