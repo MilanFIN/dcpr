@@ -7,7 +7,7 @@
 #define SCREENHEIGHT 135
 #define SCREENWIDTH 240
 #define FOV 60
-#define MAXENTITYCOUNT 5
+#define MAXENTITYCOUNT 10
 
 //todo: fix black screen when direction == int2fx(45);
 
@@ -135,18 +135,30 @@ void initTextureStepLu() {
 }
 
 void initEntities() {
+
+	for(int i = 0; i < MAXENTITYCOUNT; i++) {
+		entities[i].active = false;
+		
+	}
+
 	entities[0].active = true;
 	entities[0].x = int2fx(4);
 	entities[0].y = int2fx(4);
-	entities[0].type = 2;
+	entities[0].texture = 2;
+	entities[0].type = 1;
 	entities[0].scale = 128;
+	entities[0].moving = false;
+	entities[0].yOffset = 128;
 
 
 	entities[1].active = true;
 	entities[1].x = int2fx(5);
 	entities[1].y = int2fx(5);
-	entities[1].type = 5;
+	entities[1].texture = 5;
+	entities[0].type = 2;
 	entities[1].scale = 128;
+	entities[1].moving = false;
+	entities[1].yOffset = -256;
 
 }
 
@@ -424,12 +436,48 @@ int castRays() {
 	}
 }
 
-int castForward() {
+void castForward() {
 	if (player.hasKey) {
 		int distance = castRay(4);
 		if (distance >= 0 && distance < 2) {
 			initLevel();
 		}
+	}
+}
+
+void fire() {
+	for(int i = 0; i < MAXENTITYCOUNT; i++) {
+		if (entities[i].active) {
+			continue;
+		}
+		
+		entities[i].x = x;
+		entities[i].y = y;
+		entities[i].texture = 5;
+		entities[i].type = 2;
+		entities[i].active = true;
+		entities[i].scale = 128;
+		entities[i].xDir = dirX;
+		entities[i].yDir = dirY;
+		entities[i].moving = true;
+		entities[i].yOffset = 256;
+
+
+
+		break;
+	}
+}
+
+void moveEntities() {
+	for(int i = 0; i < MAXENTITYCOUNT; i++) {
+		if (!entities[i].active || !entities[i].moving) {
+			continue;
+		}
+		if (entities[i].type == 2) { //projectile
+			entities[i].x = fxadd(entities[i].x, entities[i].xDir);
+			entities[i].y = fxadd(entities[i].y, entities[i].yDir);
+		}
+
 	}
 }
 
@@ -509,7 +557,7 @@ void sortEntities()
 
 
 
-int drawSprites() {
+int drawEntities() {
 
 	//update distances to player 
 	for(int i = 0; i < MAXENTITYCOUNT; i++) {
@@ -547,10 +595,11 @@ int drawSprites() {
 
 		//calculate height of the sprite on screen
 		int spriteHeight = fixedAbs(fx2int(fxdiv(fxmul(int2fx(SCREENHEIGHT), entities[entityOrder[i]].scale), (transformY)))); //using 'transformY' instead of the real distance prevents fisheye
+		int offsetY = fx2int(fxmul(int2fx(spriteHeight) , entities[entityOrder[i]].yOffset));
 		//calculate lowest and highest pixel to fill in current stripe
-		int drawStartY = -spriteHeight / 2 + SCREENHEIGHT / 2;
+		int drawStartY = -spriteHeight / 2 + SCREENHEIGHT / 2 + offsetY;
 		if(drawStartY < 0) drawStartY = 0;
-		int drawEndY = spriteHeight / 2 + SCREENHEIGHT / 2;
+		int drawEndY = spriteHeight / 2 + SCREENHEIGHT / 2 + offsetY;
 		if(drawEndY >= SCREENHEIGHT) drawEndY = SCREENHEIGHT - 1;
 
 
@@ -572,8 +621,8 @@ int drawSprites() {
 				if (stripe >= 0 && stripe < SCREENWIDTH/2 ) {
 					if(transformY < zBuffer[stripe]) {
 						int texX = fx2int(hTexPos);
-						int type = entities[entityOrder[i]].type;
-						m4_sprite_textured_dual_line(2*stripe, drawStartY, drawEndY, drawEndY-drawStartY, type , texX);
+						int texture = entities[entityOrder[i]].texture;
+						m4_sprite_textured_dual_line(2*stripe, drawStartY, drawEndY, drawEndY-drawStartY, texture , texX);
 					}
 				}
 				else if (stripe > SCREENWIDTH/2) {
@@ -588,15 +637,31 @@ int drawSprites() {
 	}
 }
 
-void checkSpriteCollisions() {
+void removeEntity(int i) {
+	entities[i].active = false;
+}
+
+void checkEntityCollisions() {
 	for(int i = 0; i < MAXENTITYCOUNT; i++) {
-		if (!entities[entityOrder[i]].active) {
+		if (!entities[i].active) {
 			continue;
 		}
-		int type = entities[entityOrder[i]].type;
-		if (type == 2) {
-			if (entities[entityOrder[i]].distance < 64) {
-				entities[entityOrder[i]].active = false;
+
+		//check for projectile collisions with walls
+		if (entities[i].moving) {
+			int xCell = fx2int(entities[i].x);
+			int yCell = fx2int(entities[i].y);
+			if (MAP[xCell*MAPSIZE + yCell] != 0) {
+				removeEntity(i);
+			}
+
+		}
+
+		//check for key pickup by player
+		int type = entities[i].type;
+		if (type == 1) {
+			if (entities[i].distance < 64) {
+				removeEntity(i);
 				player.hasKey = true;
 			}
 		}
@@ -740,14 +805,18 @@ int main(void)
 		if (key_hit(KEY_A)) {
 			castForward();
 		}
+		if (key_hit(KEY_B)) {
+			fire();
+		}
 
  		updateDirection();
 		//x = fxadd(x, 1);
 		//y = fxadd(y, 4);
 
 		castRays();
-		drawSprites();
-		checkSpriteCollisions();
+		moveEntities();
+		drawEntities();
+		checkEntityCollisions();
 		vid_flip(); 
 		
 		
