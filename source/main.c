@@ -154,11 +154,11 @@ void initEntities() {
 	entities[1].active = true;
 	entities[1].x = int2fx(5);
 	entities[1].y = int2fx(5);
-	entities[1].texture = 5;
-	entities[0].type = 2;
-	entities[1].scale = 128;
+	entities[1].texture = 6;
+	entities[1].type = 3;
+	entities[1].scale = 256;
 	entities[1].moving = false;
-	entities[1].yOffset = -256;
+	entities[1].yOffset = 0;
 
 }
 
@@ -657,12 +657,34 @@ void checkEntityCollisions() {
 
 		}
 
-		//check for key pickup by player
 		int type = entities[i].type;
+		//check if a key is near a player
 		if (type == 1) {
 			if (entities[i].distance < 64) {
 				removeEntity(i);
 				player.hasKey = true;
+			}
+		}
+
+		//check projectile collisions with enemies
+		if (type == 2) {
+			int hit = 0;
+			for (int j = 0; j < MAXENTITYCOUNT; j++) {
+				//ignore all entities, which aren't enemies
+				if (!entities[j].active || entities[j].type != 3) { //
+					continue;
+				}
+				
+				//check entity distances from each other 
+				FIXED distance = fxadd(fixedAbs(fxsub(entities[i].x, entities[j].x)), fixedAbs(fxsub(entities[i].y, entities[j].y)));
+				if (distance < 128) {
+					removeEntity(j);
+					hit = 1;
+				}
+				
+			}
+			if (hit) {
+				removeEntity(i);
 			}
 		}
 

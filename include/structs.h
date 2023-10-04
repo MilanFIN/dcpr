@@ -5,7 +5,7 @@ struct Entity {
 	FIXED y;
 	FIXED xDir;
 	FIXED yDir;
-	int type; //1: key, 2: projectile, 3:?
+	int type; //1: key, 2: projectile, 3:enemy
 	int texture;
 	FIXED distance;
 	FIXED scale;
