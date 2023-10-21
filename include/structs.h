@@ -10,6 +10,7 @@ struct Entity {
 	FIXED distance;
 	FIXED scale;
 	FIXED yOffset;
+	FIXED speed;
 };
 
 struct Player {

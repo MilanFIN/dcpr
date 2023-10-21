@@ -18,7 +18,7 @@ int MAP[8*8] = {
         1, 1, 1, 1, 1, 1, 1, 1,
         1, 0, 0, 0, 0, 0, 0, 1,
         1, 0, 0, 0, 0, 0, 0, 1,
-        1, 0, 0, 0, 0, 0, 0, 1,
+        1, 0, 0, 1, 1, 0, 0, 1,
         1, 0, 0, 0, 0, 0, 0, 1,
         1, 0, 0, 0, 0, 0, 0, 1,
         1, 0, 0, 0, 0, 0, 0, 1,
@@ -157,8 +157,9 @@ void initEntities() {
 	entities[1].texture = 6;
 	entities[1].type = 3;
 	entities[1].scale = 256;
-	entities[1].moving = false;
+	entities[1].moving = true;
 	entities[1].yOffset = 0;
+	entities[1].speed = 4;
 
 }
 
@@ -468,6 +469,16 @@ void fire() {
 	}
 }
 
+
+bool collisionCheck(FIXED x, FIXED y) {
+	if (MAP[fx2int(x) * MAPSIZE + fx2int(y)] != 0) {
+		return true;
+	}
+	else {
+		return false;
+	}
+}
+
 void moveEntities() {
 	for(int i = 0; i < MAXENTITYCOUNT; i++) {
 		if (!entities[i].active || !entities[i].moving) {
@@ -476,6 +487,39 @@ void moveEntities() {
 		if (entities[i].type == 2) { //projectile
 			entities[i].x = fxadd(entities[i].x, entities[i].xDir);
 			entities[i].y = fxadd(entities[i].y, entities[i].yDir);
+		}
+		if (entities[i].type == 3) {
+			
+			if (entities[i].distance < 1800) {
+				if (entities[i].x < x) {
+					entities[i].xDir = entities[i].speed;
+				}
+				else {
+					entities[i].xDir = -entities[i].speed;
+				}
+				if (entities[i].y < y) {
+					entities[i].yDir = entities[i].speed;
+				}
+				else {
+					entities[i].yDir = -entities[i].speed;
+				}
+				FIXED newX = fxadd(entities[i].x, entities[i].xDir);
+				FIXED newY = fxadd(entities[i].y, entities[i].yDir);
+				
+				if (!collisionCheck(newX, entities[i].y)) {
+					entities[i].x = newX;
+				}
+				
+				if (!collisionCheck(entities[i].x, newY)) {
+					entities[i].y = newY;
+				}
+
+
+			}
+
+			
+
+
 		}
 
 	}
@@ -714,14 +758,6 @@ void updateDirection() {
 
 }
 
-bool collisionCheck(FIXED x, FIXED y) {
-	if (MAP[fx2int(x) * MAPSIZE + fx2int(y)] != 0) {
-		return true;
-	}
-	else {
-		return false;
-	}
-}
 
 void move(int type) {
 	const FIXED SPEED = float2fx(0.1); 
