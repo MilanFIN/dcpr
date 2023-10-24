@@ -2,6 +2,7 @@
 #include <tonc.h>
 #include "textures.h"
 #include "structs.h"
+#include "dungeon.c"
 
 #define TILESIZE 1
 #define SCREENHEIGHT 135
@@ -12,18 +13,21 @@
 //todo: fix black screen when direction == int2fx(45);
 
 const float PI = 3.1415;
-const int MAPSIZE = 8;
+const int MAPSIZE = 32;
 
-int MAP[8*8] = {
+int MAP[32*32] = {0 };
+/*
         1, 1, 1, 1, 1, 1, 1, 1,
         1, 0, 0, 0, 0, 0, 0, 1,
         1, 0, 0, 0, 0, 0, 0, 1,
-        1, 0, 0, 1, 1, 0, 0, 1,
+        1, 0, 0, 0, 0, 0, 0, 1,
         1, 0, 0, 0, 0, 0, 0, 1,
         1, 0, 0, 0, 0, 0, 0, 1,
         1, 0, 0, 0, 0, 0, 0, 1,
         1, 1, 1, 1, 4, 1, 1, 1
     };
+	*/
+
 
 FIXED CAMERAX_LU[SCREENWIDTH / 2] = {0};
 FIXED TEXTURESTEP_LU[SCREENHEIGHT] = {0};
@@ -472,7 +476,7 @@ void fire() {
 
 bool collisionCheck(FIXED x, FIXED y) {
 	if (MAP[fx2int(x) * MAPSIZE + fx2int(y)] != 0) {
-		return true;
+		return false; //todo debug only, change back to true
 	}
 	else {
 		return false;
@@ -795,6 +799,7 @@ int main(void)
 {
 
 
+	getDungeon(&MAP);
 
 	
 	
