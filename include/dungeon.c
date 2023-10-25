@@ -1,16 +1,23 @@
 #include "dungeon.h"
 
-static int PAIRID = 0;
 
+//int MAP[32*32] = {0 };
+
+
+
+static int PAIRID = 0;
+static int ID = 0;
 
 struct Leaf {
-	bool active;
+	int active;
 	int x;
 	int y;
 	int xend;
 	int yend;
 	int pairId;
+	int id;
 };
+
 
 
 void divide(struct Leaf* leaves, struct Leaf* leaf, int horizontal) {
@@ -26,64 +33,100 @@ void divide(struct Leaf* leaves, struct Leaf* leaf, int horizontal) {
 
 		if (horizontal) {
 
-			leaves[0].active = true;
+			leaves[0].active = 1;
 			leaves[0].x = leaf->x;
 			leaves[0].y = leaf->y;
 			leaves[0].xend = xmid - 1;
 			leaves[0].yend = leaf->yend;
 			leaves[0].pairId = PAIRID;
+			leaves[0].id = ID; 
+			ID++;
 
-			leaves[1].active = true;
+			leaves[1].active = 1;
 			leaves[1].x = xmid + 1;
 			leaves[1].y = leaf->y;
 			leaves[1].xend = leaf->xend;
 			leaves[1].yend = leaf->yend;
 			leaves[1].pairId = PAIRID;
+			leaves[1].id = ID;
+			ID++;
 
 		}
 		else { //vertical
 
-			leaves[0].active = true;
+			leaves[0].active = 1;
 			leaves[0].x = leaf->x;
 			leaves[0].y = leaf->y;
 			leaves[0].xend = leaf->xend;
 			leaves[0].yend = ymid - 1;
 			leaves[0].pairId = PAIRID;
+			leaves[0].id = ID; 
+			ID++;
 
-			leaves[1].active = true;
+
+			leaves[1].active = 1;
 			leaves[1].x = leaf->x;
 			leaves[1].y = ymid + 1;
 			leaves[1].xend = leaf->xend;
 			leaves[1].yend = leaf->yend;
 			leaves[1].pairId = PAIRID;
+			leaves[1].id = ID; 
+			ID++;
+
 
 		}
 
 	}
 	else {
-		leaves[0].active = true;
+		
+		leaves[0].active = 1;
 		leaves[0].x = leaf->x;
 		leaves[0].y = leaf->y;
 		leaves[0].xend = leaf->xend;
 		leaves[0].yend = leaf->yend;
 		leaves[0].pairId = leaf->pairId;
+		leaves[0].id = ID; 
+		ID++;
+
+	
 	}
 }
 
-void generate(struct Leaf* leaf, struct Leaf* finalLeaves, int maxDepth, int depth) {
+void generate(struct Leaf* leaf, struct Leaf* finalLeaves, struct Leaf* pairTree, int maxDepth, int depth) {
 
 	int direction = qran_range(0, 2);
 	struct Leaf leaves[2];
-	leaves[0].active = false;
-	leaves[1].active = false;
+	leaves[0].active = 0;
+	leaves[1].active = 0;
 	divide(&leaves, leaf, direction);
 
+	for (int i = 0; i < 100; i++) {
+		if (!pairTree[i].active) {
+			if (leaves[0].active && leaves[1].active) {
+				//printf("OK\n");
+                int x = 0;
+                int y = 0;
+                int xend = 0;
+                int yend = 0;
+
+                getCorridor(&leaves[0], &leaves[1], &x, &y, &xend, &yend);
+                pairTree[i].x = x;
+                pairTree[i].y = y;
+                pairTree[i].xend = xend;
+                pairTree[i].yend = yend;
+                pairTree[i].active = 1;
+
+			}
+			break;
+		}
+	}
+
+
 	if (depth < maxDepth) {
-		//leaves[0] = *leaf;
-		//generate(&leaves[0], finalLeaves, maxDepth, depth+1);
 		for (int i = 0; i < 2; i++) {
 			if (leaves[i].active) {
-				generate(&leaves[i], finalLeaves, maxDepth, depth+1);
+
+				generate(&leaves[i], finalLeaves, pairTree, maxDepth, depth+1);
 			}
 		}
 	}
@@ -95,16 +138,40 @@ void generate(struct Leaf* leaf, struct Leaf* finalLeaves, int maxDepth, int dep
 				break;
 			}
 		}
+		
 	}
-
-
 
 }
 
+void getCorridor(struct Leaf* first, struct Leaf* second, int* x, int* y, int* xend, int* yend) {
+
+	int firstMidX = (first->x + first->xend) / 2;
+	int secondMidX = (second->x + second->xend) / 2;
+	int firstMidY = (first->y + first->yend) / 2;
+	int secondMidY = (second->y + second->yend) / 2;
+
+	*x = firstMidX;
+	*y = firstMidY;
+	*xend = secondMidX;
+	*yend = secondMidY;
+
+	if (*x > *xend) {
+		int temp = *x;
+		*x = *xend;
+		*xend = temp;
+	}
+
+	if (*y > *yend) {
+		int temp = *y;
+		*y = *yend;
+		*yend = temp;
+	}
+}
 
 void getDungeon(int* map) {
 	sqran(-256);
 	PAIRID = 0;
+	ID = 0;
 	struct Leaf rootLeaf;
 
 	rootLeaf.x = 1;
@@ -113,36 +180,52 @@ void getDungeon(int* map) {
 	rootLeaf.yend = 31;
 
 	struct Leaf finalLeaves[100];
+	struct Leaf pairTree[100];
 
 	//initialize the array of leaves that are unused
 	for (int i = 0; i < 100; i++) {
-		finalLeaves[i].active = false;
+		finalLeaves[i].active = 0;
+		pairTree[i].active = 0;
 	}
 
-	generate(&rootLeaf, &finalLeaves, 6, 0);
+	generate(&rootLeaf, &finalLeaves, &pairTree, 6, 0);
 	
 	for (int y = 0; y < 32; y++) {
 		for (int x = 0; x < 32; x++) {
 			map[32*y+x] = 1;
 		}
 	}
-	//temp taking the first half, should loop through finalleaves here instead
-	rootLeaf = finalLeaves[0];
+
 	for (int i = 0; i < 100; i++) {
 		struct Leaf iter = finalLeaves[i];
 		if (!iter.active) {
 			continue;
 		}
-		for (int y = 1; y < 31; y++) {
-			for (int x = 1; x < 31; x++) {
+
+		for (int y = 0; y < 31; y++) {
+			for (int x = 0; x < 31; x++) {
 				if (x >= iter.x && y >= iter.y && x <= iter.xend && y <= iter.yend) {
 					map[32*y+x] = 0;
-
 				}
 			}
 		}
+	}
+
+
+    int counter = 0;
+	for (int i = 0; i < 100; i++) {
+		struct Leaf first = pairTree[i];
+		if (!first.active) {
+			continue;
+		}
+		                				
+
+        for (int x = first.x; x < first.xend+1; x++) {
+	    	for (int y = first.y; y < first.yend+1; y++) {
+	    		map[32*y+x] = 0;
+	    	}
+	    }
 
 	}
-	
-	//map[25] = 1;
+
 }
