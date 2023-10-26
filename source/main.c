@@ -476,7 +476,7 @@ void fire() {
 
 bool collisionCheck(FIXED x, FIXED y) {
 	if (MAP[fx2int(x) * MAPSIZE + fx2int(y)] != 0) {
-		return false; //todo debug only, change back to true
+		return true;
 	}
 	else {
 		return false;
@@ -799,7 +799,6 @@ int main(void)
 {
 
 
-	getDungeon(&MAP);
 
 	
 	
@@ -813,6 +812,9 @@ int main(void)
 
 
 	initLevel();
+
+	getDungeon(&MAP, &x,&y);
+
 		
 	/*
 	REG_DISPCNT = DCNT_MODE0 | DCNT_BG0 | DCNT_OBJ | DCNT_OBJ_1D;
