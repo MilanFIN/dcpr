@@ -9,13 +9,13 @@
 #define SCREENWIDTH 240
 #define FOV 60
 #define MAXENTITYCOUNT 10
+#define MAPSIZE 8
 
 //todo: fix black screen when direction == int2fx(45);
 
 const float PI = 3.1415;
-const int MAPSIZE = 32;
 
-int MAP[32*32] = {0 };
+int MAP[MAPSIZE*MAPSIZE] = {0 };
 /*
         1, 1, 1, 1, 1, 1, 1, 1,
         1, 0, 0, 0, 0, 0, 0, 1,
@@ -180,12 +180,16 @@ void initLevel() {
 	player.hp = 100;
 	player.hasKey = false;
 
-	initEntities();
 
-	x = int2fx(2);//96;//2*64;//
-	y = int2fx(2);//224;//2*64;//
+	x = int2fx(0);//96;//2*64;//
+	y = int2fx(0);//224;//2*64;//
 
 	direction = int2fx(0);//int2fx(45);
+
+	getDungeon(&MAP, MAPSIZE, &x,&y);
+	populateMap();
+	initEntities();
+
 
 }
 
@@ -295,8 +299,8 @@ int castRay(int targetType) {
 
 		int currentXCell = fx2int(mapX);
 		int currentYCell = fx2int(mapY); 
-		if(MAP[currentXCell*MAPSIZE + currentYCell] > 0) {
-			if (MAP[currentXCell*MAPSIZE + currentYCell] == targetType) {
+		if(MAP[currentYCell*MAPSIZE + currentXCell] > 0) {
+			if (MAP[currentYCell*MAPSIZE + currentXCell] == targetType) {
 				hit = 1;
 			}
 			break;
@@ -396,7 +400,7 @@ int castRays() {
 
 			int currentXCell = fx2int(mapX);
 			int currentYCell = fx2int(mapY); 
-        	if(MAP[currentXCell*MAPSIZE + currentYCell] > 0) {
+        	if(MAP[currentYCell*MAPSIZE + currentXCell] > 0) {
 				xCell = currentXCell;
 				yCell = currentYCell;
 				hit = 1;
@@ -432,7 +436,7 @@ int castRays() {
 
 			zBuffer[i] = perpWallDistance;
 
-			drawWall(2*i, perpWallDistance, MAP[xCell*MAPSIZE + yCell], side, textureColumn);
+			drawWall(2*i, perpWallDistance, MAP[yCell*MAPSIZE + xCell], side, textureColumn);
 
 		}
 		else {
@@ -475,7 +479,7 @@ void fire() {
 
 
 bool collisionCheck(FIXED x, FIXED y) {
-	if (MAP[fx2int(x) * MAPSIZE + fx2int(y)] != 0) {
+	if (MAP[fx2int(y) * MAPSIZE + fx2int(x)] != 0) {
 		return true;
 	}
 	else {
@@ -699,7 +703,7 @@ void checkEntityCollisions() {
 		if (entities[i].moving) {
 			int xCell = fx2int(entities[i].x);
 			int yCell = fx2int(entities[i].y);
-			if (MAP[xCell*MAPSIZE + yCell] != 0) {
+			if (MAP[yCell*MAPSIZE + xCell] != 0) {
 				removeEntity(i);
 			}
 
@@ -792,16 +796,67 @@ void move(int type) {
 		y = fxadd(y, moveY);
 	}
 
+}
+
+int openTile(int x, int y) {
+	if (x < 0 || x >= MAPSIZE) {
+		return 0;
+	}
+	if (y < 0 || y >= MAPSIZE) {
+		return 0;
+	}
+	if (MAP[MAPSIZE*y+x] == 0) {
+		return 1;
+	}
+	else {
+		return 0;
+	}
+}
+
+void populateMap() {
+
+	//figure out a position for the door
+	int doorCandidates[MAPSIZE*MAPSIZE] = {0};
+
+	int counter = 0;
+	for (int y = 0; y < MAPSIZE; y++) {
+		for (int x = 0; x < MAPSIZE; x++) {
+			//check for a valid door position, which would be one that 
+			//is blocked, but still has one adjacent clear tile
+			if (MAP[MAPSIZE*y+x]) {
+				if (openTile(x+1, y) + openTile(x-1, y) + openTile(x, y+1) + openTile(x, y-1) == 1) {
+					doorCandidates[counter] = MAPSIZE*y+x;
+					counter++;
+				}
+			}
+		}
+	}
+
+	int doorPosition = qran_range(0, counter);
+	//set to door sprite
+	MAP[doorCandidates[doorPosition]] = 4;
+
+	counter = 0;
+	int openSpaces[MAPSIZE*MAPSIZE] = {0};
+	//figure out a position for the key
+	for (int y = 0; y < MAPSIZE; y++) {
+		for (int x = 0; x < MAPSIZE; x++) {
+			if (!MAP[MAPSIZE*y+x]) {
+				openSpaces[counter] = MAPSIZE*y+x;
+				counter++;
+			}
+		}
+	}
+
+	//TODO: do something with the info on the open positions
+
 
 }
 
-int main(void)
-{
 
 
+int main() {
 
-	
-	
 	REG_DISPCNT= DCNT_MODE4 | DCNT_BG2;
 	initCameraXLu();
 	initTextureStepLu();
@@ -812,8 +867,6 @@ int main(void)
 
 
 	initLevel();
-
-	getDungeon(&MAP, &x,&y);
 
 		
 	/*

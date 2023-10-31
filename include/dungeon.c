@@ -198,16 +198,16 @@ void shrink(struct Leaf* leaves) {
 }
 
 
-void getDungeon(int* map, FIXED* playerX, FIXED* playerY) {
-	sqran(-256);
+void getDungeon(int* map, int mapsize, FIXED* playerX, FIXED* playerY) {
+	sqran(-1);
 	PAIRID = 0;
 	ID = 0;
 	struct Leaf rootLeaf;
 
 	rootLeaf.x = 1;
 	rootLeaf.y = 1;
-	rootLeaf.xend = 31;
-	rootLeaf.yend = 31;
+	rootLeaf.xend = mapsize-1;
+	rootLeaf.yend = mapsize-1;
 
 	struct Leaf finalLeaves[100];
 	struct Leaf pairTree[100];
@@ -221,9 +221,9 @@ void getDungeon(int* map, FIXED* playerX, FIXED* playerY) {
 	generate(&rootLeaf, &finalLeaves, &pairTree, 6, 0);
 	shrink(&finalLeaves);
 	
-	for (int y = 0; y < 32; y++) {
-		for (int x = 0; x < 32; x++) {
-			map[32*y+x] = 1;
+	for (int y = 0; y < mapsize; y++) {
+		for (int x = 0; x < mapsize; x++) {
+			map[mapsize*y+x] = 1;
 		}
 	}
 
@@ -233,15 +233,14 @@ void getDungeon(int* map, FIXED* playerX, FIXED* playerY) {
 			continue;
 		}
 
-		for (int y = 0; y < 31; y++) {
-			for (int x = 0; x < 31; x++) {
+		for (int y = 0; y < mapsize-1; y++) {
+			for (int x = 0; x < mapsize-1; x++) {
 				if (x >= iter.x && y >= iter.y && x <= iter.xend && y <= iter.yend) {
-					map[32*y+x] = 0;
+					map[mapsize*y+x] = 0;
 				}
 			}
 		}
 	}
-
 
 	for (int i = 0; i < 100; i++) {
 		struct Leaf first = pairTree[i];
@@ -252,17 +251,14 @@ void getDungeon(int* map, FIXED* playerX, FIXED* playerY) {
 
         for (int x = first.x; x < first.xend+1; x++) {
 	    	for (int y = first.y; y < first.yend+1; y++) {
-	    		map[32*y+x] = 0;
+	    		map[mapsize*y+x] = 0;
 	    	}
 	    }
-	}
+	}	
 
-	//*playerX = int2fx(12);
-	
-
-	for (int x = 0; x < 32; x++) {
-		for (int y = 0; y < 32; y++) {
-			if (map[32*y+x] == 0) {
+	for (int x = 0; x < mapsize; x++) {
+		for (int y = 0; y < mapsize; y++) {
+			if (map[mapsize*y+x] == 0) {
 				*playerX = int2fx(x) + 128;
 				*playerY = int2fx(y) + 128;
 				return;
@@ -271,3 +267,4 @@ void getDungeon(int* map, FIXED* playerX, FIXED* playerY) {
 	}
 
 }
+
