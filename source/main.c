@@ -9,7 +9,7 @@
 #define SCREENWIDTH 240
 #define FOV 60
 #define MAXENTITYCOUNT 10
-#define MAPSIZE 8
+#define MAPSIZE 12
 
 //todo: fix black screen when direction == int2fx(45);
 
@@ -138,6 +138,18 @@ void initTextureStepLu() {
 	}
 }
 
+void initKey(int x, int y) {
+	entities[0].active = true;
+	entities[0].x = int2fx(x)+128;
+	entities[0].y = int2fx(y)+128;
+	entities[0].texture = 2;
+	entities[0].type = 1;
+	entities[0].scale = 128;
+	entities[0].moving = false;
+	entities[0].yOffset = 128;
+
+}
+
 void initEntities() {
 
 	for(int i = 0; i < MAXENTITYCOUNT; i++) {
@@ -145,6 +157,7 @@ void initEntities() {
 		
 	}
 
+	/*
 	entities[0].active = true;
 	entities[0].x = int2fx(4);
 	entities[0].y = int2fx(4);
@@ -153,6 +166,7 @@ void initEntities() {
 	entities[0].scale = 128;
 	entities[0].moving = false;
 	entities[0].yOffset = 128;
+	*/
 
 
 	entities[1].active = true;
@@ -187,8 +201,9 @@ void initLevel() {
 	direction = int2fx(0);//int2fx(45);
 
 	getDungeon(&MAP, MAPSIZE, &x,&y);
-	populateMap();
 	initEntities();
+
+	populateMap();
 
 
 }
@@ -813,6 +828,17 @@ int openTile(int x, int y) {
 	}
 }
 
+void shuffleArray(int* array, int size) {
+	//array[size] = 15;
+	for (int i = 0; i < size;i++) {
+		int j = qran_range(0, size);
+		int temp = array[i];
+		array[i] = array[j];
+		array[j] = temp;
+
+	}
+}
+
 void populateMap() {
 
 	//figure out a position for the door
@@ -838,17 +864,24 @@ void populateMap() {
 
 	counter = 0;
 	int openSpaces[MAPSIZE*MAPSIZE] = {0};
-	//figure out a position for the key
+	int playerPosition = MAPSIZE*fx2int(y) + fx2int(x);
+	//get open positions on map
 	for (int y = 0; y < MAPSIZE; y++) {
 		for (int x = 0; x < MAPSIZE; x++) {
-			if (!MAP[MAPSIZE*y+x]) {
+			if (!MAP[MAPSIZE*y+x] && MAPSIZE*y+x != playerPosition) {
 				openSpaces[counter] = MAPSIZE*y+x;
 				counter++;
 			}
 		}
 	}
 
-	//TODO: do something with the info on the open positions
+	shuffleArray(openSpaces, counter);
+
+	int keyPosition = counter-1;//qran_range(0, counter);
+	int y = openSpaces[keyPosition] / MAPSIZE;
+	int x = openSpaces[keyPosition] % MAPSIZE;
+
+	initKey(x, y);
 
 
 }
@@ -856,8 +889,10 @@ void populateMap() {
 
 
 int main() {
-
 	REG_DISPCNT= DCNT_MODE4 | DCNT_BG2;
+	
+	sqran(1);
+
 	initCameraXLu();
 	initTextureStepLu();
 	initPalette();
