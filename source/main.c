@@ -45,6 +45,7 @@ FIXED x, y;
 FIXED dirX, dirY;
 FIXED planeX, planeY;
 FIXED direction;
+int updateHud = 2;
 
 struct Entity entities[MAXENTITYCOUNT];
 struct Player player;
@@ -147,44 +148,36 @@ void initKey(int x, int y) {
 	entities[0].scale = 128;
 	entities[0].moving = false;
 	entities[0].yOffset = 128;
+}
 
+void initEnemy(int id, int x, int y) {
+	entities[id].active = true;
+	entities[id].x = int2fx(x)+128;
+	entities[id].y = int2fx(y)+128;
+	entities[id].texture = 6;
+	entities[id].type = 3;
+	entities[id].scale = 256;
+	entities[id].moving = true;
+	entities[id].yOffset = 0;
+	entities[id].speed = 4;
 }
 
 void initEntities() {
-
 	for(int i = 0; i < MAXENTITYCOUNT; i++) {
 		entities[i].active = false;
 		
 	}
-
-	/*
-	entities[0].active = true;
-	entities[0].x = int2fx(4);
-	entities[0].y = int2fx(4);
-	entities[0].texture = 2;
-	entities[0].type = 1;
-	entities[0].scale = 128;
-	entities[0].moving = false;
-	entities[0].yOffset = 128;
-	*/
-
-
-	entities[1].active = true;
-	entities[1].x = int2fx(5);
-	entities[1].y = int2fx(5);
-	entities[1].texture = 6;
-	entities[1].type = 3;
-	entities[1].scale = 256;
-	entities[1].moving = true;
-	entities[1].yOffset = 0;
-	entities[1].speed = 4;
-
 }
 
-void initHud() {
+void drawHud() {
 	for (int i = 0; i < CASTEDRAYS; i++) {
 		m4_dual_vline(2*i, 160-HUDHEIGHT, 160, 29);
+	}
 
+	if (player.hasKey) {
+		for (int i = 20; i < 40; i++) {
+			m4_dual_vline(2*i, 160-HUDHEIGHT, 160, 39);
+		}
 	}
 
 }
@@ -193,6 +186,8 @@ void initLevel() {
 
 	player.hp = 100;
 	player.hasKey = false;
+
+	updateHud = 2;
 
 
 	x = int2fx(0);//96;//2*64;//
@@ -537,11 +532,7 @@ void moveEntities() {
 					entities[i].y = newY;
 				}
 
-
 			}
-
-			
-
 
 		}
 
@@ -730,6 +721,7 @@ void checkEntityCollisions() {
 			if (entities[i].distance < 64) {
 				removeEntity(i);
 				player.hasKey = true;
+				updateHud = 2;
 			}
 		}
 
@@ -876,12 +868,31 @@ void populateMap() {
 	}
 
 	shuffleArray(openSpaces, counter);
+	counter--;
+	int keyY = openSpaces[counter] / MAPSIZE;
+	int keyX = openSpaces[counter] % MAPSIZE;
 
-	int keyPosition = counter-1;//qran_range(0, counter);
-	int y = openSpaces[keyPosition] / MAPSIZE;
-	int x = openSpaces[keyPosition] % MAPSIZE;
+	initKey(keyX, keyY);
 
-	initKey(x, y);
+	//spawn a bunch of enemies
+	int i = 0;
+	for (i; i < 5; i++) {
+		counter--;
+		if (counter < 0) {
+			break;
+		}
+		int enemyX = openSpaces[counter] / MAPSIZE;
+		int enemyY = openSpaces[counter] % MAPSIZE;
+		initEnemy(i+1, enemyX, enemyY);
+	}
+	//todo: spawn a bunch of items (hp, weapon upgrades etc.)
+	for (i; i < 10; i++) {
+		counter--;
+		if (counter < 0) {
+			break;
+		}
+
+	}
 
 
 }
@@ -896,9 +907,6 @@ int main() {
 	initCameraXLu();
 	initTextureStepLu();
 	initPalette();
-	initHud();
-	vid_flip(); 
-	initHud();
 
 
 	initLevel();
@@ -962,6 +970,7 @@ int main() {
 			fire();
 		}
 
+
  		updateDirection();
 		//x = fxadd(x, 1);
 		//y = fxadd(y, 4);
@@ -970,6 +979,16 @@ int main() {
 		moveEntities();
 		drawEntities();
 		checkEntityCollisions();
+
+		if (updateHud) {
+			drawHud();
+			updateHud--;
+		}
+
+		if (player.hp <= 0) {
+			initLevel();
+		}
+
 		vid_flip(); 
 		
 		
