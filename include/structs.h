@@ -11,9 +11,14 @@ struct Entity {
 	FIXED scale;
 	FIXED yOffset;
 	FIXED speed;
+	int attackDelay;
+	int attackFrequency;
+	//amount of damage dealth or healed
+	int damage;
 };
 
 struct Player {
 	bool hasKey;
 	int hp;
+	int maxHp;
 };

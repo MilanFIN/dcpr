@@ -8,7 +8,7 @@
 #define SCREENHEIGHT 135
 #define SCREENWIDTH 240
 #define FOV 60
-#define MAXENTITYCOUNT 10
+#define MAXENTITYCOUNT 20
 #define MAPSIZE 12
 
 //todo: fix black screen when direction == int2fx(45);
@@ -50,7 +50,7 @@ int updateHud = 2;
 struct Entity entities[MAXENTITYCOUNT];
 struct Player player;
 
-int entityOrder[MAXENTITYCOUNT] = {0, 1, 2, 3, 4, 5};
+int entityOrder[MAXENTITYCOUNT] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
 FIXED zBuffer[SCREENWIDTH/2] = {0};
 
 
@@ -160,6 +160,23 @@ void initEnemy(int id, int x, int y) {
 	entities[id].moving = true;
 	entities[id].yOffset = 0;
 	entities[id].speed = 4;
+	entities[id].attackDelay = 20;
+	entities[id].attackFrequency = 20;
+	entities[id].damage = 10;
+
+}
+
+void initPickup(int id, int x, int y) {
+	entities[id].active = true;
+	entities[id].x = int2fx(x)+128;
+	entities[id].y = int2fx(y)+128;
+	entities[id].texture = 7;
+	entities[id].type = 4;
+	entities[id].scale = 128;
+	entities[id].moving = false;
+	entities[id].yOffset = 128;
+	entities[id].damage = 30;
+
 }
 
 void initEntities() {
@@ -169,15 +186,22 @@ void initEntities() {
 	}
 }
 
+
+
 void drawHud() {
+	//background
 	for (int i = 0; i < CASTEDRAYS; i++) {
 		m4_dual_vline(2*i, 160-HUDHEIGHT, 160, 29);
 	}
-
+	//key icon
 	if (player.hasKey) {
 		for (int i = 20; i < 40; i++) {
 			m4_dual_vline(2*i, 160-HUDHEIGHT, 160, 39);
 		}
+	}
+	// health bar
+	for (int i = 0; i < player.hp/3; i++) {
+		m4_dual_vline(120 + 2*i, 160-HUDHEIGHT + 5, 160 - 5, 15);
 	}
 
 }
@@ -185,6 +209,7 @@ void drawHud() {
 void initLevel() {
 
 	player.hp = 100;
+	player.maxHp = 100;
 	player.hasKey = false;
 
 	updateHud = 2;
@@ -705,15 +730,7 @@ void checkEntityCollisions() {
 			continue;
 		}
 
-		//check for projectile collisions with walls
-		if (entities[i].moving) {
-			int xCell = fx2int(entities[i].x);
-			int yCell = fx2int(entities[i].y);
-			if (MAP[yCell*MAPSIZE + xCell] != 0) {
-				removeEntity(i);
-			}
 
-		}
 
 		int type = entities[i].type;
 		//check if a key is near a player
@@ -725,8 +742,11 @@ void checkEntityCollisions() {
 			}
 		}
 
-		//check projectile collisions with enemies
-		if (type == 2) {
+		//check projectile collisions
+		else if (type == 2) {
+
+
+			//with enemies
 			int hit = 0;
 			for (int j = 0; j < MAXENTITYCOUNT; j++) {
 				//ignore all entities, which aren't enemies
@@ -736,7 +756,7 @@ void checkEntityCollisions() {
 				
 				//check entity distances from each other 
 				FIXED distance = fxadd(fixedAbs(fxsub(entities[i].x, entities[j].x)), fixedAbs(fxsub(entities[i].y, entities[j].y)));
-				if (distance < 128) {
+				if (distance < 180) {
 					removeEntity(j);
 					hit = 1;
 				}
@@ -744,6 +764,46 @@ void checkEntityCollisions() {
 			}
 			if (hit) {
 				removeEntity(i);
+			}
+
+			//with walls
+			int xCell = fx2int(entities[i].x);
+			int yCell = fx2int(entities[i].y);
+			if (MAP[yCell*MAPSIZE + xCell] != 0) {
+				removeEntity(i);
+			}
+
+		}
+
+		//check enemy proximity with player
+		else if (type == 3) {
+			if (entities[i].distance < 64) {
+				if (!entities[i].attackDelay) {
+					player.hp -= entities[i].damage;
+					updateHud = 2;
+					entities[i].attackDelay = entities[i].attackFrequency;
+				}
+			}
+			if (entities[i].attackDelay) {
+				entities[i].attackDelay--;
+			}
+		}
+
+		//check pickup proximity with player
+		else if (type == 4) {
+			//TODO
+			if (entities[i].distance < 64) {
+				if (player.hp < player.maxHp) {
+					int heal = entities[i].damage;
+					player.hp += heal;
+					if (player.hp > player.maxHp) {
+						player.hp = player.maxHp;
+					}
+					removeEntity(i);
+					updateHud = 2;
+
+				}
+
 			}
 		}
 
@@ -876,7 +936,8 @@ void populateMap() {
 
 	//spawn a bunch of enemies
 	int i = 0;
-	for (i; i < 5; i++) {
+	
+	for (i; i < 3; i++) {
 		counter--;
 		if (counter < 0) {
 			break;
@@ -885,12 +946,16 @@ void populateMap() {
 		int enemyY = openSpaces[counter] % MAPSIZE;
 		initEnemy(i+1, enemyX, enemyY);
 	}
+	
 	//todo: spawn a bunch of items (hp, weapon upgrades etc.)
-	for (i; i < 10; i++) {
+	for (i; i < 6; i++) {
 		counter--;
 		if (counter < 0) {
 			break;
 		}
+		int x = openSpaces[counter] / MAPSIZE;
+		int y = openSpaces[counter] % MAPSIZE;
+		initPickup(i+1, x, y);
 
 	}
 
