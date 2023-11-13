@@ -39,6 +39,7 @@ const int TILESHIFTER = log2(TILESIZE);
 const FIXED FIXEDTILESIZE = TILESIZE * 256; // equal to int2fx(TILESIZE);
 const int HALFSCREENPOINT = SCREENHEIGHT / 2;
 const int HUDHEIGHT = 160-SCREENHEIGHT;
+const int PROJECTILETEXTURES[3] = {5, 8, 9};
 
 
 FIXED x, y;
@@ -167,16 +168,31 @@ void initEnemy(int id, int x, int y) {
 }
 
 void initPickup(int id, int x, int y) {
-	entities[id].active = true;
-	entities[id].x = int2fx(x)+128;
-	entities[id].y = int2fx(y)+128;
-	entities[id].texture = 7;
-	entities[id].type = 4;
-	entities[id].scale = 128;
-	entities[id].moving = false;
-	entities[id].yOffset = 128;
-	entities[id].damage = 30;
 
+	int type = qran_range(0, 2);
+
+	if (type == 0) { //healthpack
+		entities[id].active = true;
+		entities[id].x = int2fx(x)+128;
+		entities[id].y = int2fx(y)+128;
+		entities[id].texture = 7;
+		entities[id].type = 4;
+		entities[id].scale = 128;
+		entities[id].moving = false;
+		entities[id].yOffset = 128;
+		entities[id].damage = 30;
+	}
+	else if(type == 1) { //gun level up
+		entities[id].active = true;
+		entities[id].x = int2fx(x)+128;
+		entities[id].y = int2fx(y)+128;
+		entities[id].texture = 10;
+		entities[id].type = 5;
+		entities[id].scale = 128;
+		entities[id].moving = false;
+		entities[id].yOffset = 128;
+		entities[id].damage = 30;
+	}
 }
 
 void initEntities() {
@@ -211,6 +227,8 @@ void initLevel() {
 	player.hp = 100;
 	player.maxHp = 100;
 	player.hasKey = false;
+	player.gunLevel = 0;
+	player.maxGunLevel = 2;
 
 	updateHud = 2;
 
@@ -497,7 +515,7 @@ void fire() {
 		
 		entities[i].x = x;
 		entities[i].y = y;
-		entities[i].texture = 5;
+		entities[i].texture = PROJECTILETEXTURES[player.gunLevel];
 		entities[i].type = 2;
 		entities[i].active = true;
 		entities[i].scale = 128;
@@ -789,7 +807,7 @@ void checkEntityCollisions() {
 			}
 		}
 
-		//check pickup proximity with player
+		//check health pack proximity with player
 		else if (type == 4) {
 			//TODO
 			if (entities[i].distance < 64) {
@@ -799,6 +817,20 @@ void checkEntityCollisions() {
 					if (player.hp > player.maxHp) {
 						player.hp = player.maxHp;
 					}
+					removeEntity(i);
+					updateHud = 2;
+
+				}
+
+			}
+		}
+
+		//check gun level up pickup proximity
+		else if (type == 5) {
+			//TODO
+			if (entities[i].distance < 64) {
+				if (player.gunLevel < player.maxGunLevel) {
+					player.gunLevel++;
 					removeEntity(i);
 					updateHud = 2;
 

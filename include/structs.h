@@ -21,4 +21,6 @@ struct Player {
 	bool hasKey;
 	int hp;
 	int maxHp;
+	int gunLevel;
+	int maxGunLevel;
 };
