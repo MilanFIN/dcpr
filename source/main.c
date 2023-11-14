@@ -152,26 +152,30 @@ void initKey(int x, int y) {
 }
 
 void initEnemy(int id, int x, int y) {
+
+	int level = qran_range(0, 8);
+
 	entities[id].active = true;
 	entities[id].x = int2fx(x)+128;
 	entities[id].y = int2fx(y)+128;
 	entities[id].texture = 6;
 	entities[id].type = 3;
-	entities[id].scale = 256;
+	entities[id].scale = 92+ (level*32);
 	entities[id].moving = true;
-	entities[id].yOffset = 0;
+	entities[id].yOffset = 192-entities[id].scale*2/3;
 	entities[id].speed = 4;
 	entities[id].attackDelay = 20;
 	entities[id].attackFrequency = 20;
-	entities[id].damage = 10;
+	entities[id].damage = 10 + 2*level;
+	entities[id].hp = level;
 
 }
 
 void initPickup(int id, int x, int y) {
 
-	int type = qran_range(0, 2);
+	int pickupType = qran_range(0, 2);
 
-	if (type == 0) { //healthpack
+	if (pickupType == 0) { //healthpack
 		entities[id].active = true;
 		entities[id].x = int2fx(x)+128;
 		entities[id].y = int2fx(y)+128;
@@ -182,7 +186,7 @@ void initPickup(int id, int x, int y) {
 		entities[id].yOffset = 128;
 		entities[id].damage = 30;
 	}
-	else if(type == 1) { //gun level up
+	else if(pickupType == 1) { //gun level up
 		entities[id].active = true;
 		entities[id].x = int2fx(x)+128;
 		entities[id].y = int2fx(y)+128;
@@ -227,8 +231,9 @@ void initLevel() {
 	player.hp = 100;
 	player.maxHp = 100;
 	player.hasKey = false;
-	player.gunLevel = 0;
-	player.maxGunLevel = 2;
+	player.gunLevel = 1;
+	player.maxGunLevel = 3;
+	player.damage = 1;
 
 	updateHud = 2;
 
@@ -515,7 +520,7 @@ void fire() {
 		
 		entities[i].x = x;
 		entities[i].y = y;
-		entities[i].texture = PROJECTILETEXTURES[player.gunLevel];
+		entities[i].texture = PROJECTILETEXTURES[player.gunLevel - 1];
 		entities[i].type = 2;
 		entities[i].active = true;
 		entities[i].scale = 128;
@@ -651,7 +656,6 @@ void quickSort(int array[], int low, int high) {
 //sort the sprites based on distance
 void sortEntities()
 {
-
 	quickSort(entityOrder, 0, MAXENTITYCOUNT - 1);
 
 }
@@ -663,7 +667,7 @@ int drawEntities() {
 	//update distances to player 
 	for(int i = 0; i < MAXENTITYCOUNT; i++) {
 	  if (!entities[i].active) {
-		entities[i].distance = int2fx(1024);
+		entities[i].distance = int2fx(4096);
 	  }
 	  else {
       	entities[i].distance = fxmul(fxsub(x, entities[i].x), fxsub(x, entities[i].x)) + fxmul(fxsub(y, entities[i].y), fxsub(y, entities[i].y));
@@ -748,8 +752,6 @@ void checkEntityCollisions() {
 			continue;
 		}
 
-
-
 		int type = entities[i].type;
 		//check if a key is near a player
 		if (type == 1) {
@@ -763,20 +765,27 @@ void checkEntityCollisions() {
 		//check projectile collisions
 		else if (type == 2) {
 
+			int hit = 0;
 
 			//with enemies
-			int hit = 0;
 			for (int j = 0; j < MAXENTITYCOUNT; j++) {
 				//ignore all entities, which aren't enemies
 				if (!entities[j].active || entities[j].type != 3) { //
 					continue;
 				}
 				
+
 				//check entity distances from each other 
 				FIXED distance = fxadd(fixedAbs(fxsub(entities[i].x, entities[j].x)), fixedAbs(fxsub(entities[i].y, entities[j].y)));
 				if (distance < 180) {
-					removeEntity(j);
+
+					entities[j].hp -= player.gunLevel * player.damage;
 					hit = 1;
+
+					if (entities[j].hp <= 0) {
+						removeEntity(j);
+						
+					}
 				}
 				
 			}
@@ -809,7 +818,6 @@ void checkEntityCollisions() {
 
 		//check health pack proximity with player
 		else if (type == 4) {
-			//TODO
 			if (entities[i].distance < 64) {
 				if (player.hp < player.maxHp) {
 					int heal = entities[i].damage;
@@ -825,20 +833,16 @@ void checkEntityCollisions() {
 			}
 		}
 
-		//check gun level up pickup proximity
+		//check gun level up pickup proximity with player
 		else if (type == 5) {
-			//TODO
 			if (entities[i].distance < 64) {
 				if (player.gunLevel < player.maxGunLevel) {
 					player.gunLevel++;
 					removeEntity(i);
 					updateHud = 2;
-
 				}
-
 			}
 		}
-
 	}
 }
 
@@ -1067,10 +1071,7 @@ int main() {
 			fire();
 		}
 
-
  		updateDirection();
-		//x = fxadd(x, 1);
-		//y = fxadd(y, 4);
 
 		castRays();
 		moveEntities();

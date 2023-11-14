@@ -15,6 +15,8 @@ struct Entity {
 	int attackFrequency;
 	//amount of damage dealth or healed
 	int damage;
+	int level;
+	int hp;
 };
 
 struct Player {
@@ -23,4 +25,5 @@ struct Player {
 	int maxHp;
 	int gunLevel;
 	int maxGunLevel;
+	int damage;
 };
