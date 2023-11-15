@@ -20,6 +20,8 @@ struct Entity {
 };
 
 struct Player {
+	FIXED x;
+	FIXED y;
 	bool hasKey;
 	int hp;
 	int maxHp;

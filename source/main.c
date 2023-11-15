@@ -42,7 +42,6 @@ const int HUDHEIGHT = 160-SCREENHEIGHT;
 const int PROJECTILETEXTURES[3] = {5, 8, 9};
 
 
-FIXED x, y;
 FIXED dirX, dirY;
 FIXED planeX, planeY;
 FIXED direction;
@@ -238,12 +237,12 @@ void initLevel() {
 	updateHud = 2;
 
 
-	x = int2fx(0);//96;//2*64;//
-	y = int2fx(0);//224;//2*64;//
+	player.x = int2fx(5);//96;//2*64;//
+	player.y = int2fx(5);//224;//2*64;//
 
 	direction = int2fx(0);//int2fx(45);
 
-	getDungeon(&MAP, MAPSIZE, &x,&y);
+	getDungeon(&MAP, MAPSIZE, &player.x,&player.y);
 	initEntities();
 
 	populateMap();
@@ -264,6 +263,15 @@ inline float floatAbs(float a) {
 inline FIXED fixedAbs(FIXED a) {
 	if (a < 0) {
 		return fxsub(int2fx(0), a);
+	}
+	else {
+		return a;
+	}
+}
+
+inline int intAbs(int a) {
+	if (a < 0) {
+		return -a;
 	}
 	else {
 		return a;
@@ -296,8 +304,8 @@ int castRay(int targetType) {
 	const FIXED rayDirX = fxadd(dirX, fxmul(planeX, cameraX));
 	const FIXED rayDirY = fxadd(dirY, fxmul(planeY, cameraX));
 
-	FIXED mapX = int2fx(fx2int(x));
-	FIXED mapY = int2fx(fx2int(y));
+	FIXED mapX = int2fx(fx2int(player.x));
+	FIXED mapY = int2fx(fx2int(player.y));
 
 	FIXED sideDistX;
 	FIXED sideDistY;
@@ -326,19 +334,19 @@ int castRay(int targetType) {
 
 	if(rayDirX < 0) {
 		stepX = int2fx(-1);
-		sideDistX = fxmul(fxsub(x, mapX) , deltaDistX);
+		sideDistX = fxmul(fxsub(player.x, mapX) , deltaDistX);
 	}
 	else {
 		stepX = int2fx(1);
-		sideDistX = fxmul(fxsub(fxadd(mapX, int2fx(1.0)), x), deltaDistX);
+		sideDistX = fxmul(fxsub(fxadd(mapX, int2fx(1.0)), player.x), deltaDistX);
 	}
 	if(rayDirY < 0) {
 		stepY = int2fx(-1);
-		sideDistY = fxmul(fxsub(y, mapY), deltaDistY);
+		sideDistY = fxmul(fxsub(player.y, mapY), deltaDistY);
 	}
 	else {
 		stepY = int2fx(1);
-		sideDistY = fxmul(fxsub(fxadd(mapY, int2fx(1.0)), y), deltaDistY);
+		sideDistY = fxmul(fxsub(fxadd(mapY, int2fx(1.0)), player.y), deltaDistY);
 	}
 
 
@@ -395,8 +403,8 @@ int castRays() {
 		const FIXED rayDirY = fxadd(dirY, fxmul(planeY, cameraX));
 		
 		
-		FIXED mapX = int2fx(fx2int(x));
-		FIXED mapY = int2fx(fx2int(y));
+		FIXED mapX = int2fx(fx2int(player.x));
+		FIXED mapY = int2fx(fx2int(player.y));
 
 		FIXED sideDistX;
 		FIXED sideDistY;
@@ -425,19 +433,19 @@ int castRays() {
 
 		if(rayDirX < 0) {
 			stepX = int2fx(-1);
-			sideDistX = fxmul(fxsub(x, mapX) , deltaDistX);
+			sideDistX = fxmul(fxsub(player.x, mapX) , deltaDistX);
 		}
 		else {
 			stepX = int2fx(1);
-			sideDistX = fxmul(fxsub(fxadd(mapX, int2fx(1.0)), x), deltaDistX);
+			sideDistX = fxmul(fxsub(fxadd(mapX, int2fx(1.0)), player.x), deltaDistX);
 		}
 		if(rayDirY < 0) {
 			stepY = int2fx(-1);
-			sideDistY = fxmul(fxsub(y, mapY), deltaDistY);
+			sideDistY = fxmul(fxsub(player.y, mapY), deltaDistY);
 		}
 		else {
 			stepY = int2fx(1);
-			sideDistY = fxmul(fxsub(fxadd(mapY, int2fx(1.0)), y), deltaDistY);
+			sideDistY = fxmul(fxsub(fxadd(mapY, int2fx(1.0)), player.y), deltaDistY);
 		}
 
 	
@@ -476,12 +484,12 @@ int castRays() {
 			//horizontal
 			if(side == 0) {
 				perpWallDistance = fxsub(sideDistX, deltaDistX);
-				wallPos = fxadd(y, fxmul(perpWallDistance, rayDirY));
+				wallPos = fxadd(player.y, fxmul(perpWallDistance, rayDirY));
 			}
 			//vertical
 			else {
 				perpWallDistance = fxsub(sideDistY, deltaDistY);
-				wallPos = fxadd(x, fxmul(perpWallDistance, rayDirX));
+				wallPos = fxadd(player.x, fxmul(perpWallDistance, rayDirX));
 			}          
 
 			wallPos = fxsub(wallPos, int2fx(fx2int(wallPos)));
@@ -518,8 +526,8 @@ void fire() {
 			continue;
 		}
 		
-		entities[i].x = x;
-		entities[i].y = y;
+		entities[i].x = player.x;
+		entities[i].y = player.y;
 		entities[i].texture = PROJECTILETEXTURES[player.gunLevel - 1];
 		entities[i].type = 2;
 		entities[i].active = true;
@@ -557,13 +565,13 @@ void moveEntities() {
 		if (entities[i].type == 3) {
 			
 			if (entities[i].distance < 1800) {
-				if (entities[i].x < x) {
+				if (entities[i].x < player.x) {
 					entities[i].xDir = entities[i].speed;
 				}
 				else {
 					entities[i].xDir = -entities[i].speed;
 				}
-				if (entities[i].y < y) {
+				if (entities[i].y < player.y) {
 					entities[i].yDir = entities[i].speed;
 				}
 				else {
@@ -670,7 +678,7 @@ int drawEntities() {
 		entities[i].distance = int2fx(4096);
 	  }
 	  else {
-      	entities[i].distance = fxmul(fxsub(x, entities[i].x), fxsub(x, entities[i].x)) + fxmul(fxsub(y, entities[i].y), fxsub(y, entities[i].y));
+      	entities[i].distance = fxmul(fxsub(player.x, entities[i].x), fxsub(player.x, entities[i].x)) + fxmul(fxsub(player.y, entities[i].y), fxsub(player.y, entities[i].y));
 	  }
     }
 
@@ -680,8 +688,8 @@ int drawEntities() {
 		if (!entities[entityOrder[i]].active || entities[entityOrder[i]].distance < 64) {
 			continue;
 		}
-		FIXED entityX = fxsub(entities[entityOrder[i]].x, x);
-		FIXED entityY = fxsub(entities[entityOrder[i]].y, y);
+		FIXED entityX = fxsub(entities[entityOrder[i]].x, player.x);
+		FIXED entityY = fxsub(entities[entityOrder[i]].y, player.y);
 
 		FIXED invDet = fxdiv(int2fx(1), fxsub(fxmul(planeX, dirY), fxmul(dirX, planeY)));
 		FIXED transformX = fxmul(invDet , fxsub(fxmul(dirY, entityX), fxmul(dirX, entityY)));
@@ -892,11 +900,11 @@ void move(int type) {
 		moveY = -fxmul(dirY, SPEED);
 	}
 
-	if (!collisionCheck(fxadd(x, fxadd(moveX, moveX)), y)) {
-		x = fxadd(x, moveX);
+	if (!collisionCheck(fxadd(player.x, fxadd(moveX, moveX)), player.y)) {
+		player.x = fxadd(player.x, moveX);
 	}
-	if (!collisionCheck(x, fxadd(y, fxadd(moveY, moveY)))) {
-		y = fxadd(y, moveY);
+	if (!collisionCheck(player.x, fxadd(player.y, fxadd(moveY, moveY)))) {
+		player.y = fxadd(player.y, moveY);
 	}
 
 }
@@ -927,6 +935,41 @@ void shuffleArray(int* array, int size) {
 	}
 }
 
+void setKeyPosition(int doorX, int doorY) {
+	int fractionOfMap = 1;
+	while (1) {
+
+		//get all positions that are at least 1/3 MAPSIZE away from the door
+		int counter = 0;
+		int keyPositions[MAPSIZE*MAPSIZE] = {0};
+		for (int y = 0; y < MAPSIZE; y++) {
+			for (int x = 0; x < MAPSIZE; x++) {
+				if (openTile(x, y)) {
+					if (intAbs(x - doorX) + intAbs(y - doorY) > MAPSIZE / fractionOfMap) {
+						keyPositions[counter] = MAPSIZE*y+x;
+						counter++;
+					}
+				}
+			}
+		}
+
+		if (counter != 0) {
+			shuffleArray(keyPositions, counter);
+			counter--;
+
+			int keyY = keyPositions[counter] / MAPSIZE;
+			int keyX = keyPositions[counter] % MAPSIZE;
+
+			initKey(keyX, keyY);
+
+			break;
+		}
+		else {
+			fractionOfMap += 1;
+		}
+	}
+}
+
 void populateMap() {
 
 	//figure out a position for the door
@@ -950,25 +993,48 @@ void populateMap() {
 	//set to door sprite
 	MAP[doorCandidates[doorPosition]] = 4;
 
-	counter = 0;
-	int openSpaces[MAPSIZE*MAPSIZE] = {0};
-	int playerPosition = MAPSIZE*fx2int(y) + fx2int(x);
-	//get open positions on map
-	for (int y = 0; y < MAPSIZE; y++) {
-		for (int x = 0; x < MAPSIZE; x++) {
-			if (!MAP[MAPSIZE*y+x] && MAPSIZE*y+x != playerPosition) {
-				openSpaces[counter] = MAPSIZE*y+x;
-				counter++;
+	int doorX = doorCandidates[doorPosition] % MAPSIZE;
+	int doorY = doorCandidates[doorPosition] / MAPSIZE;
+
+	//set player to be next to the door
+	int found = 0;
+	for (int i = -1; i <= 1; i+=2) {
+		if (!found) {
+			for (int j = -1; j <= 1; j+= 2) {
+				//if (i != j && j+i != 0) {
+					if (openTile(doorX+i, doorY+j)) {
+						player.x = int2fx(doorX+i) + 128;
+						player.y = int2fx(doorY+j) + 128;
+						found = 1;
+						break;
+					}
+				//}
 			}
+
 		}
 	}
 
+	//set key position, it should be relatively far to allow for more walking around
+	setKeyPosition(doorX, doorY);
+
+	//get all open positions on map for spawning other stuff
+	counter = 0;
+	int openSpaces[MAPSIZE*MAPSIZE] = {0};
+	int playerPosition = MAPSIZE*fx2int(player.y) + fx2int(player.x);
+	for (int y = 0; y < MAPSIZE; y++) {
+		for (int x = 0; x < MAPSIZE; x++) {
+			if (openTile(x, y)) {
+				if (!MAP[MAPSIZE*y+x] && MAPSIZE*y+x != playerPosition) {
+					openSpaces[counter] = MAPSIZE*y+x;
+					counter++;
+				}
+			}
+		}
+	}
+	
 	shuffleArray(openSpaces, counter);
 	counter--;
-	int keyY = openSpaces[counter] / MAPSIZE;
-	int keyX = openSpaces[counter] % MAPSIZE;
 
-	initKey(keyX, keyY);
 
 	//spawn a bunch of enemies
 	int i = 0;
@@ -978,8 +1044,8 @@ void populateMap() {
 		if (counter < 0) {
 			break;
 		}
-		int enemyX = openSpaces[counter] / MAPSIZE;
-		int enemyY = openSpaces[counter] % MAPSIZE;
+		int enemyX = openSpaces[counter] % MAPSIZE;
+		int enemyY = openSpaces[counter] / MAPSIZE;
 		initEnemy(i+1, enemyX, enemyY);
 	}
 	

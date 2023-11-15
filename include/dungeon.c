@@ -255,6 +255,8 @@ void getDungeon(int* map, int mapsize, FIXED* playerX, FIXED* playerY) {
 	    }
 	}	
 
+	//no longer needed, as player is placed relative to the door
+	
 	for (int x = 0; x < mapsize; x++) {
 		for (int y = 0; y < mapsize; y++) {
 			if (map[mapsize*y+x] == 0) {
@@ -264,6 +266,7 @@ void getDungeon(int* map, int mapsize, FIXED* playerX, FIXED* playerY) {
 			}
 		}
 	}
+	
 
 }
 
