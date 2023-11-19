@@ -11,7 +11,6 @@
 #define MAXENTITYCOUNT 20
 #define MAPSIZE 12
 
-//todo: fix black screen when direction == int2fx(45);
 
 const float PI = 3.1415;
 
@@ -44,7 +43,6 @@ const int PROJECTILETEXTURES[3] = {5, 8, 9};
 
 FIXED dirX, dirY;
 FIXED planeX, planeY;
-FIXED direction;
 int updateHud = 2;
 
 struct Entity entities[MAXENTITYCOUNT];
@@ -237,10 +235,10 @@ void initLevel() {
 	updateHud = 2;
 
 
-	player.x = int2fx(5);//96;//2*64;//
-	player.y = int2fx(5);//224;//2*64;//
+	//player.x = int2fx(5);//96;//2*64;//
+	//player.y = int2fx(5);//224;//2*64;//
 
-	direction = int2fx(0);//int2fx(45);
+	//player.direction = int2fx(0);//int2fx(45);
 
 	getDungeon(&MAP, MAPSIZE, &player.x,&player.y);
 	initEntities();
@@ -860,7 +858,7 @@ void updateDirection() {
 	FIXED viewPlaneMultiplier = 200;//168;
 
 	const FIXED PI2 = int2fx(0x10000 >> 1);
-	FIXED luAngle = fxmul(PI2, fxdiv(direction, int2fx(360))) >> 7;
+	FIXED luAngle = fxmul(PI2, fxdiv(player.direction, int2fx(360))) >> 7;
 
 	FIXED cosine = lu_cos(luAngle);
 	FIXED sine = lu_sin(luAngle);
@@ -970,6 +968,32 @@ void setKeyPosition(int doorX, int doorY) {
 	}
 }
 
+	void getOpenAdjacentTile(int oX, int oY, FIXED* x, FIXED* y, FIXED* direction) {
+
+		if (openTile(oX + 1, oY)) {
+			*x = int2fx(oX + 1) + 128;
+			*y = int2fx(oY) + 128;
+			*direction = int2fx(0);
+		}
+		else if (openTile(oX - 1, oY)) {
+			*x = int2fx(oX - 1) + 128;
+			*y = int2fx(oY) + 128;
+			*direction = int2fx(180);
+		}
+		else if (openTile(oX, oY + 1)) {
+			*x = int2fx(oX) + 128;
+			*y = int2fx(oY + 1) + 128;
+			*direction = int2fx(270);
+		}
+		else if (openTile(oX, oY - 1)) {
+			*x = int2fx(oX) + 128;
+			*y = int2fx(oY - 1) + 128;
+			*direction = int2fx(90);
+		}
+
+	}
+
+
 void populateMap() {
 
 	//figure out a position for the door
@@ -996,23 +1020,10 @@ void populateMap() {
 	int doorX = doorCandidates[doorPosition] % MAPSIZE;
 	int doorY = doorCandidates[doorPosition] / MAPSIZE;
 
-	//set player to be next to the door
-	int found = 0;
-	for (int i = -1; i <= 1; i+=2) {
-		if (!found) {
-			for (int j = -1; j <= 1; j+= 2) {
-				//if (i != j && j+i != 0) {
-					if (openTile(doorX+i, doorY+j)) {
-						player.x = int2fx(doorX+i) + 128;
-						player.y = int2fx(doorY+j) + 128;
-						found = 1;
-						break;
-					}
-				//}
-			}
 
-		}
-	}
+	//set player position to the free tile next to the door
+	getOpenAdjacentTile(doorX, doorY, &player.x, &player.y, &player.direction);
+
 
 	//set key position, it should be relatively far to allow for more walking around
 	setKeyPosition(doorX, doorY);
@@ -1118,16 +1129,16 @@ int main() {
 			move(3);
 		}
 		if (key_is_down(KEY_R)) {
-			direction -= int2fx(5);
+			player.direction -= int2fx(5);
 		}
 		else if (key_is_down(KEY_L)) {
-			direction += int2fx(5);
+			player.direction += int2fx(5);
 		}
-		if (fx2int(direction) >= 360) {
-			direction = fxsub(direction, int2fx(360));
+		if (fx2int(player.direction) >= 360) {
+			player.direction = fxsub(player.direction, int2fx(360));
 		}
-		if (fx2int(direction) < 0) {
-			direction = fxadd(direction, int2fx(360));
+		if (fx2int(player.direction) < 0) {
+			player.direction = fxadd(player.direction, int2fx(360));
 		}
 
 		if (key_hit(KEY_A)) {

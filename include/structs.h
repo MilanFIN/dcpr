@@ -22,6 +22,7 @@ struct Entity {
 struct Player {
 	FIXED x;
 	FIXED y;
+	FIXED direction;
 	bool hasKey;
 	int hp;
 	int maxHp;
