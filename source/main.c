@@ -77,13 +77,16 @@ INLINE void m4_textured_dual_line(int x, int y1, int y2, int height, int type, i
 	}
 }
 
-INLINE void m4_sprite_textured_dual_line(int x, int y1, int y2, int height, int type, int column) {
+INLINE void m4_sprite_textured_dual_line(int x, int y1, int y2, int height, int type, int column, int hit) {
 
 	const FIXED step = TEXTURESTEP_LU[height];
 	FIXED textureY = 0;
 	for (y1; y1 < y2; y1++) {
-		const color = TEXTURES[(type-1) * 256 + fx2int(textureY) * TEXTURESIZE  + column];
+		int color = TEXTURES[(type-1) * 256 + fx2int(textureY) * TEXTURESIZE  + column];
 		if (color != 0) {
+			if (hit) {
+				color = 11;
+			}
 			m4_dual_plot(x, y1, color);
 		}
 		textureY = fxadd(textureY, step);
@@ -146,6 +149,8 @@ void initKey(int x, int y) {
 	entities[0].scale = 128;
 	entities[0].moving = false;
 	entities[0].yOffset = 128;
+	entities[0].hit = 0;
+
 }
 
 void initEnemy(int id, int x, int y) {
@@ -165,6 +170,8 @@ void initEnemy(int id, int x, int y) {
 	entities[id].attackFrequency = 20;
 	entities[id].damage = 10 + 2*level;
 	entities[id].hp = level;
+	entities[id].hit = 0;
+
 
 }
 
@@ -181,7 +188,8 @@ void initPickup(int id, int x, int y) {
 		entities[id].scale = 128;
 		entities[id].moving = false;
 		entities[id].yOffset = 128;
-		entities[id].damage = 30;
+		entities[0].hit = 0;
+
 	}
 	else if(pickupType == 1) { //gun level up
 		entities[id].active = true;
@@ -192,7 +200,7 @@ void initPickup(int id, int x, int y) {
 		entities[id].scale = 128;
 		entities[id].moving = false;
 		entities[id].yOffset = 128;
-		entities[id].damage = 30;
+		entities[0].hit = 0;
 	}
 }
 
@@ -534,6 +542,7 @@ void fire() {
 		entities[i].yDir = dirY;
 		entities[i].moving = true;
 		entities[i].yOffset = 256;
+		entities[i].hit = 0;
 
 
 
@@ -728,12 +737,16 @@ int drawEntities() {
 		//instead first column set to 32/256 => 0.125
 		FIXED hTexPos = 32;
 		if (transformY > 0) {
+
+			int texture = entities[entityOrder[i]].texture;
+			int hit = entities[entityOrder[i]].hit;
+
+
 			for(int stripe = drawStartX; stripe < drawEndX; stripe++) {
 				if (stripe >= 0 && stripe < SCREENWIDTH/2 ) {
 					if(transformY < zBuffer[stripe]) {
 						int texX = fx2int(hTexPos);
-						int texture = entities[entityOrder[i]].texture;
-						m4_sprite_textured_dual_line(2*stripe, drawStartY, drawEndY, drawEndY-drawStartY, texture , texX);
+						m4_sprite_textured_dual_line(2*stripe, drawStartY, drawEndY, drawEndY-drawStartY, texture , texX, hit);
 					}
 				}
 				else if (stripe > SCREENWIDTH/2) {
@@ -742,6 +755,7 @@ int drawEntities() {
 				hTexPos = fxadd(hTexPos, horizontalTexFrag);
 			}
 		}
+		entities[entityOrder[i]].hit = 0;
 
 
 
@@ -786,6 +800,7 @@ void checkEntityCollisions() {
 				if (distance < 180) {
 
 					entities[j].hp -= player.gunLevel * player.damage;
+					entities[j].hit = 1;
 					hit = 1;
 
 					if (entities[j].hp <= 0) {
@@ -1100,7 +1115,6 @@ int main() {
 	tte_init_chr4c_default(0, BG_CBB(0) | BG_SBB(31));
 	tte_set_pos(92, 68);
 	castRays();
-	FIXED test = drawSprites();
 
 
 	char str[8];

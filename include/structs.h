@@ -17,6 +17,7 @@ struct Entity {
 	int damage;
 	int level;
 	int hp;
+	int hit; //set to 1, when should show hit frame
 };
 
 struct Player {
