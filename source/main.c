@@ -14,7 +14,7 @@
 
 const float PI = 3.1415;
 
-EWRAM_DATA int MAP[MAPSIZE*MAPSIZE] = {0};
+EWRAM_DATA char MAP[MAPSIZE*MAPSIZE] = {0};
 /*
         1, 1, 1, 1, 1, 1, 1, 1,
         1, 0, 0, 0, 0, 0, 0, 1,

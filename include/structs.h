@@ -5,19 +5,19 @@ struct Entity {
 	FIXED y;
 	FIXED xDir;
 	FIXED yDir;
-	int type; //1: key, 2: projectile, 3:enemy
-	int texture;
+	char type; //1: key, 2: projectile, 3:enemy
+	char texture;
 	FIXED distance;
 	FIXED scale;
 	FIXED yOffset;
 	FIXED speed;
-	int attackDelay;
-	int attackFrequency;
+	char attackDelay;
+	char attackFrequency;
 	//amount of damage dealth or healed
-	int damage;
-	int level;
+	char damage;
+	char level;
 	int hp;
-	int hit; //set to 1, when should show hit frame
+	char hit; //set to 1, when should show hit frame
 };
 
 struct Player {
@@ -27,7 +27,7 @@ struct Player {
 	bool hasKey;
 	int hp;
 	int maxHp;
-	int gunLevel;
-	int maxGunLevel;
-	int damage;
+	char gunLevel;
+	char maxGunLevel;
+	char damage;
 };

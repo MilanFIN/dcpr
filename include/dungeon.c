@@ -195,7 +195,7 @@ void shrink(struct Leaf* leaves) {
 }
 
 
-void getDungeon(int* map, int mapsize, FIXED* playerX, FIXED* playerY) {
+void getDungeon(char* map, int mapsize, FIXED* playerX, FIXED* playerY) {
 	PAIRID = 0;
 	ID = 0;
 	struct Leaf rootLeaf;
