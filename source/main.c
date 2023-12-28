@@ -14,7 +14,7 @@
 
 const float PI = 3.1415;
 
-int MAP[MAPSIZE*MAPSIZE] = {0 };
+EWRAM_DATA int MAP[MAPSIZE*MAPSIZE] = {0};
 /*
         1, 1, 1, 1, 1, 1, 1, 1,
         1, 0, 0, 0, 0, 0, 0, 1,
@@ -45,7 +45,7 @@ FIXED dirX, dirY;
 FIXED planeX, planeY;
 int updateHud = 2;
 
-struct Entity entities[MAXENTITYCOUNT];
+EWRAM_DATA struct Entity entities[MAXENTITYCOUNT];
 struct Player player;
 
 int entityOrder[MAXENTITYCOUNT] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
@@ -507,8 +507,9 @@ int castRays() {
 
 
 			zBuffer[i] = perpWallDistance;
-
 			drawWall(2*i, perpWallDistance, MAP[yCell*MAPSIZE + xCell], side, textureColumn);
+
+
 
 		}
 		else {
@@ -521,9 +522,11 @@ void castForward() {
 	if (player.hasKey) {
 		int distance = castRay(4);
 		if (distance >= 0 && distance < 2) {
-			initLevel();
+			//initLevel();
 		}
 	}
+				initLevel();
+
 }
 
 void fire() {

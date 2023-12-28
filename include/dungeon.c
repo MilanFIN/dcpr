@@ -1,13 +1,10 @@
 #include "dungeon.h"
 #include <tonc.h>
 
-
-//int MAP[32*32] = {0 };
-
-
-
 static int PAIRID = 0;
 static int ID = 0;
+static int MAXITERATIONS = 100;
+static int MINROOMSIZE = 5;
 
 struct Leaf {
 	int active;
@@ -28,7 +25,7 @@ void divide(struct Leaf* leaves, struct Leaf* leaf, int horizontal) {
 	int ySize = leaf->yend - leaf->y;
 
 	int xmid, ymid;
-	if (xSize > 5 && ySize > 5) {
+	if (xSize > MINROOMSIZE && ySize > MINROOMSIZE && ID < MAXITERATIONS) {
 		xmid = qran_range(leaf->x+2, leaf->xend -1);
 		ymid = qran_range(leaf->y+2, leaf->yend -1);
 
@@ -101,7 +98,7 @@ void generate(struct Leaf* leaf, struct Leaf* finalLeaves, struct Leaf* pairTree
 	leaves[1].active = 0;
 	divide(&leaves, leaf, direction);
 
-	for (int i = 0; i < 100; i++) {
+	for (int i = 0; i < MAXITERATIONS; i++) {
 		if (!pairTree[i].active) {
 			if (leaves[0].active && leaves[1].active) {
 				//printf("OK\n");
@@ -132,7 +129,7 @@ void generate(struct Leaf* leaf, struct Leaf* finalLeaves, struct Leaf* pairTree
 		}
 	}
 	else {
-		for (int i = 0; i < 100; i++) {
+		for (int i = 0; i < MAXITERATIONS; i++) {
 			if (!finalLeaves[i].active) {
 				finalLeaves[i] = leaves[0];
 				finalLeaves[i+1] = leaves[1];
@@ -171,7 +168,7 @@ void getCorridor(struct Leaf* first, struct Leaf* second, int* x, int* y, int* x
 
 
 void shrink(struct Leaf* leaves) {
-    for (int i = 0; i < 100; i++) {
+    for (int i = 0; i < MAXITERATIONS; i++) {
         struct Leaf* leaf = &leaves[i];
         if (!leaf->active) {
             continue;
@@ -208,11 +205,11 @@ void getDungeon(int* map, int mapsize, FIXED* playerX, FIXED* playerY) {
 	rootLeaf.xend = mapsize-1;
 	rootLeaf.yend = mapsize-1;
 
-	struct Leaf finalLeaves[100];
-	struct Leaf pairTree[100];
+	struct Leaf finalLeaves[MAXITERATIONS];
+	struct Leaf pairTree[MAXITERATIONS];
 
 	//initialize the array of leaves that are unused
-	for (int i = 0; i < 100; i++) {
+	for (int i = 0; i < MAXITERATIONS; i++) {
 		finalLeaves[i].active = 0;
 		pairTree[i].active = 0;
 	}
@@ -226,7 +223,7 @@ void getDungeon(int* map, int mapsize, FIXED* playerX, FIXED* playerY) {
 		}
 	}
 
-	for (int i = 0; i < 100; i++) {
+	for (int i = 0; i < MAXITERATIONS; i++) {
 		struct Leaf iter = finalLeaves[i];
 		if (!iter.active) {
 			continue;
@@ -241,7 +238,7 @@ void getDungeon(int* map, int mapsize, FIXED* playerX, FIXED* playerY) {
 		}
 	}
 
-	for (int i = 0; i < 100; i++) {
+	for (int i = 0; i < MAXITERATIONS; i++) {
 		struct Leaf first = pairTree[i];
 		if (!first.active) {
 			continue;
