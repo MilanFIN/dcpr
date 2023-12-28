@@ -522,10 +522,9 @@ void castForward() {
 	if (player.hasKey) {
 		int distance = castRay(4);
 		if (distance >= 0 && distance < 2) {
-			//initLevel();
+			initLevel();
 		}
 	}
-				initLevel();
 
 }
 
