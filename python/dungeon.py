@@ -4,7 +4,7 @@ import copy
 
 
 random.seed()
-MAPSIZE = 32
+MAPSIZE = 48
 global pairId 
 pairId = 0
 
@@ -38,13 +38,13 @@ def clamp(value, min, max):
 
 def shrink(leaf):
 
-	if (leaf.xSize() > 5):
+	if (leaf.xSize() > 3):
 		xmid = floor((leaf.xend + leaf.x) / 2)
 		x = random.randint(leaf.x, xmid)
 		xend = random.randint(xmid, leaf.xend)
 		leaf.x = x
 		leaf.xend = xend
-	if (leaf.ySize() > 5):
+	if (leaf.ySize() > 3):
 		ymid = floor((leaf.yend + leaf.y) / 2)
 		y = random.randint(leaf.y, ymid)
 		yend = random.randint(ymid, leaf.yend)
@@ -101,7 +101,7 @@ map = [["##" for _ in range(MAPSIZE)] for _ in range(MAPSIZE)]
 
 rootLeaf = Leaf(1,1,MAPSIZE-2, MAPSIZE-2, 0,  None, 0)
 
-leaves, compTree = generate(rootLeaf, 5)
+leaves, compTree = generate(rootLeaf, 100)
 corridors = []
 
 

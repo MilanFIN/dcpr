@@ -9,7 +9,7 @@
 #define SCREENWIDTH 240
 #define FOV 60
 #define MAXENTITYCOUNT 20
-#define MAPSIZE 12
+#define MAPSIZE 10
 
 
 const float PI = 3.1415;
@@ -211,6 +211,15 @@ void initEntities() {
 	}
 }
 
+void drawFlat(int texture, int x, int y, int w, int h) {
+	FIXED textureX = 0;
+	const FIXED step = TEXTURESTEP_LU[w];
+
+	for (int x1 = x; x1 < x+w; x1++) {
+		m4_sprite_textured_dual_line(2*x1, y, y+h, h, texture, fx2int(textureX), 0);
+		textureX = fxadd(textureX, step);
+	}
+}
 
 
 void drawHud() {
@@ -220,14 +229,14 @@ void drawHud() {
 	}
 	//key icon
 	if (player.hasKey) {
-		for (int i = 20; i < 40; i++) {
-			m4_dual_vline(2*i, 160-HUDHEIGHT, 160, 39);
-		}
+		drawFlat(2, 10, 160-HUDHEIGHT-10, 16, 32);
+
 	}
 	// health bar
 	for (int i = 0; i < player.hp/3; i++) {
 		m4_dual_vline(120 + 2*i, 160-HUDHEIGHT + 5, 160 - 5, 15);
 	}
+
 
 }
 
@@ -1179,6 +1188,7 @@ int main() {
 		if (player.hp <= 0) {
 			initLevel();
 		}
+
 
 		vid_flip(); 
 		
