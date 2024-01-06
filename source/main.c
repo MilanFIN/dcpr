@@ -67,6 +67,8 @@ INLINE void m4_dual_vline(int x, int y1, int y2, u8 clrid) {
 	}
 }
 
+//draw a textured vertical line to x column, between y1, y2
+// column defines which texture column is used
 INLINE void m4_textured_dual_line(int x, int y1, int y2, int height, int type, int vertical, int column) {
 	const FIXED step = TEXTURESTEP_LU[height];
 	FIXED textureY = 0;
@@ -77,23 +79,32 @@ INLINE void m4_textured_dual_line(int x, int y1, int y2, int height, int type, i
 	}
 }
 
-INLINE void m4_sprite_textured_dual_line(int x, int y1, int y2, int height, int type, int column, int hit) {
-
+//same as above, but supports transparency
+INLINE void m4_sprite_textured_dual_line(int x, int y1, int y2, int height, int type, int column) {
 	const FIXED step = TEXTURESTEP_LU[height];
 	FIXED textureY = 0;
 	for (y1; y1 < y2; y1++) {
 		int color = TEXTURES[(type-1) * 256 + fx2int(textureY) * TEXTURESIZE  + column];
 		if (color != 0) {
-			if (hit) {
-				color = 11;
-			}
 			m4_dual_plot(x, y1, color);
 		}
 		textureY = fxadd(textureY, step);
-
 	}
 }
 
+//same as above, supports transparency, but all colors are replaced
+//with flatColor (palette id)
+INLINE void m4_sprite_color_textured_dual_line(int x, int y1, int y2, int height, int type, int column, int flatColor) {
+	const FIXED step = TEXTURESTEP_LU[height];
+	FIXED textureY = 0;
+	for (y1; y1 < y2; y1++) {
+		int realColor = TEXTURES[(type-1) * 256 + fx2int(textureY) * TEXTURESIZE  + column];
+		if (realColor != 0) {
+			m4_dual_plot(x, y1, flatColor);
+		}
+		textureY = fxadd(textureY, step);
+	}
+}
 
 void loadColorToPalette(COLOR c) {
 	palette[nextPaletteIndex] = c;
@@ -211,12 +222,25 @@ void initEntities() {
 	}
 }
 
+//draws a rectangular texture to arbitary point on screen
+//texture as in id from TEXTURES
 void drawFlat(int texture, int x, int y, int w, int h) {
 	FIXED textureX = 0;
 	const FIXED step = TEXTURESTEP_LU[w];
 
 	for (int x1 = x; x1 < x+w; x1++) {
-		m4_sprite_textured_dual_line(2*x1, y, y+h, h, texture, fx2int(textureX), 0);
+		m4_sprite_textured_dual_line(2*x1, y, y+h, h, texture, fx2int(textureX));
+		textureX = fxadd(textureX, step);
+	}
+}
+
+//same as above, but use a single color for visible parts of the texture
+void drawFlatColorTexture(int texture, int x, int y, int w, int h, int color) {
+	FIXED textureX = 0;
+	const FIXED step = TEXTURESTEP_LU[w];
+
+	for (int x1 = x; x1 < x+w; x1++) {
+		m4_sprite_color_textured_dual_line(2*x1, y, y+h, h, texture, fx2int(textureX), color);
 		textureX = fxadd(textureX, step);
 	}
 }
@@ -230,7 +254,7 @@ void drawHud() {
 	//key icon
 	if (player.hasKey) {
 		drawFlat(2, 10, 160-HUDHEIGHT-10, 16, 32);
-
+		//drawFlatColorTexture(2, 10, 160-HUDHEIGHT-10, 16, 32, 10);
 	}
 	// health bar
 	for (int i = 0; i < player.hp/3; i++) {
@@ -757,7 +781,15 @@ int drawEntities() {
 				if (stripe >= 0 && stripe < SCREENWIDTH/2 ) {
 					if(transformY < zBuffer[stripe]) {
 						int texX = fx2int(hTexPos);
-						m4_sprite_textured_dual_line(2*stripe, drawStartY, drawEndY, drawEndY-drawStartY, texture , texX, hit);
+						if (!hit) {
+							m4_sprite_textured_dual_line(2*stripe, drawStartY, drawEndY, drawEndY-drawStartY, texture , texX);
+						}
+						else {
+							int color = 11;
+						
+							m4_sprite_color_textured_dual_line(2*stripe, drawStartY, drawEndY, drawEndY-drawStartY, texture , texX, color);
+
+						}
 					}
 				}
 				else if (stripe > SCREENWIDTH/2) {
