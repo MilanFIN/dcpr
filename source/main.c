@@ -1,12 +1,11 @@
 
 #include <tonc.h>
-#include "textures.h"
+//#include "textures.h"
 #include "structs.h"
 #include "dungeon.c"
+#include "render.h"
 
 #define TILESIZE 1
-#define SCREENHEIGHT 135
-#define SCREENWIDTH 240
 #define FOV 60
 #define MAXENTITYCOUNT 20
 #define MAPSIZE 10
@@ -27,9 +26,6 @@ EWRAM_DATA char MAP[MAPSIZE*MAPSIZE] = {0};
     };
 	*/
 
-
-FIXED CAMERAX_LU[SCREENWIDTH / 2] = {0};
-FIXED TEXTURESTEP_LU[SCREENHEIGHT] = {0};
 
 
 const int CASTEDRAYS = SCREENWIDTH / 2;
@@ -55,56 +51,6 @@ FIXED zBuffer[SCREENWIDTH/2] = {0};
 volatile unsigned short* palette = (volatile unsigned short*) 0x5000000;
 int nextPaletteIndex = 0;
 
-
-INLINE void m4_dual_plot(int x, int y, u8 clrid)
-{
-	vid_page[(y*M4_WIDTH+x)>>1] = (clrid << 8) | clrid;
-}
-
-INLINE void m4_dual_vline(int x, int y1, int y2, u8 clrid) {
-	for (int i = y1; i <= y2; i++) {
-		m4_dual_plot(x, i, clrid);
-	}
-}
-
-//draw a textured vertical line to x column, between y1, y2
-// column defines which texture column is used
-INLINE void m4_textured_dual_line(int x, int y1, int y2, int height, int type, int vertical, int column) {
-	const FIXED step = TEXTURESTEP_LU[height];
-	FIXED textureY = 0;
-	for (y1; y1 < y2; y1++) {
-		const color = TEXTURES[(type-1) * 256 + fx2int(textureY) * TEXTURESIZE  + column] - vertical;
-		m4_dual_plot(x, y1, color);
-		textureY = fxadd(textureY, step);
-	}
-}
-
-//same as above, but supports transparency
-INLINE void m4_sprite_textured_dual_line(int x, int y1, int y2, int height, int type, int column) {
-	const FIXED step = TEXTURESTEP_LU[height];
-	FIXED textureY = 0;
-	for (y1; y1 < y2; y1++) {
-		int color = TEXTURES[(type-1) * 256 + fx2int(textureY) * TEXTURESIZE  + column];
-		if (color != 0) {
-			m4_dual_plot(x, y1, color);
-		}
-		textureY = fxadd(textureY, step);
-	}
-}
-
-//same as above, supports transparency, but all colors are replaced
-//with flatColor (palette id)
-INLINE void m4_sprite_color_textured_dual_line(int x, int y1, int y2, int height, int type, int column, int flatColor) {
-	const FIXED step = TEXTURESTEP_LU[height];
-	FIXED textureY = 0;
-	for (y1; y1 < y2; y1++) {
-		int realColor = TEXTURES[(type-1) * 256 + fx2int(textureY) * TEXTURESIZE  + column];
-		if (realColor != 0) {
-			m4_dual_plot(x, y1, flatColor);
-		}
-		textureY = fxadd(textureY, step);
-	}
-}
 
 void loadColorToPalette(COLOR c) {
 	palette[nextPaletteIndex] = c;
@@ -222,28 +168,6 @@ void initEntities() {
 	}
 }
 
-//draws a rectangular texture to arbitary point on screen
-//texture as in id from TEXTURES
-void drawFlat(int texture, int x, int y, int w, int h) {
-	FIXED textureX = 0;
-	const FIXED step = TEXTURESTEP_LU[w];
-
-	for (int x1 = x; x1 < x+w; x1++) {
-		m4_sprite_textured_dual_line(2*x1, y, y+h, h, texture, fx2int(textureX));
-		textureX = fxadd(textureX, step);
-	}
-}
-
-//same as above, but use a single color for visible parts of the texture
-void drawFlatColorTexture(int texture, int x, int y, int w, int h, int color) {
-	FIXED textureX = 0;
-	const FIXED step = TEXTURESTEP_LU[w];
-
-	for (int x1 = x; x1 < x+w; x1++) {
-		m4_sprite_color_textured_dual_line(2*x1, y, y+h, h, texture, fx2int(textureX), color);
-		textureX = fxadd(textureX, step);
-	}
-}
 
 
 void drawHud() {
@@ -253,8 +177,8 @@ void drawHud() {
 	}
 	//key icon
 	if (player.hasKey) {
-		drawFlat(2, 10, 160-HUDHEIGHT-10, 16, 32);
-		//drawFlatColorTexture(2, 10, 160-HUDHEIGHT-10, 16, 32, 10);
+		drawFlat(TEXTURES, 2, 10, 160-HUDHEIGHT-10, 16, 32);
+		//drawFlat(LETTERS, 1, 10, 160-HUDHEIGHT+5, 8, 16);
 	}
 	// health bar
 	for (int i = 0; i < player.hp/3; i++) {
@@ -328,9 +252,10 @@ void drawWall(int i, FIXED distance, int type, int vertical, int textureColumn) 
 	m4_dual_vline(i, 0, HALFSCREENPOINT-halfHeight, 1);
 
 	int color = 0;
-	
+	const FIXED yStep = TEXTURESTEP_LU[wallHeight];
+
 	//the actual wall
-	m4_textured_dual_line(i, HALFSCREENPOINT-halfHeight, HALFSCREENPOINT + halfHeight, wallHeight, type, vertical, textureColumn);
+	m4_textured_dual_line(TEXTURES, i, HALFSCREENPOINT-halfHeight, HALFSCREENPOINT + halfHeight, type, vertical, textureColumn, yStep);
 	//floor
 	m4_dual_vline(i, HALFSCREENPOINT+ halfHeight, SCREENHEIGHT, 4);
 
@@ -781,13 +706,14 @@ int drawEntities() {
 				if (stripe >= 0 && stripe < SCREENWIDTH/2 ) {
 					if(transformY < zBuffer[stripe]) {
 						int texX = fx2int(hTexPos);
+						const FIXED yStep = TEXTURESTEP_LU[drawEndY-drawStartY];
+
 						if (!hit) {
-							m4_sprite_textured_dual_line(2*stripe, drawStartY, drawEndY, drawEndY-drawStartY, texture , texX);
+							m4_sprite_textured_dual_line(TEXTURES, 2*stripe, drawStartY, drawEndY, texture , texX, yStep);
 						}
 						else {
 							int color = 11;
-						
-							m4_sprite_color_textured_dual_line(2*stripe, drawStartY, drawEndY, drawEndY-drawStartY, texture , texX, color);
+							m4_sprite_color_textured_dual_line(TEXTURES, 2*stripe, drawStartY, drawEndY, texture , texX, color, yStep);
 
 						}
 					}
