@@ -1,5 +1,6 @@
 
-const TEXTURESIZE = 16;
+const int TEXTURESIZE = 16;
+const int LETTERSIZE = 8;
 
 const int TEXTURES[20*16*16] = {
 
