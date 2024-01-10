@@ -178,7 +178,7 @@ void drawHud()
 	// key icon
 	if (player.hasKey)
 	{
-		drawFlat(TEXTURES, 2, 10, 160 - HUDHEIGHT - 10, 16, 32);
+		drawFlat(TEXTURES, 2, 10, 160 - HUDHEIGHT - 10, 16, 16, 0, TEXTURESIZE);
 		// drawFlat(LETTERS, 1, 10, 160-HUDHEIGHT+5, 8, 16);
 	}
 	// health bar
@@ -186,6 +186,7 @@ void drawHud()
 	{
 		m4_dual_vline(120 + 2 * i, 160 - HUDHEIGHT + 5, 160 - 5, 15);
 	}
+
 }
 
 inline float floatAbs(float a)
@@ -239,7 +240,7 @@ void drawWall(int i, FIXED distance, int type, int vertical, int textureColumn)
 	const FIXED yStep = TEXTURESTEP_LU[wallHeight];
 
 	// the actual wall
-	m4_textured_dual_line(TEXTURES, i, HALFSCREENPOINT - halfHeight, HALFSCREENPOINT + halfHeight, type, vertical, textureColumn, yStep);
+	m4_textured_dual_line(TEXTURES, i, HALFSCREENPOINT - halfHeight, HALFSCREENPOINT + halfHeight, type, vertical, textureColumn, yStep, TEXTURESIZE);
 	// floor
 	m4_dual_vline(i, HALFSCREENPOINT + halfHeight, SCREENHEIGHT, color);
 }
@@ -721,12 +722,12 @@ void drawEntities()
 
 						if (!hit)
 						{
-							m4_sprite_textured_dual_line(TEXTURES, 2 * stripe, drawStartY, drawEndY, texture, texX, yStep);
+							m4_sprite_textured_dual_line(TEXTURES, 2 * stripe, drawStartY, drawEndY, texture, texX, yStep, TEXTURESIZE);
 						}
 						else
 						{
 							int color = 11;
-							m4_sprite_color_textured_dual_line(TEXTURES, 2 * stripe, drawStartY, drawEndY, texture, texX, color, yStep);
+							m4_sprite_color_textured_dual_line(TEXTURES, 2 * stripe, drawStartY, drawEndY, texture, texX, color, yStep, TEXTURESIZE);
 						}
 					}
 				}
@@ -1240,6 +1241,9 @@ int main()
 		{
 			initLevel();
 		}
+		
+		drawFlatColorTexture(LETTERS, 3, 0, 0, 4, 4, 15, 1, LETTERSIZE);
+
 
 		vid_flip();
 
