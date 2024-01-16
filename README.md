@@ -1,6 +1,6 @@
 # gba-raycast-engine
 
-A work in progress raycasting engine for the Game Boy Advance. Written in C.
+A very much work in progress 3d raycast game for the Game Boy Advance. Written in C.
 
 ## Compiling
 
