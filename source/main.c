@@ -186,7 +186,6 @@ void drawHud()
 	{
 		m4_dual_vline(120 + 2 * i, 160 - HUDHEIGHT + 5, 160 - 5, 15);
 	}
-
 }
 
 inline float floatAbs(float a)
@@ -1241,9 +1240,9 @@ int main()
 		{
 			initLevel();
 		}
-		
-		drawFlatColorTexture(LETTERS, 3, 0, 0, 4, 4, 15, 1, LETTERSIZE);
 
+		// drawFlatColorTexture(LETTERS, 13, 0, 0, 8, 8, 15, 1, LETTERSIZE);
+		writeLine("123ABC", 6, 0,0,15);
 
 		vid_flip();
 
