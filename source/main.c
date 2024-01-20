@@ -2,8 +2,9 @@
 #include <tonc.h>
 // #include "textures.h"
 #include "structs.h"
-#include "dungeon.c"
+#include "dungeon.h"
 #include "render.h"
+#include "menu.h"
 
 #define TILESIZE 1
 #define FOV 60
@@ -44,12 +45,15 @@ FIXED zBuffer[SCREENWIDTH / 2] = {0};
 volatile unsigned short *palette = (volatile unsigned short *)0x5000000;
 int nextPaletteIndex = 0;
 
+/// @brief write a color value to next available slot in palette memory
+/// @param c Libtonc builtin 15 bit rgb color value
 void loadColorToPalette(COLOR c)
 {
 	palette[nextPaletteIndex] = c;
 	nextPaletteIndex++;
 }
 
+// load 8 shades of a color to palette
 void initShadeOfColor(float r, float g, float b)
 {
 	for (int i = 0; i < 8; i++)
@@ -58,6 +62,7 @@ void initShadeOfColor(float r, float g, float b)
 	}
 }
 
+/// @brief initialize all colors into palette memory
 void initPalette()
 {
 	initShadeOfColor(1, 1, 1);
@@ -79,6 +84,7 @@ void initPalette()
 	initShadeOfColor(1, 0.6, 0.3);
 }
 
+/// @brief initialize lookup table for direction vectors for camera
 void initCameraXLu()
 {
 	for (int i = 0; i < CASTEDRAYS; i++)
@@ -87,6 +93,7 @@ void initCameraXLu()
 	}
 }
 
+/// @brief initialize a lookup table for how wide each texture column is based on texture size
 void initTextureStepLu()
 {
 	for (int i = 0; i < SCREENHEIGHT; i++)
@@ -95,6 +102,9 @@ void initTextureStepLu()
 	}
 }
 
+/// @brief initialize "key" entity position, key is always first in entity array
+/// @param x tile position (0 to mapsize)
+/// @param y -||-
 void initKey(int x, int y)
 {
 	entities[0].active = true;
@@ -108,6 +118,10 @@ void initKey(int x, int y)
 	entities[0].hit = 0;
 }
 
+/// @brief initialize an enemy entity
+/// @param id position of the entity in entity array
+/// @param x tile position (0 to mapsize)
+/// @param y -||-
 void initEnemy(int id, int x, int y)
 {
 
@@ -129,9 +143,12 @@ void initEnemy(int id, int x, int y)
 	entities[id].hit = 0;
 }
 
+/// @brief initialize an item pickup
+/// @param id position in entity array
+/// @param x tile position (0 to mapsize)
+/// @param y
 void initPickup(int id, int x, int y)
 {
-
 	int pickupType = qran_range(0, 2);
 
 	if (pickupType == 0)
@@ -160,6 +177,7 @@ void initPickup(int id, int x, int y)
 	}
 }
 
+/// @brief initialize entity array with unused values
 void initEntities()
 {
 	for (int i = 0; i < MAXENTITYCOUNT; i++)
@@ -168,26 +186,23 @@ void initEntities()
 	}
 }
 
+/// @brief draw player hud and contents
 void drawHud()
 {
 	// background
-	for (int i = 0; i < CASTEDRAYS; i++)
-	{
-		m4_dual_vline(2 * i, 160 - HUDHEIGHT, 160, 29);
-	}
+	fillArea(0, 160 - HUDHEIGHT, 2 * CASTEDRAYS, 160, 29);
 	// key icon
 	if (player.hasKey)
 	{
 		drawFlat(TEXTURES, 2, 10, 160 - HUDHEIGHT - 10, 16, 16, 0, TEXTURESIZE);
-		// drawFlat(LETTERS, 1, 10, 160-HUDHEIGHT+5, 8, 16);
 	}
 	// health bar
-	for (int i = 0; i < player.hp / 3; i++)
-	{
-		m4_dual_vline(120 + 2 * i, 160 - HUDHEIGHT + 5, 160 - 5, 15);
-	}
+	fillArea(120, 160 - HUDHEIGHT + 5, 120 + player.hp / 2, 160 - 5, 15);
 }
 
+/// @brief floating point absolute value
+/// @param a source value
+/// @return absolute value of a
 inline float floatAbs(float a)
 {
 	if (a < 0.0)
@@ -200,6 +215,9 @@ inline float floatAbs(float a)
 	}
 }
 
+/// @brief libtonc builtin fixed point absolute value
+/// @param a source value
+/// @return absolute value
 inline static FIXED fixedAbs(FIXED a)
 {
 	if (a < 0)
@@ -212,6 +230,9 @@ inline static FIXED fixedAbs(FIXED a)
 	}
 }
 
+/// @brief integer absolute value
+/// @param a
+/// @return
 inline int intAbs(int a)
 {
 	if (a < 0)
@@ -223,7 +244,12 @@ inline int intAbs(int a)
 		return a;
 	}
 }
-
+/// @brief draw a single pixel column on screen, inc. roof, wall and floor
+/// @param i column (0-120)
+/// @param distance distance to the wall (determines wall height)
+/// @param type wall texture (indexed from 1)
+/// @param vertical true if wall is vertical in 2d map space
+/// @param textureColumn which column of the texture is to be read
 void drawWall(int i, FIXED distance, int type, int vertical, int textureColumn)
 {
 
@@ -244,6 +270,9 @@ void drawWall(int i, FIXED distance, int type, int vertical, int textureColumn)
 	m4_dual_vline(i, HALFSCREENPOINT + halfHeight, SCREENHEIGHT, color);
 }
 
+/// @brief cast a ray forward in 2d plane, and check if specified wall is hit
+/// @param targetType texture of target wall
+/// @return true, if specified target was hit
 int castRay(int targetType)
 {
 	const FIXED cameraX = CAMERAX_LU[CASTEDRAYS / 2]; // x-coordinate in camera space
@@ -348,11 +377,9 @@ int castRay(int targetType)
 	return fx2int(perpWallDistance);
 }
 
+/// @brief main raycast method. Loops through the columns of screen (120, when at half resolution)
 void castRays()
 {
-	// pi2 equivalent for calling lu_sin & cos
-	// must be scaled down to avoid overflow later
-
 	for (int i = 0; i < CASTEDRAYS; i++)
 	{
 
@@ -478,6 +505,7 @@ void castRays()
 	}
 }
 
+/// @brief create a new projectile entity with speed and direction
 void fire()
 {
 	for (int i = 0; i < MAXENTITYCOUNT; i++)
@@ -503,6 +531,10 @@ void fire()
 	}
 }
 
+/// @brief check if a point collides with a wall
+/// @param x fixed point position
+/// @param y fixed point position
+/// @return
 bool collisionCheck(FIXED x, FIXED y)
 {
 	if (MAP[fx2int(y) * MAPSIZE + fx2int(x)] != 0)
@@ -515,6 +547,7 @@ bool collisionCheck(FIXED x, FIXED y)
 	}
 }
 
+/// @brief move projectile and enemy entities
 void moveEntities()
 {
 	for (int i = 0; i < MAXENTITYCOUNT; i++)
@@ -566,6 +599,10 @@ void moveEntities()
 	}
 }
 
+/// @brief helper for quicksort
+/// @param v1
+/// @param v2
+/// @return
 int compareDistances(const void *v1, const void *v2)
 {
 	const struct Entity *u1 = v1;
@@ -573,7 +610,9 @@ int compareDistances(const void *v1, const void *v2)
 	return u1->distance < u2->distance;
 }
 
-// function to swap elements
+/// @brief helper for quicksort, swap places of two items
+/// @param a
+/// @param b
 void swap(int *a, int *b)
 {
 	int t = *a;
@@ -581,7 +620,11 @@ void swap(int *a, int *b)
 	*b = t;
 }
 
-// function to find the partition position
+/// @brief helper for quicksort
+/// @param array
+/// @param low
+/// @param high
+/// @return
 int partition(int array[], int low, int high)
 {
 
@@ -614,6 +657,10 @@ int partition(int array[], int low, int high)
 	return (i + 1);
 }
 
+/// @brief main quicksort function, used to order entities based on distance to player
+/// @param array
+/// @param low
+/// @param high
 void quickSort(int array[], int low, int high)
 {
 	if (low < high)
@@ -632,13 +679,13 @@ void quickSort(int array[], int low, int high)
 	}
 }
 
-// sort algorithm
-// sort the sprites based on distance
+/// @brief sort entities based on distance to player
 void sortEntities()
 {
 	quickSort(entityOrder, 0, MAXENTITYCOUNT - 1);
 }
 
+/// @brief draw all visible entities on screen, if not hidden by walls
 void drawEntities()
 {
 
@@ -741,11 +788,14 @@ void drawEntities()
 	}
 }
 
+/// @brief disables an entity from being drawn
+/// @param i entity array index
 void removeEntity(int i)
 {
 	entities[i].active = false;
 }
 
+/// @brief check for collisions between entities and each other &/or player
 void checkEntityCollisions()
 {
 	for (int i = 0; i < MAXENTITYCOUNT; i++)
@@ -864,6 +914,7 @@ void checkEntityCollisions()
 	}
 }
 
+/// @brief set player direction vectors based on player view angle
 void updateDirection()
 {
 
@@ -880,10 +931,10 @@ void updateDirection()
 
 	planeY = (fxdiv(fxmul(cosine, viewPlaneMultiplier), int2fx(16)));
 	planeX = (fxdiv(fxmul(sine, viewPlaneMultiplier), int2fx(16)));
-
-	// return planeX * 100.0;//(fxmul(dirX, int2fx(100)));
 }
 
+/// @brief move player while taking into account collision
+/// @param type direction index
 void move(int type)
 {
 	const FIXED SPEED = float2fx(0.1);
@@ -921,6 +972,10 @@ void move(int type)
 	}
 }
 
+/// @brief check if a tile value is 0 (open)
+/// @param x tile index
+/// @param y tile index
+/// @return true if tile is open, or out of bounds
 int openTile(int x, int y)
 {
 	if (x < 0 || x >= MAPSIZE)
@@ -941,9 +996,11 @@ int openTile(int x, int y)
 	}
 }
 
+/// @brief randomize order of an array in place 
+/// @param array array pointer
+/// @param size size of array
 void shuffleArray(int *array, int size)
 {
-	// array[size] = 15;
 	for (int i = 0; i < size; i++)
 	{
 		int j = qran_range(0, size);
@@ -953,12 +1010,14 @@ void shuffleArray(int *array, int size)
 	}
 }
 
+/// @brief set position of key entity in relation to the door "wall" in the map
+/// @param doorX door position in tile space (0 to mapsize)
+/// @param doorY 
 void setKeyPosition(int doorX, int doorY)
 {
 	int fractionOfMap = 1;
 	while (1)
 	{
-
 		// get all positions that are at least 1/3 MAPSIZE away from the door
 		int counter = 0;
 		int keyPositions[MAPSIZE * MAPSIZE] = {0};
@@ -996,6 +1055,13 @@ void setKeyPosition(int doorX, int doorY)
 	}
 }
 
+/// @brief check if at least one of the 4 adjacent tiles is open (val == 0),
+///			then return position to such open tile and direction away from the original tile
+/// @param oX position of the tile in tile space (0 to mapsize)
+/// @param oY position of the tile
+/// @param x saves result of the coordinate of the open position next to the specified tile
+/// @param y -||-
+/// @param direction direction that is away from the original tile
 void getOpenAdjacentTile(int oX, int oY, FIXED *x, FIXED *y, FIXED *direction)
 {
 
@@ -1025,6 +1091,7 @@ void getOpenAdjacentTile(int oX, int oY, FIXED *x, FIXED *y, FIXED *direction)
 	}
 }
 
+/// @brief take a map that only contains walls and open spaces and add items & door to that map
 void populateMap()
 {
 
@@ -1113,6 +1180,7 @@ void populateMap()
 	}
 }
 
+/// @brief generate a new level and reset player state
 void initLevel()
 {
 
@@ -1130,13 +1198,16 @@ void initLevel()
 
 	// player.direction = int2fx(0);//int2fx(45);
 
-	getDungeon(MAP, MAPSIZE, &player.x, &player.y);
+	getDungeon(MAP, mapSize, &player.x, &player.y);
 	initEntities();
 
 	populateMap();
 }
+
+/// @brief check if player is looking at anything special (walls)
 void castForward()
 {
+	//check if player has key and is looking at a wall
 	if (player.hasKey)
 	{
 		int distance = castRay(4);
@@ -1147,36 +1218,9 @@ void castForward()
 	}
 }
 
-int main()
+/// @brief main game logic
+void mainGameLoop()
 {
-	REG_DISPCNT = DCNT_MODE4 | DCNT_BG2;
-
-	sqran(1);
-
-	initCameraXLu();
-	initTextureStepLu();
-	initPalette();
-
-	initLevel();
-
-	/*
-	REG_DISPCNT = DCNT_MODE0 | DCNT_BG0 | DCNT_OBJ | DCNT_OBJ_1D;
-	updateDirection();
-
-	irq_init(NULL);
-	irq_enable(II_VBLANK);
-
-	tte_init_chr4c_default(0, BG_CBB(0) | BG_SBB(31));
-	tte_set_pos(92, 68);
-	castRays();
-
-
-	char str[8];
-	sprintf(str, "%d", test); //65536
-	tte_write(str);
-
-	*/
-
 	while (1)
 	{
 
@@ -1222,6 +1266,10 @@ int main()
 		{
 			fire();
 		}
+		if (key_hit(KEY_START))
+		{
+			break;
+		}
 
 		updateDirection();
 
@@ -1238,14 +1286,33 @@ int main()
 
 		if (player.hp <= 0)
 		{
-			initLevel();
+			break;
 		}
 
-		// drawFlatColorTexture(LETTERS, 13, 0, 0, 8, 8, 15, 1, LETTERSIZE);
-		writeLine("123ABC", 6, 0,0,15);
+		// writeLine("123ABC", 6, 0, 0, 15);
 
 		vid_flip();
-
 		// VBlankIntrWait();
+	}
+}
+
+int main()
+{
+	REG_DISPCNT = DCNT_MODE4 | DCNT_BG2;
+
+	sqran(1);
+	initCameraXLu();
+	initTextureStepLu();
+	initPalette();
+	renderStart();
+
+	while (1)
+	{
+
+		renderMenu();
+
+		initLevel();
+
+		mainGameLoop();
 	}
 }

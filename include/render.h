@@ -1,17 +1,29 @@
 #include <tonc.h>
 #include "textures.h"
 
+#ifndef RENDER_H
+#define RENDER_H
+
 #define SCREENHEIGHT 135
 #define SCREENWIDTH 240
 
 FIXED CAMERAX_LU[SCREENWIDTH / 2] = {0};
 FIXED TEXTURESTEP_LU[SCREENHEIGHT] = {0};
 
+/// @brief write a pixel value to video memory (2 pixels due to mode4)
+/// @param x x coordinate of the leftmost pixel on screen
+/// @param y y coordinate on screen
+/// @param clrid color palette index
 INLINE void m4_dual_plot(int x, int y, u8 clrid)
 {
 	vid_page[(y * M4_WIDTH + x) >> 1] = (clrid << 8) | clrid;
 }
 
+/// @brief draw a vertical line on screen (2 columns wide)
+/// @param x screen column
+/// @param y1 start
+/// @param y2 end (inclusive)
+/// @param clrid color palette index
 INLINE void m4_dual_vline(int x, int y1, int y2, u8 clrid)
 {
 	for (int i = y1; i <= y2; i++)
@@ -113,3 +125,12 @@ void writeLine(char *content, char length, int x, int y, int color)
 		writeLetter(content + i, x + 9 * i, y, color);
 	}
 }
+
+void fillArea(int x0, int y0, int x1, int y1, char color) {
+	for (int x = x0; x <= x1; x++)
+	{
+		m4_dual_vline(x, y0, y1, color);
+	}
+}
+
+#endif // RENDER_H
