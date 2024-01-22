@@ -13,6 +13,7 @@
 const float PI = 3.1415;
 
 EWRAM_DATA char MAP[MAPSIZE * MAPSIZE] = {0};
+
 /*
 		1, 1, 1, 1, 1, 1, 1, 1,
 		1, 0, 0, 0, 0, 0, 0, 1,
@@ -788,11 +789,60 @@ void drawEntities()
 	}
 }
 
+/// @brief randomize order of an array in place
+/// @param array array pointer
+/// @param size size of array
+void shuffleArray(int *array, int size)
+{
+	for (int i = 0; i < size; i++)
+	{
+		int j = qran_range(0, size);
+		int temp = array[i];
+		array[i] = array[j];
+		array[j] = temp;
+	}
+}
+
+int simpleDistance(int x1, int y1, int x2, int y2)
+{
+	return intAbs(x2 - x1) + intAbs(y2 - y1);
+}
+
 /// @brief disables an entity from being drawn
 /// @param i entity array index
 void removeEntity(int i)
 {
 	entities[i].active = false;
+
+	if (entities[i].type != 3)
+	{
+		return;
+	}
+
+	int free[MAPSIZE * MAPSIZE] = {0};
+	int counter = 0;
+	int playerX = fx2int(player.x);
+	int playerY = fx2int(player.y);
+
+	for (int y = 0; y < MAPSIZE; y++)
+	{
+		for (int x = 0; x < MAPSIZE; x++)
+			if (MAP[y * MAPSIZE + x] == 0)
+			{
+				int distance = simpleDistance(x, y, playerX, playerY);
+				if (distance > 5 && distance < 8)
+				{
+					free[counter] = y * MAPSIZE + x;
+					counter++;
+				}
+			}
+	}
+
+	shuffleArray(free, counter);
+	int x = free[0] % MAPSIZE;
+	int y = free[0] / MAPSIZE;
+
+	initEnemy(i, x, y);
 }
 
 /// @brief check for collisions between entities and each other &/or player
@@ -996,23 +1046,9 @@ int openTile(int x, int y)
 	}
 }
 
-/// @brief randomize order of an array in place 
-/// @param array array pointer
-/// @param size size of array
-void shuffleArray(int *array, int size)
-{
-	for (int i = 0; i < size; i++)
-	{
-		int j = qran_range(0, size);
-		int temp = array[i];
-		array[i] = array[j];
-		array[j] = temp;
-	}
-}
-
 /// @brief set position of key entity in relation to the door "wall" in the map
 /// @param doorX door position in tile space (0 to mapsize)
-/// @param doorY 
+/// @param doorY
 void setKeyPosition(int doorX, int doorY)
 {
 	int fractionOfMap = 1;
@@ -1207,7 +1243,7 @@ void initLevel()
 /// @brief check if player is looking at anything special (walls)
 void castForward()
 {
-	//check if player has key and is looking at a wall
+	// check if player has key and is looking at a wall
 	if (player.hasKey)
 	{
 		int distance = castRay(4);
@@ -1304,12 +1340,14 @@ int main()
 	initCameraXLu();
 	initTextureStepLu();
 	initPalette();
-	renderStart();
+	// renderStart();
+
+	mapSize = 10;
 
 	while (1)
 	{
 
-		renderMenu();
+		// renderMenu();
 
 		initLevel();
 
