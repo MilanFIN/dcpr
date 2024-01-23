@@ -46,6 +46,12 @@ FIXED zBuffer[SCREENWIDTH / 2] = {0};
 volatile unsigned short *palette = (volatile unsigned short *)0x5000000;
 int nextPaletteIndex = 0;
 
+int utilityCounter = 0;
+const int UTILITYRESET = 10;
+
+const int goalEnemyCount = 3;
+const int pruneEnemyDistance = 8;
+
 /// @brief write a color value to next available slot in palette memory
 /// @param c Libtonc builtin 15 bit rgb color value
 void loadColorToPalette(COLOR c)
@@ -813,36 +819,68 @@ int simpleDistance(int x1, int y1, int x2, int y2)
 void removeEntity(int i)
 {
 	entities[i].active = false;
+}
 
-	if (entities[i].type != 3)
+void refillEnemies()
+{
+
+	int count = 0;
+	int firstFreeSlot = -1;
+	for (int i = 0; i < MAXENTITYCOUNT; i++)
 	{
-		return;
+		if (entities[i].active && entities[i].type == 3)
+		{
+			count++;
+		}
+		if (firstFreeSlot < 0 && !entities[i].active)
+		{
+			firstFreeSlot = i;
+		}
 	}
 
-	int free[MAPSIZE * MAPSIZE] = {0};
-	int counter = 0;
-	int playerX = fx2int(player.x);
-	int playerY = fx2int(player.y);
-
-	for (int y = 0; y < MAPSIZE; y++)
+	if (firstFreeSlot >= 0 && count < goalEnemyCount)
 	{
-		for (int x = 0; x < MAPSIZE; x++)
-			if (MAP[y * MAPSIZE + x] == 0)
+		int free[MAPSIZE * MAPSIZE] = {0};
+		int counter = 0;
+		int playerX = fx2int(player.x);
+		int playerY = fx2int(player.y);
+
+		for (int y = 0; y < MAPSIZE; y++)
+		{
+			for (int x = 0; x < MAPSIZE; x++)
 			{
-				int distance = simpleDistance(x, y, playerX, playerY);
-				if (distance > 5 && distance < 8)
+				if (MAP[y * MAPSIZE + x] == 0)
 				{
-					free[counter] = y * MAPSIZE + x;
-					counter++;
+					int distance = simpleDistance(x, y, playerX, playerY);
+					if (distance > 5 && distance < 8)
+					{
+						free[counter] = y * MAPSIZE + x;
+						counter++;
+					}
 				}
 			}
+		}
+
+		shuffleArray(free, counter);
+		int x = free[0] % MAPSIZE;
+		int y = free[0] / MAPSIZE;
+
+		initEnemy(firstFreeSlot, x, y);
 	}
+}
 
-	shuffleArray(free, counter);
-	int x = free[0] % MAPSIZE;
-	int y = free[0] / MAPSIZE;
-
-	initEnemy(i, x, y);
+void pruneFarAwayEnemies()
+{
+	for (int i = 0; i < MAXENTITYCOUNT; i++)
+	{
+		if (entities[i].type == 3)
+		{
+			int distance = simpleDistance(fx2int(entities[i].x), fx2int(entities[i].y), fx2int(player.x), fx2int(player.y));
+			if (distance >= pruneEnemyDistance) {
+				removeEntity(i);
+			}
+		}
+	}
 }
 
 /// @brief check for collisions between entities and each other &/or player
@@ -1323,6 +1361,20 @@ void mainGameLoop()
 		if (player.hp <= 0)
 		{
 			break;
+		}
+
+		if (utilityCounter == 0)
+		{
+			pruneFarAwayEnemies();
+		}
+		if (utilityCounter == 5)
+		{
+			refillEnemies();
+		}
+		utilityCounter--;
+		if (utilityCounter < 0)
+		{
+			utilityCounter = UTILITYRESET;
 		}
 
 		// writeLine("123ABC", 6, 0, 0, 15);
