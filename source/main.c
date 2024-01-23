@@ -873,7 +873,7 @@ void pruneFarAwayEnemies()
 {
 	for (int i = 0; i < MAXENTITYCOUNT; i++)
 	{
-		if (entities[i].type == 3)
+		if (entities[i].active && entities[i].type == 3)
 		{
 			int distance = simpleDistance(fx2int(entities[i].x), fx2int(entities[i].y), fx2int(player.x), fx2int(player.y));
 			if (distance >= pruneEnemyDistance) {
