@@ -5,6 +5,7 @@
 #include "dungeon.h"
 #include "render.h"
 #include "menu.h"
+#include "utils.h"
 
 #define TILESIZE 1
 #define FOV 60
@@ -51,6 +52,11 @@ const int UTILITYRESET = 10;
 
 const int goalEnemyCount = 3;
 const int pruneEnemyDistance = 8;
+
+char notification[4] = "ABCD";
+size_t notificationLength = 4;
+int notificationCounter = 0;
+const int notificationDuration = 20;
 
 /// @brief write a color value to next available slot in palette memory
 /// @param c Libtonc builtin 15 bit rgb color value
@@ -168,7 +174,11 @@ void initPickup(int id, int x, int y)
 		entities[id].scale = 128;
 		entities[id].moving = false;
 		entities[id].yOffset = 128;
-		entities[0].hit = 0;
+		entities[id].hit = 0;
+		entities[id].damage = 50;
+		copyText(entities[id].notification, "HP:", 3);
+		entities[id].notificationLength = 3;
+
 	}
 	else if (pickupType == 1)
 	{ // gun level up
@@ -180,7 +190,10 @@ void initPickup(int id, int x, int y)
 		entities[id].scale = 128;
 		entities[id].moving = false;
 		entities[id].yOffset = 128;
-		entities[0].hit = 0;
+		entities[id].hit = 0;
+		//entities[id].notification[0] = 'W';
+		copyText(entities[id].notification, "WEPN", 4);
+		entities[id].notificationLength = 4;
 	}
 }
 
@@ -207,50 +220,7 @@ void drawHud()
 	fillArea(120, 160 - HUDHEIGHT + 5, 120 + player.hp / 2, 160 - 5, 15);
 }
 
-/// @brief floating point absolute value
-/// @param a source value
-/// @return absolute value of a
-inline float floatAbs(float a)
-{
-	if (a < 0.0)
-	{
-		return -a;
-	}
-	else
-	{
-		return a;
-	}
-}
 
-/// @brief libtonc builtin fixed point absolute value
-/// @param a source value
-/// @return absolute value
-inline static FIXED fixedAbs(FIXED a)
-{
-	if (a < 0)
-	{
-		return fxsub(int2fx(0), a);
-	}
-	else
-	{
-		return a;
-	}
-}
-
-/// @brief integer absolute value
-/// @param a
-/// @return
-inline int intAbs(int a)
-{
-	if (a < 0)
-	{
-		return -a;
-	}
-	else
-	{
-		return a;
-	}
-}
 /// @brief draw a single pixel column on screen, inc. roof, wall and floor
 /// @param i column (0-120)
 /// @param distance distance to the wall (determines wall height)
@@ -876,11 +846,18 @@ void pruneFarAwayEnemies()
 		if (entities[i].active && entities[i].type == 3)
 		{
 			int distance = simpleDistance(fx2int(entities[i].x), fx2int(entities[i].y), fx2int(player.x), fx2int(player.y));
-			if (distance >= pruneEnemyDistance) {
+			if (distance >= pruneEnemyDistance)
+			{
 				removeEntity(i);
 			}
 		}
 	}
+}
+
+void setNotification(int i) {
+	notificationCounter = notificationDuration;
+	notificationLength = entities[i].notificationLength;
+	copyText(notification, entities[i].notification, entities[i].notificationLength);
 }
 
 /// @brief check for collisions between entities and each other &/or player
@@ -980,6 +957,7 @@ void checkEntityCollisions()
 					{
 						player.hp = player.maxHp;
 					}
+					setNotification(i);
 					removeEntity(i);
 					updateHud = 2;
 				}
@@ -994,6 +972,7 @@ void checkEntityCollisions()
 				if (player.gunLevel < player.maxGunLevel)
 				{
 					player.gunLevel++;
+					setNotification(i);
 					removeEntity(i);
 					updateHud = 2;
 				}
@@ -1376,8 +1355,11 @@ void mainGameLoop()
 		{
 			utilityCounter = UTILITYRESET;
 		}
-
-		// writeLine("123ABC", 6, 0, 0, 15);
+		if (notificationCounter > 0)
+		{
+			writeLine(notification, notificationLength, 118 - 9*notificationLength, 0, 15);
+			notificationCounter--;
+		}
 
 		vid_flip();
 		// VBlankIntrWait();

@@ -1,3 +1,6 @@
+#ifndef STRUCTS_H
+#define STRUCTS_H
+
 struct Entity
 {
 	bool active;
@@ -15,10 +18,12 @@ struct Entity
 	char attackDelay;
 	char attackFrequency;
 	// amount of damage dealth or healed
-	char damage;
+	int damage;
 	char level;
 	int hp;
 	char hit; // set to 1, when should show hit frame
+	char notification[4];
+	size_t notificationLength;
 };
 
 struct Player
@@ -33,3 +38,5 @@ struct Player
 	char maxGunLevel;
 	char damage;
 };
+
+#endif // STRUCTS_H
