@@ -32,7 +32,8 @@ const int HALFFOV = FOV / 2;
 const FIXED FIXEDTILESIZE = TILESIZE * 256; // equal to int2fx(TILESIZE);
 const int HALFSCREENPOINT = SCREENHEIGHT / 2;
 const int HUDHEIGHT = 160 - SCREENHEIGHT;
-const int PROJECTILETEXTURES[3] = {5, 8, 9};
+
+const int PROJECTILETEXTURES[3] = {6, 9, 10};
 
 FIXED dirX, dirY;
 FIXED planeX, planeY;
@@ -123,7 +124,7 @@ void initKey(int x, int y)
 	entities[0].active = true;
 	entities[0].x = int2fx(x) + 128;
 	entities[0].y = int2fx(y) + 128;
-	entities[0].texture = 2;
+	entities[0].texture = 3;
 	entities[0].type = 1;
 	entities[0].scale = 128;
 	entities[0].moving = false;
@@ -143,7 +144,7 @@ void initEnemy(int id, int x, int y)
 	entities[id].active = true;
 	entities[id].x = int2fx(x) + 128;
 	entities[id].y = int2fx(y) + 128;
-	entities[id].texture = 6;
+	entities[id].texture = 7;
 	entities[id].type = 3;
 	entities[id].scale = 92 + (level * 32);
 	entities[id].moving = true;
@@ -169,7 +170,7 @@ void initPickup(int id, int x, int y)
 		entities[id].active = true;
 		entities[id].x = int2fx(x) + 128;
 		entities[id].y = int2fx(y) + 128;
-		entities[id].texture = 7;
+		entities[id].texture = 8;
 		entities[id].type = 4;
 		entities[id].scale = 128;
 		entities[id].moving = false;
@@ -185,7 +186,7 @@ void initPickup(int id, int x, int y)
 		entities[id].active = true;
 		entities[id].x = int2fx(x) + 128;
 		entities[id].y = int2fx(y) + 128;
-		entities[id].texture = 10;
+		entities[id].texture = 11;
 		entities[id].type = 5;
 		entities[id].scale = 128;
 		entities[id].moving = false;
@@ -214,7 +215,7 @@ void drawHud()
 	// key icon
 	if (player.hasKey)
 	{
-		drawFlat(TEXTURES, 2, 10, 160 - HUDHEIGHT - 10, 16, 16, 0, TEXTURESIZE);
+		drawFlat(TEXTURES, 3, 10, 160 - HUDHEIGHT - 10, 16, 16, 0, TEXTURESIZE);
 	}
 	// health bar
 	fillArea(120, 160 - HUDHEIGHT + 5, 120 + player.hp / 2, 160 - 5, 15);
@@ -238,7 +239,7 @@ void drawWall(int i, FIXED distance, int type, int vertical, int textureColumn)
 	// roof
 	m4_dual_vline(i, 0, HALFSCREENPOINT - halfHeight, color);
 
-	color = 4;
+	color = 131;//59;//4;
 	const FIXED yStep = TEXTURESTEP_LU[wallHeight];
 
 	// the actual wall
@@ -687,6 +688,9 @@ void drawEntities()
 		{
 			continue;
 		}
+		if (entities[entityOrder[i]].type == 1 && entities[entityOrder[i]].distance < 150) {
+			continue;
+		}
 		FIXED entityX = fxsub(entities[entityOrder[i]].x, player.x);
 		FIXED entityY = fxsub(entities[entityOrder[i]].y, player.y);
 
@@ -874,7 +878,7 @@ void checkEntityCollisions()
 		// check if a key is near a player
 		if (type == 1)
 		{
-			if (entities[i].distance < 64)
+			if (entities[i].distance < 150)
 			{
 				removeEntity(i);
 				player.hasKey = true;
@@ -1171,7 +1175,7 @@ void populateMap()
 
 	int doorPosition = qran_range(0, counter);
 	// set to door sprite
-	MAP[doorCandidates[doorPosition]] = 4;
+	MAP[doorCandidates[doorPosition]] = 5;
 
 	int doorX = doorCandidates[doorPosition] % MAPSIZE;
 	int doorY = doorCandidates[doorPosition] / MAPSIZE;

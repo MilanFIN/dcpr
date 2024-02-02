@@ -239,7 +239,11 @@ void getDungeon(char *map, int mapsize, FIXED *playerX, FIXED *playerY)
 	{
 		for (int x = 0; x < MAPSIZE; x++)
 		{
-			map[MAPSIZE * y + x] = 1;
+			char wallVal = 1;
+			if (qran_range(0, 15) < 2) {
+				wallVal = 2;
+			}
+			map[MAPSIZE * y + x] = wallVal;
 		}
 	}
 
