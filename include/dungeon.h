@@ -3,13 +3,13 @@
 #ifndef DUNGEON_H
 #define DUNGEON_H
 
-#define MAPSIZE 30
+#define MAPSIZE 50
+#define MAXITERATIONS 500
 
 static int PAIRID = 0;
 static int ID = 0;
-static int MAXITERATIONS = 200;
-static int MINROOMSIZE = 5;
-static int MAXDEPTH = 15;
+static int MINROOMSIZE = 3;
+static int MAXDEPTH = 25;
 
 int mapSize = MAPSIZE;
 
@@ -23,6 +23,9 @@ struct Leaf
 	int pairId;
 	int id;
 };
+
+EWRAM_DATA struct Leaf finalLeaves[MAXITERATIONS] = {};
+EWRAM_DATA struct Leaf pairTree[MAXITERATIONS] = {};
 
 void divide(struct Leaf *leaves, struct Leaf *leaf, int horizontal)
 {
@@ -219,11 +222,8 @@ void getDungeon(char *map, int mapsize, FIXED *playerX, FIXED *playerY)
 
 	rootLeaf.x = 1;
 	rootLeaf.y = 1;
-	rootLeaf.xend = mapsize - 1;
-	rootLeaf.yend = mapsize - 1;
-
-	struct Leaf finalLeaves[MAXITERATIONS];
-	struct Leaf pairTree[MAXITERATIONS];
+	rootLeaf.xend = mapsize - 2;
+	rootLeaf.yend = mapsize - 2;
 
 	// initialize the array of leaves that are unused
 	for (int i = 0; i < MAXITERATIONS; i++)
@@ -240,7 +240,8 @@ void getDungeon(char *map, int mapsize, FIXED *playerX, FIXED *playerY)
 		for (int x = 0; x < MAPSIZE; x++)
 		{
 			char wallVal = 1;
-			if (qran_range(0, 15) < 2) {
+			if (qran_range(0, 15) < 2)
+			{
 				wallVal = 2;
 			}
 			map[MAPSIZE * y + x] = wallVal;
@@ -283,22 +284,6 @@ void getDungeon(char *map, int mapsize, FIXED *playerX, FIXED *playerY)
 			}
 		}
 	}
-
-	// no longer needed, as player is placed relative to the door
-
-	for (int x = 0; x < MAPSIZE; x++)
-	{
-		for (int y = 0; y < MAPSIZE; y++)
-		{
-			if (map[MAPSIZE * y + x] == 0)
-			{
-				*playerX = int2fx(x) + 128;
-				*playerY = int2fx(y) + 128;
-				return;
-			}
-		}
-	}
 }
-
 
 #endif // DUNGEON_H

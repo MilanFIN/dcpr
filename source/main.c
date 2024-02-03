@@ -26,6 +26,7 @@ EWRAM_DATA char MAP[MAPSIZE * MAPSIZE] = {0};
 		1, 1, 1, 1, 4, 1, 1, 1
 	};
 	*/
+EWRAM_DATA int UTILITYMAPDATA[MAPSIZE * MAPSIZE] = {0};
 
 const int CASTEDRAYS = SCREENWIDTH / 2;
 const int HALFFOV = FOV / 2;
@@ -97,7 +98,6 @@ void initPalette()
 	initShadeOfColor(0.5, 0.5, 1);
 	initShadeOfColor(1, 0.6, 0.3);
 	initShadeOfColor(0.7, 0.7, 1);
-
 }
 
 /// @brief initialize lookup table for direction vectors for camera
@@ -183,7 +183,6 @@ void initPickup(int id, int x, int y)
 		entities[id].damage = 50;
 		copyText(entities[id].notification, "HP:", 3);
 		entities[id].notificationLength = 3;
-
 	}
 	else if (pickupType == 1)
 	{ // gun level up
@@ -196,7 +195,7 @@ void initPickup(int id, int x, int y)
 		entities[id].moving = false;
 		entities[id].yOffset = 128;
 		entities[id].hit = 0;
-		//entities[id].notification[0] = 'W';
+		// entities[id].notification[0] = 'W';
 		copyText(entities[id].notification, "WEPN", 4);
 		entities[id].notificationLength = 4;
 	}
@@ -225,7 +224,6 @@ void drawHud()
 	fillArea(120, 160 - HUDHEIGHT + 5, 120 + player.hp / 2, 160 - 5, 15);
 }
 
-
 /// @brief draw a single pixel column on screen, inc. roof, wall and floor
 /// @param i column (0-120)
 /// @param distance distance to the wall (determines wall height)
@@ -243,13 +241,23 @@ void drawWall(int i, FIXED distance, int type, int vertical, int textureColumn)
 	// roof
 	m4_dual_vline(i, 0, HALFSCREENPOINT - halfHeight, color);
 
-	color = 131;//59;//4;
+	color = 131; // 59;//4;
 	const FIXED yStep = TEXTURESTEP_LU[wallHeight];
 
 	// the actual wall
 	m4_textured_dual_line(TEXTURES, i, HALFSCREENPOINT - halfHeight, HALFSCREENPOINT + halfHeight, type, vertical, textureColumn, yStep, TEXTURESIZE);
 	// floor
 	m4_dual_vline(i, HALFSCREENPOINT + halfHeight, SCREENHEIGHT, color);
+}
+
+void drawWithoutWall(int i)
+{
+	int color = 1;
+	// roof
+	m4_dual_vline(i, 0, HALFSCREENPOINT, color);
+	color = 131; // 59;//4;
+	// floor
+	m4_dual_vline(i, HALFSCREENPOINT, SCREENHEIGHT, color);
 }
 
 /// @brief cast a ray forward in 2d plane, and check if specified wall is hit
@@ -482,7 +490,7 @@ void castRays()
 		}
 		else
 		{
-			m4_dual_vline(2 * i, 0, 160, 0);
+			drawWithoutWall(2 * i);
 		}
 	}
 }
@@ -692,7 +700,8 @@ void drawEntities()
 		{
 			continue;
 		}
-		if (entities[entityOrder[i]].type == 1 && entities[entityOrder[i]].distance < 150) {
+		if (entities[entityOrder[i]].type == 1 && entities[entityOrder[i]].distance < 150)
+		{
 			continue;
 		}
 		FIXED entityX = fxsub(entities[entityOrder[i]].x, player.x);
@@ -818,7 +827,6 @@ void refillEnemies()
 
 	if (firstFreeSlot >= 0 && count < goalEnemyCount)
 	{
-		int free[MAPSIZE * MAPSIZE] = {0};
 		int counter = 0;
 		int playerX = fx2int(player.x);
 		int playerY = fx2int(player.y);
@@ -832,16 +840,18 @@ void refillEnemies()
 					int distance = simpleDistance(x, y, playerX, playerY);
 					if (distance > 5 && distance < 8)
 					{
-						free[counter] = y * MAPSIZE + x;
+						UTILITYMAPDATA[counter] = y * MAPSIZE + x;
 						counter++;
 					}
 				}
 			}
 		}
 
-		shuffleArray(free, counter);
-		int x = free[0] % MAPSIZE;
-		int y = free[0] / MAPSIZE;
+		// shuffleArray(UTILITYMAPDATA, counter);
+		// TODO CONTINUE
+		int position = qran_range(0, counter);
+		int x = UTILITYMAPDATA[position] % MAPSIZE;
+		int y = UTILITYMAPDATA[position] / MAPSIZE;
 
 		initEnemy(firstFreeSlot, x, y);
 	}
@@ -862,7 +872,8 @@ void pruneFarAwayEnemies()
 	}
 }
 
-void setNotification(int i) {
+void setNotification(int i)
+{
 	notificationCounter = notificationDuration;
 	notificationLength = entities[i].notificationLength;
 	copyText(notification, entities[i].notification, entities[i].notificationLength);
@@ -1013,7 +1024,7 @@ void updateDirection()
 /// @param type direction index
 void move(int type)
 {
-	const FIXED SPEED = float2fx(0.1);
+	const FIXED SPEED = player.speed;
 	FIXED moveX = 0;
 	FIXED moveY = 0;
 
@@ -1082,7 +1093,6 @@ void setKeyPosition(int doorX, int doorY)
 	{
 		// get all positions that are at least 1/3 MAPSIZE away from the door
 		int counter = 0;
-		int keyPositions[MAPSIZE * MAPSIZE] = {0};
 		for (int y = 0; y < MAPSIZE; y++)
 		{
 			for (int x = 0; x < MAPSIZE; x++)
@@ -1091,7 +1101,7 @@ void setKeyPosition(int doorX, int doorY)
 				{
 					if (intAbs(x - doorX) + intAbs(y - doorY) > MAPSIZE / fractionOfMap)
 					{
-						keyPositions[counter] = MAPSIZE * y + x;
+						UTILITYMAPDATA[counter] = MAPSIZE * y + x;
 						counter++;
 					}
 				}
@@ -1100,11 +1110,11 @@ void setKeyPosition(int doorX, int doorY)
 
 		if (counter != 0)
 		{
-			shuffleArray(keyPositions, counter);
+			shuffleArray(UTILITYMAPDATA, counter);
 			counter--;
 
-			int keyY = keyPositions[counter] / MAPSIZE;
-			int keyX = keyPositions[counter] % MAPSIZE;
+			int keyY = UTILITYMAPDATA[counter] / MAPSIZE;
+			int keyX = UTILITYMAPDATA[counter] % MAPSIZE;
 
 			initKey(keyX, keyY);
 
@@ -1158,7 +1168,7 @@ void populateMap()
 {
 
 	// figure out a position for the door
-	int doorCandidates[MAPSIZE * MAPSIZE] = {0};
+	int UTILITYMAPDATA[MAPSIZE * MAPSIZE] = {0};
 
 	int counter = 0;
 	for (int y = 0; y < MAPSIZE; y++)
@@ -1171,7 +1181,7 @@ void populateMap()
 			{
 				if (openTile(x + 1, y) + openTile(x - 1, y) + openTile(x, y + 1) + openTile(x, y - 1) == 1)
 				{
-					doorCandidates[counter] = MAPSIZE * y + x;
+					UTILITYMAPDATA[counter] = MAPSIZE * y + x;
 					counter++;
 				}
 			}
@@ -1180,10 +1190,10 @@ void populateMap()
 
 	int doorPosition = qran_range(0, counter);
 	// set to door sprite
-	MAP[doorCandidates[doorPosition]] = 5;
+	MAP[UTILITYMAPDATA[doorPosition]] = 5;
 
-	int doorX = doorCandidates[doorPosition] % MAPSIZE;
-	int doorY = doorCandidates[doorPosition] / MAPSIZE;
+	int doorX = UTILITYMAPDATA[doorPosition] % MAPSIZE;
+	int doorY = UTILITYMAPDATA[doorPosition] / MAPSIZE;
 
 	// set player position to the free tile next to the door
 	getOpenAdjacentTile(doorX, doorY, &player.x, &player.y, &player.direction);
@@ -1193,7 +1203,6 @@ void populateMap()
 
 	// get all open positions on map for spawning other stuff
 	counter = 0;
-	int openSpaces[MAPSIZE * MAPSIZE] = {0};
 	int playerPosition = MAPSIZE * fx2int(player.y) + fx2int(player.x);
 	for (int y = 0; y < MAPSIZE; y++)
 	{
@@ -1203,14 +1212,14 @@ void populateMap()
 			{
 				if (!MAP[MAPSIZE * y + x] && MAPSIZE * y + x != playerPosition)
 				{
-					openSpaces[counter] = MAPSIZE * y + x;
+					UTILITYMAPDATA[counter] = MAPSIZE * y + x;
 					counter++;
 				}
 			}
 		}
 	}
 
-	shuffleArray(openSpaces, counter);
+	shuffleArray(UTILITYMAPDATA, counter);
 	counter--;
 
 	// spawn a bunch of enemies
@@ -1223,8 +1232,8 @@ void populateMap()
 		{
 			break;
 		}
-		int enemyX = openSpaces[counter] % MAPSIZE;
-		int enemyY = openSpaces[counter] / MAPSIZE;
+		int enemyX = UTILITYMAPDATA[counter] % MAPSIZE;
+		int enemyY = UTILITYMAPDATA[counter] / MAPSIZE;
 		initEnemy(i + 1, enemyX, enemyY);
 	}
 
@@ -1236,8 +1245,8 @@ void populateMap()
 		{
 			break;
 		}
-		int x = openSpaces[counter] / MAPSIZE;
-		int y = openSpaces[counter] % MAPSIZE;
+		int x = UTILITYMAPDATA[counter] / MAPSIZE;
+		int y = UTILITYMAPDATA[counter] % MAPSIZE;
 		initPickup(j + 1, x, y);
 	}
 }
@@ -1248,6 +1257,7 @@ void initLevel()
 
 	player.hp = 100;
 	player.maxHp = 100;
+	player.speed = float2fx(0.15);
 	player.hasKey = false;
 	player.gunLevel = 1;
 	player.maxGunLevel = 3;
@@ -1330,7 +1340,16 @@ void mainGameLoop()
 		}
 		if (key_hit(KEY_START))
 		{
-			break;
+			castRays();
+			drawEntities();
+			vid_flip();
+			castRays();
+			drawEntities();
+			vid_flip();
+
+			renderPauseMenu(MAP, fx2int(player.x), fx2int(player.y));
+
+			updateHud = 2;
 		}
 
 		updateDirection();
@@ -1366,7 +1385,7 @@ void mainGameLoop()
 		}
 		if (notificationCounter > 0)
 		{
-			writeLine(notification, notificationLength, 118 - 9*notificationLength, 0, 15);
+			writeLine(notification, notificationLength, 118 - 9 * notificationLength, 0, 15);
 			notificationCounter--;
 		}
 
@@ -1385,7 +1404,7 @@ int main()
 	initPalette();
 	// renderStart();
 
-	mapSize = 10;
+	mapSize = 50; // 60 or 70 highest tested
 
 	while (1)
 	{

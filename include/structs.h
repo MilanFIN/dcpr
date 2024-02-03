@@ -37,6 +37,7 @@ struct Player
 	char gunLevel;
 	char maxGunLevel;
 	char damage;
+	FIXED speed;
 };
 
 #endif // STRUCTS_H

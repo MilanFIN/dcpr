@@ -126,7 +126,8 @@ void writeLine(char *content, char length, int x, int y, int color)
 	}
 }
 
-void fillArea(int x0, int y0, int x1, int y1, char color) {
+void fillArea(int x0, int y0, int x1, int y1, char color)
+{
 	for (int x = x0; x <= x1; x++)
 	{
 		m4_dual_vline(x, y0, y1, color);
