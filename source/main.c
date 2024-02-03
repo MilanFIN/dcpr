@@ -96,6 +96,8 @@ void initPalette()
 	initShadeOfColor(0.5, 1, 0.5);
 	initShadeOfColor(0.5, 0.5, 1);
 	initShadeOfColor(1, 0.6, 0.3);
+	initShadeOfColor(0.7, 0.7, 1);
+
 }
 
 /// @brief initialize lookup table for direction vectors for camera
@@ -130,6 +132,8 @@ void initKey(int x, int y)
 	entities[0].moving = false;
 	entities[0].yOffset = 128;
 	entities[0].hit = 0;
+	copyText(entities[0].notification, "KEY", 3);
+	entities[0].notificationLength = 3;
 }
 
 /// @brief initialize an enemy entity
@@ -498,7 +502,7 @@ void fire()
 		entities[i].texture = PROJECTILETEXTURES[player.gunLevel - 1];
 		entities[i].type = 2;
 		entities[i].active = true;
-		entities[i].scale = 128;
+		entities[i].scale = 64;
 		entities[i].xDir = dirX;
 		entities[i].yDir = dirY;
 		entities[i].moving = true;
@@ -880,6 +884,7 @@ void checkEntityCollisions()
 		{
 			if (entities[i].distance < 150)
 			{
+				setNotification(i);
 				removeEntity(i);
 				player.hasKey = true;
 				updateHud = 2;
@@ -1264,10 +1269,10 @@ void initLevel()
 /// @brief check if player is looking at anything special (walls)
 void castForward()
 {
-	// check if player has key and is looking at a wall
+	// check if player has key and is looking at a door
 	if (player.hasKey)
 	{
-		int distance = castRay(4);
+		int distance = castRay(5);
 		if (distance >= 0 && distance < 2)
 		{
 			initLevel();
