@@ -5,6 +5,8 @@
 #ifndef MENU_H
 #define MENU_H
 
+#define MINIMAPVISIBLERADIUS 3
+
 /// @brief render "press start" screen and initialize random number generator based on user input
 void renderStart()
 {
@@ -62,7 +64,20 @@ void renderMenu()
 	mapSize = 10 + size * 10;
 }
 
-void renderPauseMenu(char *map, int playerX, int playerY)
+bool checkAround(char* map, int x, int y) {
+	for (int i = x - MINIMAPVISIBLERADIUS; i < x+MINIMAPVISIBLERADIUS+1; i++) {
+		for (int j = y - MINIMAPVISIBLERADIUS; j < y+MINIMAPVISIBLERADIUS+1; j++) {
+			if (i >= 0 && i < mapSize && j >= 0 && j < mapSize) {
+				if (map[MAPSIZE * j + i] != 0) {
+					return true;
+				} 
+			}
+		}
+	}
+	return false;
+}
+
+void renderPauseMenu(char *map, char *visited, int playerX, int playerY)
 {
 
 	FIXED sizeMultiplier = fxdiv(int2fx(MAPSIZE), int2fx(mapSize));
@@ -95,6 +110,10 @@ void renderPauseMenu(char *map, int playerX, int playerY)
 				{
 					color = 15; // player
 				}
+			}
+			if (!checkAround(visited, x, y))
+			{
+				color = 0;
 			}
 			fillArea(2 * (screenX + xOffset), 2 * (screenY + yOffset), 2 * (screenX + xOffset), 2 * (screenY + yOffset) + 1, color);
 		}

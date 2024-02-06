@@ -27,6 +27,8 @@ EWRAM_DATA char MAP[MAPSIZE * MAPSIZE] = {0};
 	};
 	*/
 EWRAM_DATA int UTILITYMAPDATA[MAPSIZE * MAPSIZE] = {0};
+EWRAM_DATA char VISITEDLOCATIONS[MAPSIZE * MAPSIZE] = {0};
+
 
 const int CASTEDRAYS = SCREENWIDTH / 2;
 const int HALFFOV = FOV / 2;
@@ -55,8 +57,8 @@ const int UTILITYRESET = 10;
 const int goalEnemyCount = 3;
 const int pruneEnemyDistance = 8;
 
-char notification[4] = "ABCD";
-size_t notificationLength = 4;
+char notification[5] = "ABCDE";
+size_t notificationLength = 5;
 int notificationCounter = 0;
 const int notificationDuration = 20;
 
@@ -98,6 +100,10 @@ void initPalette()
 	initShadeOfColor(0.5, 0.5, 1);
 	initShadeOfColor(1, 0.6, 0.3);
 	initShadeOfColor(0.7, 0.7, 1);
+	initShadeOfColor(1, 0.8, 0.5);
+
+	initShadeOfColor(1, 0.9, 0.7);
+
 }
 
 /// @brief initialize lookup table for direction vectors for camera
@@ -174,7 +180,7 @@ void initPickup(int id, int x, int y)
 		entities[id].active = true;
 		entities[id].x = int2fx(x) + 128;
 		entities[id].y = int2fx(y) + 128;
-		entities[id].texture = 8;
+		entities[id].texture = 12;
 		entities[id].type = 4;
 		entities[id].scale = 128;
 		entities[id].moving = false;
@@ -195,9 +201,8 @@ void initPickup(int id, int x, int y)
 		entities[id].moving = false;
 		entities[id].yOffset = 128;
 		entities[id].hit = 0;
-		// entities[id].notification[0] = 'W';
-		copyText(entities[id].notification, "WEPN", 4);
-		entities[id].notificationLength = 4;
+		copyText(entities[id].notification, "SPELL", 5);
+		entities[id].notificationLength = 5;
 	}
 }
 
@@ -692,7 +697,7 @@ void drawEntities()
 		}
 	}
 
-	sortEntities();
+	// sortEntities();
 
 	for (int i = 0; i < MAXENTITYCOUNT; i++)
 	{
@@ -1271,6 +1276,12 @@ void initLevel()
 	// player.direction = int2fx(0);//int2fx(45);
 
 	getDungeon(MAP, mapSize, &player.x, &player.y);
+
+	for (int i = 0; i < MAPSIZE * MAPSIZE; i++) {
+		VISITEDLOCATIONS[i] = 0;
+
+	}
+
 	initEntities();
 
 	populateMap();
@@ -1288,6 +1299,10 @@ void castForward()
 			initLevel();
 		}
 	}
+}
+
+void updatePlayerVisited() {
+	VISITEDLOCATIONS[fx2int(player.y) * MAPSIZE + fx2int(player.x)] = 1;
 }
 
 /// @brief main game logic
@@ -1347,7 +1362,7 @@ void mainGameLoop()
 			drawEntities();
 			vid_flip();
 
-			renderPauseMenu(MAP, fx2int(player.x), fx2int(player.y));
+			renderPauseMenu(MAP, VISITEDLOCATIONS, fx2int(player.x), fx2int(player.y));
 
 			updateHud = 2;
 		}
@@ -1358,6 +1373,8 @@ void mainGameLoop()
 		moveEntities();
 		drawEntities();
 		checkEntityCollisions();
+			updatePlayerVisited();
+
 
 		if (updateHud)
 		{
@@ -1374,10 +1391,15 @@ void mainGameLoop()
 		{
 			pruneFarAwayEnemies();
 		}
+		if (utilityCounter % 2 == 0)
+		{
+			sortEntities();
+		}
 		if (utilityCounter == 5)
 		{
 			refillEnemies();
 		}
+
 		utilityCounter--;
 		if (utilityCounter < 0)
 		{
