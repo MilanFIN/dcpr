@@ -80,10 +80,16 @@ bool checkAround(char* map, int x, int y) {
 void renderPauseMenu(char *map, char *visited, int playerX, int playerY)
 {
 
-	FIXED sizeMultiplier = fxdiv(int2fx(MAPSIZE), int2fx(mapSize));
 
 	const int xOffset = 34;
 	const int yOffset = 15;
+	fillArea(2 * xOffset, 2 * yOffset, 2 * (MAPSIZE-1 + xOffset), 2 * (MAPSIZE  + yOffset), 0);
+
+	vid_flip();
+
+
+	FIXED sizeMultiplier = fxdiv(int2fx(MAPSIZE), int2fx(mapSize));
+
 	for (int screenY = 0; screenY < MAPSIZE; screenY++)
 	{
 		for (int screenX = 0; screenX < MAPSIZE; screenX++)

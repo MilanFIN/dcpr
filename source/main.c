@@ -37,6 +37,8 @@ const int HALFSCREENPOINT = SCREENHEIGHT / 2;
 const int HUDHEIGHT = 160 - SCREENHEIGHT;
 
 const int PROJECTILETEXTURES[3] = {6, 9, 10};
+const int ENEMYTEXTURES[4] = {7, 8, 13, 14};
+
 
 FIXED dirX, dirY;
 FIXED planeX, planeY;
@@ -55,7 +57,7 @@ int utilityCounter = 0;
 const int UTILITYRESET = 10;
 
 const int goalEnemyCount = 3;
-const int pruneEnemyDistance = 8;
+const int pruneEnemyDistance = 12;
 
 char notification[5] = "ABCDE";
 size_t notificationLength = 5;
@@ -150,11 +152,13 @@ void initEnemy(int id, int x, int y)
 {
 
 	int level = qran_range(0, 8);
+	int enemyType = qran_range(0, 4);
+
 
 	entities[id].active = true;
 	entities[id].x = int2fx(x) + 128;
 	entities[id].y = int2fx(y) + 128;
-	entities[id].texture = 7;
+	entities[id].texture = ENEMYTEXTURES[enemyType];
 	entities[id].type = 3;
 	entities[id].scale = 92 + (level * 32);
 	entities[id].moving = true;
@@ -559,7 +563,7 @@ void moveEntities()
 		if (entities[i].type == 3)
 		{
 
-			if (entities[i].distance < 1800)
+			if (entities[i].distance < 3000 && entities[i].distance > 128)
 			{
 				if (entities[i].x < player.x)
 				{
@@ -954,7 +958,7 @@ void checkEntityCollisions()
 		// check enemy proximity with player
 		else if (type == 3)
 		{
-			if (entities[i].distance < 64)
+			if (entities[i].distance < 150)
 			{
 				if (!entities[i].attackDelay)
 				{
