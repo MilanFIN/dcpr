@@ -29,7 +29,6 @@ EWRAM_DATA char MAP[MAPSIZE * MAPSIZE] = {0};
 EWRAM_DATA int UTILITYMAPDATA[MAPSIZE * MAPSIZE] = {0};
 EWRAM_DATA char VISITEDLOCATIONS[MAPSIZE * MAPSIZE] = {0};
 
-
 const int CASTEDRAYS = SCREENWIDTH / 2;
 const int HALFFOV = FOV / 2;
 const FIXED FIXEDTILESIZE = TILESIZE * 256; // equal to int2fx(TILESIZE);
@@ -37,8 +36,7 @@ const int HALFSCREENPOINT = SCREENHEIGHT / 2;
 const int HUDHEIGHT = 160 - SCREENHEIGHT;
 
 const int PROJECTILETEXTURES[3] = {6, 9, 10};
-const int ENEMYTEXTURES[4] = {7, 8, 13, 14};
-
+const int ENEMYTEXTURES[5] = {7, 8, 13, 14, 15};
 
 FIXED dirX, dirY;
 FIXED planeX, planeY;
@@ -105,7 +103,6 @@ void initPalette()
 	initShadeOfColor(1, 0.8, 0.5);
 
 	initShadeOfColor(1, 0.9, 0.7);
-
 }
 
 /// @brief initialize lookup table for direction vectors for camera
@@ -152,8 +149,7 @@ void initEnemy(int id, int x, int y)
 {
 
 	int level = qran_range(0, 8);
-	int enemyType = qran_range(0, 4);
-
+	int enemyType = qran_range(0, 5);
 
 	entities[id].active = true;
 	entities[id].x = int2fx(x) + 128;
@@ -254,7 +250,14 @@ void drawWall(int i, FIXED distance, int type, int vertical, int textureColumn)
 	const FIXED yStep = TEXTURESTEP_LU[wallHeight];
 
 	// the actual wall
-	m4_textured_dual_line(TEXTURES, i, HALFSCREENPOINT - halfHeight, HALFSCREENPOINT + halfHeight, type, vertical, textureColumn, yStep, TEXTURESIZE);
+	if (distance > 1024)
+	{
+		m4_textured_dual_line(TEXTURES, i, HALFSCREENPOINT - halfHeight, HALFSCREENPOINT + halfHeight, type, vertical, textureColumn, yStep, TEXTURESIZE);
+	}
+	else
+	{
+		m4_reduced_res_textured_dual_line(TEXTURES, i, HALFSCREENPOINT - halfHeight, HALFSCREENPOINT + halfHeight, type, vertical, textureColumn, yStep, TEXTURESIZE, 2);
+	}
 	// floor
 	m4_dual_vline(i, HALFSCREENPOINT + halfHeight, SCREENHEIGHT, color);
 }
@@ -759,6 +762,10 @@ void drawEntities()
 
 			int texture = entities[entityOrder[i]].texture;
 			int hit = entities[entityOrder[i]].hit;
+			const int height = drawEndY - drawStartY;
+			const FIXED yStep = TEXTURESTEP_LU[height];
+			const int downScaledDistance = 64;
+
 
 			for (int stripe = drawStartX; stripe < drawEndX; stripe++)
 			{
@@ -767,16 +774,25 @@ void drawEntities()
 					if (transformY < zBuffer[stripe])
 					{
 						int texX = fx2int(hTexPos);
-						const FIXED yStep = TEXTURESTEP_LU[drawEndY - drawStartY];
 
 						if (!hit)
 						{
-							m4_sprite_textured_dual_line(TEXTURES, 2 * stripe, drawStartY, drawEndY, texture, texX, yStep, TEXTURESIZE);
+							if (height < downScaledDistance) {
+								m4_sprite_textured_dual_line(TEXTURES, 2 * stripe, drawStartY, drawEndY, texture, texX, yStep, TEXTURESIZE);
+							}
+							else {
+								m4_downscaled_sprite_textured_dual_line(TEXTURES, 2 * stripe, drawStartY, drawEndY, texture, texX, yStep, TEXTURESIZE, 2);
+							}
 						}
 						else
 						{
-							int color = 11;
-							m4_sprite_color_textured_dual_line(TEXTURES, 2 * stripe, drawStartY, drawEndY, texture, texX, color, yStep, TEXTURESIZE);
+							const int color = 11;
+							if (height < downScaledDistance) {
+								m4_sprite_color_textured_dual_line(TEXTURES, 2 * stripe, drawStartY, drawEndY, texture, texX, color, yStep, TEXTURESIZE);
+							}
+							else {
+								m4_downscaled_sprite_color_textured_dual_line(TEXTURES, 2 * stripe, drawStartY, drawEndY, texture, texX, color, yStep, TEXTURESIZE, 2);
+							}
 						}
 					}
 				}
@@ -1281,9 +1297,9 @@ void initLevel()
 
 	getDungeon(MAP, mapSize, &player.x, &player.y);
 
-	for (int i = 0; i < MAPSIZE * MAPSIZE; i++) {
+	for (int i = 0; i < MAPSIZE * MAPSIZE; i++)
+	{
 		VISITEDLOCATIONS[i] = 0;
-
 	}
 
 	initEntities();
@@ -1305,7 +1321,8 @@ void castForward()
 	}
 }
 
-void updatePlayerVisited() {
+void updatePlayerVisited()
+{
 	VISITEDLOCATIONS[fx2int(player.y) * MAPSIZE + fx2int(player.x)] = 1;
 }
 
@@ -1377,8 +1394,7 @@ void mainGameLoop()
 		moveEntities();
 		drawEntities();
 		checkEntityCollisions();
-			updatePlayerVisited();
-
+		updatePlayerVisited();
 
 		if (updateHud)
 		{

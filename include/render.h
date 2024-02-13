@@ -45,6 +45,22 @@ INLINE void m4_textured_dual_line(const int *textures, int x, int y1, int y2, in
 	}
 }
 
+// draw a textured vertical line to x column, between y1, y2
+//  column defines which texture column is used
+INLINE void m4_reduced_res_textured_dual_line(const int *textures, int x, int y1, int y2, int type, int vertical, int column, FIXED step, int textureSize, int downScale)
+{
+	FIXED textureY = 0;
+	for (int y = y1; y < y2; y += downScale)
+	{
+		const int color = textures[(type - 1) * textureSize * textureSize + fx2int(textureY) * textureSize + column] - vertical;
+		for (int i = 0; i < downScale; i++)
+		{
+			m4_dual_plot(x, y + i, color);
+		}
+		textureY = fxadd(textureY, downScale * step);
+	}
+}
+
 // same as above, but supports transparency
 INLINE void m4_sprite_textured_dual_line(const int *textures, int x, int y1, int y2, int type, int column, FIXED step, int textureSize)
 {
@@ -57,6 +73,24 @@ INLINE void m4_sprite_textured_dual_line(const int *textures, int x, int y1, int
 			m4_dual_plot(x, y, color);
 		}
 		textureY = fxadd(textureY, step);
+	}
+}
+
+// same as above, but supports transparency
+INLINE void m4_downscaled_sprite_textured_dual_line(const int *textures, int x, int y1, int y2, int type, int column, FIXED step, int textureSize, int downScale)
+{
+	FIXED textureY = 0;
+	for (int y = y1; y < y2; y += downScale)
+	{
+		const int color = textures[(type - 1) * textureSize * textureSize + fx2int(textureY) * textureSize + column];
+		if (color != 0)
+		{
+			for (int i = 0; i < downScale; i++)
+			{
+				m4_dual_plot(x, y + i, color);
+			}
+		}
+		textureY = fxadd(textureY, downScale * step);
 	}
 }
 
@@ -73,6 +107,23 @@ INLINE void m4_sprite_color_textured_dual_line(const int *textures, int x, int y
 			m4_dual_plot(x, y, flatColor);
 		}
 		textureY = fxadd(textureY, step);
+	}
+}
+
+INLINE void m4_downscaled_sprite_color_textured_dual_line(const int *textures, int x, int y1, int y2, int type, int column, int flatColor, FIXED step, int textureSize, int downScale)
+{
+	FIXED textureY = 0;
+	for (int y = y1; y < y2; y += downScale)
+	{
+		const int realColor = textures[(type - 1) * textureSize * textureSize + fx2int(textureY) * textureSize + column];
+		if (realColor != 0)
+		{
+			for (int i = 0; i < downScale; i++)
+			{
+				m4_dual_plot(x, y+i, flatColor);
+			}
+		}
+		textureY = fxadd(textureY, step * downScale);
 	}
 }
 
@@ -97,7 +148,7 @@ void drawFlat(const int *textures, int texture, int x, int y, int w, int h, int 
 // same as above, but use a single color for visible parts of the texture
 void drawFlatColorTexture(const int *textures, int texture, int x, int y, int w, int h, int color, int scale, int textureSize)
 {
-	h = h << 1;
+	// h = h << 1;
 	FIXED textureX = 0;
 	const FIXED xStep = TEXTURESTEP_LU[w] >> scale;
 	const FIXED yStep = TEXTURESTEP_LU[h] >> scale; // >> (2*scale);
