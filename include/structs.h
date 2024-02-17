@@ -1,5 +1,6 @@
 #ifndef STRUCTS_H
 #define STRUCTS_H
+#include <tonc.h>
 
 struct Entity
 {
@@ -43,7 +44,7 @@ struct Player
 	int previousY;
 };
 
-struct Player player;
+extern struct Player player;
 
 
 #endif // STRUCTS_H

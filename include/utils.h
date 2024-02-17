@@ -1,7 +1,7 @@
-#include <tonc.h>
-
 #ifndef UTILS_H
 #define UTILS_H
+
+#include <tonc.h>
 
 /// @brief floating point absolute value
 /// @param a source value
@@ -48,13 +48,5 @@ inline int intAbs(int a)
 	}
 }
 
-void copyText(char target[], char source[], size_t length)
-{
-
-	for (size_t i = 0; i < length; i++)
-	{
-		target[i] = source[i];
-	}
-}
-
+void copyText(char target[], char source[], size_t length);
 #endif // UTILS_H
