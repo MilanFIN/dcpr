@@ -1,5 +1,6 @@
 #include "menu.h"
 #include "textures.h"
+#include "dungeon.h"
 
 int keyX = 0;
 int keyXAdd = 2;
@@ -115,6 +116,8 @@ void renderPause1st(char *map, char *visited, int playerX, int playerY)
 
 	FIXED sizeMultiplier = fxdiv(int2fx(MAPSIZE), int2fx(mapSize));
 
+	FIXED remainderLimit = fxdiv(int2fx(mapSize), int2fx(MAPSIZE));
+
 	for (int screenY = 0; screenY < MAPSIZE; screenY++)
 	{
 		for (int screenX = 0; screenX < MAPSIZE; screenX++)
@@ -131,7 +134,7 @@ void renderPause1st(char *map, char *visited, int playerX, int playerY)
 			{
 				color = 132;
 			}
-			if (xRemainder < 128 && yRemainder < 128)
+			if (xRemainder < remainderLimit && yRemainder < remainderLimit)
 			{
 				if (map[MAPSIZE * y + x] == 5)
 				{
