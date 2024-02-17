@@ -6,6 +6,7 @@
 #include "render.h"
 #include "menu.h"
 #include "utils.h"
+#include "raycaster.h"
 
 #define TILESIZE 1
 #define FOV 60
@@ -13,40 +14,22 @@
 
 const float PI = 3.1415;
 
-EWRAM_DATA char MAP[MAPSIZE * MAPSIZE] = {0};
-
-/*
-		1, 1, 1, 1, 1, 1, 1, 1,
-		1, 0, 0, 0, 0, 0, 0, 1,
-		1, 0, 0, 0, 0, 0, 0, 1,
-		1, 0, 0, 0, 0, 0, 0, 1,
-		1, 0, 0, 0, 0, 0, 0, 1,
-		1, 0, 0, 0, 0, 0, 0, 1,
-		1, 0, 0, 0, 0, 0, 0, 1,
-		1, 1, 1, 1, 4, 1, 1, 1
-	};
-	*/
 EWRAM_DATA int UTILITYMAPDATA[MAPSIZE * MAPSIZE] = {0};
 EWRAM_DATA char VISITEDLOCATIONS[MAPSIZE * MAPSIZE] = {0};
 
-const int CASTEDRAYS = SCREENWIDTH / 2;
 const int HALFFOV = FOV / 2;
 const FIXED FIXEDTILESIZE = TILESIZE * 256; // equal to int2fx(TILESIZE);
-const int HALFSCREENPOINT = SCREENHEIGHT / 2;
 const int HUDHEIGHT = 160 - SCREENHEIGHT;
 
 const int PROJECTILETEXTURES[3] = {6, 9, 10};
-const int ENEMYTEXTURES[5] = {7, 8, 13, 14, 15};
+const int ENEMYTEXTURES[6] = {7, 8, 13, 14, 15, 16};
+const int ENEMYTEXCOUNT = 6;
 
-FIXED dirX, dirY;
-FIXED planeX, planeY;
 int updateHud = 2;
 
 EWRAM_DATA struct Entity entities[MAXENTITYCOUNT];
-struct Player player;
 
 int entityOrder[MAXENTITYCOUNT] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
-FIXED zBuffer[SCREENWIDTH / 2] = {0};
 
 volatile unsigned short *palette = (volatile unsigned short *)0x5000000;
 int nextPaletteIndex = 0;
@@ -149,7 +132,7 @@ void initEnemy(int id, int x, int y)
 {
 
 	int level = qran_range(0, 8);
-	int enemyType = qran_range(0, 5);
+	int enemyType = qran_range(0, ENEMYTEXCOUNT);
 
 	entities[id].active = true;
 	entities[id].x = int2fx(x) + 128;
@@ -227,49 +210,6 @@ void drawHud()
 	}
 	// health bar
 	fillArea(120, 160 - HUDHEIGHT + 5, 120 + player.hp / 2, 160 - 5, 15);
-}
-
-/// @brief draw a single pixel column on screen, inc. roof, wall and floor
-/// @param i column (0-120)
-/// @param distance distance to the wall (determines wall height)
-/// @param type wall texture (indexed from 1)
-/// @param vertical true if wall is vertical in 2d map space
-/// @param textureColumn which column of the texture is to be read
-void drawWall(int i, FIXED distance, int type, int vertical, int textureColumn)
-{
-
-	int wallHeight = fx2int(fxdiv(int2fx(SCREENHEIGHT), distance));
-	wallHeight = CLAMP(wallHeight, 1, SCREENHEIGHT);
-	int halfHeight = (wallHeight >> 1);
-	int color = 1;
-
-	// roof
-	m4_dual_vline(i, 0, HALFSCREENPOINT - halfHeight, color);
-
-	color = 131; // 59;//4;
-	const FIXED yStep = TEXTURESTEP_LU[wallHeight];
-
-	// the actual wall
-	if (distance > 1024)
-	{
-		m4_textured_dual_line(TEXTURES, i, HALFSCREENPOINT - halfHeight, HALFSCREENPOINT + halfHeight, type, vertical, textureColumn, yStep, TEXTURESIZE);
-	}
-	else
-	{
-		m4_reduced_res_textured_dual_line(TEXTURES, i, HALFSCREENPOINT - halfHeight, HALFSCREENPOINT + halfHeight, type, vertical, textureColumn, yStep, TEXTURESIZE, 2);
-	}
-	// floor
-	m4_dual_vline(i, HALFSCREENPOINT + halfHeight, SCREENHEIGHT, color);
-}
-
-void drawWithoutWall(int i)
-{
-	int color = 1;
-	// roof
-	m4_dual_vline(i, 0, HALFSCREENPOINT, color);
-	color = 131; // 59;//4;
-	// floor
-	m4_dual_vline(i, HALFSCREENPOINT, SCREENHEIGHT, color);
 }
 
 /// @brief cast a ray forward in 2d plane, and check if specified wall is hit
@@ -377,134 +317,6 @@ int castRay(int targetType)
 	}
 
 	return fx2int(perpWallDistance);
-}
-
-/// @brief main raycast method. Loops through the columns of screen (120, when at half resolution)
-void castRays()
-{
-	for (int i = 0; i < CASTEDRAYS; i++)
-	{
-
-		const FIXED cameraX = CAMERAX_LU[i]; // x-coordinate in camera space
-		const FIXED rayDirX = fxadd(dirX, fxmul(planeX, cameraX));
-		const FIXED rayDirY = fxadd(dirY, fxmul(planeY, cameraX));
-
-		FIXED mapX = int2fx(fx2int(player.x));
-		FIXED mapY = int2fx(fx2int(player.y));
-
-		FIXED sideDistX;
-		FIXED sideDistY;
-
-		FIXED deltaDistX;
-		FIXED deltaDistY;
-		if (rayDirX == 0)
-		{
-			deltaDistX = int2fx(1024);
-		}
-		else
-		{
-			deltaDistX = fixedAbs(fxdiv(int2fx(1), rayDirX));
-		}
-
-		if (rayDirY == 0)
-		{
-			deltaDistY = int2fx(1024);
-		}
-		else
-		{
-			deltaDistY = fixedAbs(fxdiv(int2fx(1), rayDirY));
-		}
-
-		FIXED stepX;
-		FIXED stepY;
-
-		int side;
-
-		if (rayDirX < 0)
-		{
-			stepX = int2fx(-1);
-			sideDistX = fxmul(fxsub(player.x, mapX), deltaDistX);
-		}
-		else
-		{
-			stepX = int2fx(1);
-			sideDistX = fxmul(fxsub(fxadd(mapX, int2fx(1.0)), player.x), deltaDistX);
-		}
-		if (rayDirY < 0)
-		{
-			stepY = int2fx(-1);
-			sideDistY = fxmul(fxsub(player.y, mapY), deltaDistY);
-		}
-		else
-		{
-			stepY = int2fx(1);
-			sideDistY = fxmul(fxsub(fxadd(mapY, int2fx(1.0)), player.y), deltaDistY);
-		}
-
-		int hit = 0;
-		int xCell;
-		int yCell;
-		for (int j = 0; j < 100; j++)
-		{
-			if (sideDistX < sideDistY)
-			{
-				sideDistX = fxadd(sideDistX, deltaDistX);
-				mapX = fxadd(mapX, stepX);
-				side = 0;
-			}
-			else
-			{
-				sideDistY = fxadd(sideDistY, deltaDistY);
-				mapY = fxadd(mapY, stepY);
-				side = 1;
-			}
-
-			int currentXCell = fx2int(mapX);
-			int currentYCell = fx2int(mapY);
-			if (MAP[currentYCell * MAPSIZE + currentXCell] > 0)
-			{
-				xCell = currentXCell;
-				yCell = currentYCell;
-				hit = 1;
-				break;
-			}
-		}
-
-		FIXED perpWallDistance;
-		int textureColumn;
-		FIXED wallPos;
-
-		if (hit)
-		{
-			// horizontal
-			if (side == 0)
-			{
-				perpWallDistance = fxsub(sideDistX, deltaDistX);
-				wallPos = fxadd(player.y, fxmul(perpWallDistance, rayDirY));
-			}
-			// vertical
-			else
-			{
-				perpWallDistance = fxsub(sideDistY, deltaDistY);
-				wallPos = fxadd(player.x, fxmul(perpWallDistance, rayDirX));
-			}
-
-			wallPos = fxsub(wallPos, int2fx(fx2int(wallPos)));
-			textureColumn = fx2int(fxmul(wallPos, int2fx(TEXTURESIZE)));
-
-			if (side == 0 && rayDirX < 0)
-				textureColumn = TEXTURESIZE - textureColumn - 1;
-			if (side == 1 && rayDirY > 0)
-				textureColumn = TEXTURESIZE - textureColumn - 1;
-
-			zBuffer[i] = perpWallDistance;
-			drawWall(2 * i, perpWallDistance, MAP[yCell * MAPSIZE + xCell], side, textureColumn);
-		}
-		else
-		{
-			drawWithoutWall(2 * i);
-		}
-	}
 }
 
 /// @brief create a new projectile entity with speed and direction
@@ -766,7 +578,6 @@ void drawEntities()
 			const FIXED yStep = TEXTURESTEP_LU[height];
 			const int downScaledDistance = 64;
 
-
 			for (int stripe = drawStartX; stripe < drawEndX; stripe++)
 			{
 				if (stripe >= 0 && stripe < SCREENWIDTH / 2)
@@ -777,20 +588,24 @@ void drawEntities()
 
 						if (!hit)
 						{
-							if (height < downScaledDistance) {
+							if (height < downScaledDistance)
+							{
 								m4_sprite_textured_dual_line(TEXTURES, 2 * stripe, drawStartY, drawEndY, texture, texX, yStep, TEXTURESIZE);
 							}
-							else {
+							else
+							{
 								m4_downscaled_sprite_textured_dual_line(TEXTURES, 2 * stripe, drawStartY, drawEndY, texture, texX, yStep, TEXTURESIZE, 2);
 							}
 						}
 						else
 						{
 							const int color = 11;
-							if (height < downScaledDistance) {
+							if (height < downScaledDistance)
+							{
 								m4_sprite_color_textured_dual_line(TEXTURES, 2 * stripe, drawStartY, drawEndY, texture, texX, color, yStep, TEXTURESIZE);
 							}
-							else {
+							else
+							{
 								m4_downscaled_sprite_color_textured_dual_line(TEXTURES, 2 * stripe, drawStartY, drawEndY, texture, texX, color, yStep, TEXTURESIZE, 2);
 							}
 						}
@@ -1323,7 +1138,29 @@ void castForward()
 
 void updatePlayerVisited()
 {
-	VISITEDLOCATIONS[fx2int(player.y) * MAPSIZE + fx2int(player.x)] = 1;
+	if (player.previousX != fx2int(player.x) || player.previousY != fx2int(player.y))
+	{
+		if (!VISITEDLOCATIONS[fx2int(player.y) * MAPSIZE + fx2int(player.x)])
+		{
+			int x = fx2int(player.x);
+			int y = fx2int(player.y);
+			// int MINIMAPVISIBLERADIUS = 3;
+
+			for (int i = x - MINIMAPVISIBLERADIUS; i < x + MINIMAPVISIBLERADIUS + 1; i++)
+			{
+				for (int j = y - MINIMAPVISIBLERADIUS; j < y + MINIMAPVISIBLERADIUS + 1; j++)
+				{
+					if (i >= 0 && i < mapSize && j >= 0 && j < mapSize)
+					{
+						VISITEDLOCATIONS[MAPSIZE * j + i] = 1;
+					}
+				}
+			}
+		}
+	}
+	player.previousX = fx2int(player.x);
+	player.previousY = fx2int(player.y);
+
 }
 
 /// @brief main game logic
@@ -1376,14 +1213,11 @@ void mainGameLoop()
 		}
 		if (key_hit(KEY_START))
 		{
-			castRays();
-			drawEntities();
-			vid_flip();
-			castRays();
-			drawEntities();
-			vid_flip();
-
-			renderPauseMenu(MAP, VISITEDLOCATIONS, fx2int(player.x), fx2int(player.y));
+			bool resume = renderPauseMenu(MAP, VISITEDLOCATIONS, fx2int(player.x), fx2int(player.y));
+			if (!resume)
+			{
+				break;
+			}
 
 			updateHud = 2;
 		}
@@ -1444,14 +1278,14 @@ int main()
 	initCameraXLu();
 	initTextureStepLu();
 	initPalette();
-	// renderStart();
+	renderStart();
 
 	mapSize = 50; // 60 or 70 highest tested
 
 	while (1)
 	{
 
-		// renderMenu();
+		renderMenu();
 
 		initLevel();
 

@@ -38,6 +38,12 @@ struct Player
 	char maxGunLevel;
 	char damage;
 	FIXED speed;
+	//in map tile space
+	int previousX;
+	int previousY;
 };
+
+struct Player player;
+
 
 #endif // STRUCTS_H

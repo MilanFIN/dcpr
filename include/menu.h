@@ -1,15 +1,46 @@
 #include <tonc.h>
 #include "render.h"
 #include "dungeon.h"
+#include "textures.h"
+#include "raycaster.h"
 
 #ifndef MENU_H
 #define MENU_H
 
 #define MINIMAPVISIBLERADIUS 3
 
+EWRAM_DATA int keyX = 0;
+EWRAM_DATA int keyXAdd = 2;
+EWRAM_DATA int keyY = -32;
+EWRAM_DATA int keyYAdd = 2;
+
+void renderBkg()
+{
+
+	drawFlat(TEXTURES, 1, 0, 0, 64, 64, 0, TEXTURESIZE);
+	drawFlat(TEXTURES, 1, 64, 0, 64, 64, 0, TEXTURESIZE);
+
+	drawFlat(TEXTURES, 3, keyX, keyY, 32, 32, 0, TEXTURESIZE);
+
+	keyX += keyXAdd;
+	keyY += keyYAdd;
+
+	if (keyX > 86 || keyX < 0)
+	{
+		keyXAdd = -keyXAdd;
+		keyX += keyXAdd;
+	}
+	if (keyY > 64 || keyY < -32)
+	{
+		keyYAdd = -keyYAdd;
+		keyY += keyYAdd;
+	}
+}
+
 /// @brief render "press start" screen and initialize random number generator based on user input
 void renderStart()
 {
+
 	int seed = 0;
 	while (1)
 	{
@@ -20,8 +51,8 @@ void renderStart()
 			break;
 		}
 
-		fillArea(0, 0, 240, 160, 7);
-		writeLine("PRESS START", 11, 10, 80, 15);
+		renderBkg();
+		writeLine("PRESS START", 11, 10, 140, 15);
 		vid_flip();
 	}
 
@@ -32,10 +63,11 @@ void renderStart()
 void renderMenu()
 {
 	int size = 0;
+	key_poll();
+
 	while (1)
 	{
 
-		key_poll();
 		if (key_hit(KEY_A) || key_hit(KEY_START))
 		{
 			break;
@@ -51,42 +83,45 @@ void renderMenu()
 				size--;
 		}
 
-		fillArea(0, 0, 240, 160, 7);
+		fillArea(0, 128, 240, 160, 16);
+		drawFlat(TEXTURES, 1, 0, 0, 64, 64, 0, TEXTURESIZE);
+		drawFlat(TEXTURES, 1, 64, 0, 64, 64, 0, TEXTURESIZE);
+
 		writeLine("LEVEL SIZE", 10, 10, 10, 15);
 		writeLine("SMALL", 5, 20, 40, 15);
-		writeLine("AVERAGE", 7, 20, 60, 15);
-		writeLine("HUGE", 4, 20, 80, 15);
+		writeLine("MEDIUM", 6, 20, 60, 15);
+		writeLine("LARGE", 5, 20, 80, 15);
 
 		writeLine(">", 1, 10, 40 + 20 * size, 15);
 		vid_flip();
+		key_poll();
 	}
 
-	mapSize = 10 + size * 10;
+	mapSize = 30 + size * 10;
 }
 
-bool checkAround(char* map, int x, int y) {
-	for (int i = x - MINIMAPVISIBLERADIUS; i < x+MINIMAPVISIBLERADIUS+1; i++) {
-		for (int j = y - MINIMAPVISIBLERADIUS; j < y+MINIMAPVISIBLERADIUS+1; j++) {
-			if (i >= 0 && i < mapSize && j >= 0 && j < mapSize) {
-				if (map[MAPSIZE * j + i] != 0) {
-					return true;
-				} 
-			}
-		}
+bool checkAround(char *map, int x, int y)
+{
+
+	if (map[MAPSIZE * y + x] != 0)
+	{
+		return true;
 	}
+
 	return false;
 }
 
-void renderPauseMenu(char *map, char *visited, int playerX, int playerY)
+void drawArrows()
 {
+	drawFlat(TEXTURES, 17, 100, 5, 16, 16, 0, TEXTURESIZE);
+	drawFlatMirrored(TEXTURES, 17, 4, 5, 16, 16, 0, TEXTURESIZE);
+}
 
-
+void renderPause1st(char *map, char *visited, int playerX, int playerY)
+{
+	castRays();
 	const int xOffset = 34;
 	const int yOffset = 15;
-	fillArea(2 * xOffset, 2 * yOffset, 2 * (MAPSIZE-1 + xOffset), 2 * (MAPSIZE  + yOffset), 0);
-
-	vid_flip();
-
 
 	FIXED sizeMultiplier = fxdiv(int2fx(MAPSIZE), int2fx(mapSize));
 
@@ -124,15 +159,88 @@ void renderPauseMenu(char *map, char *visited, int playerX, int playerY)
 			fillArea(2 * (screenX + xOffset), 2 * (screenY + yOffset), 2 * (screenX + xOffset), 2 * (screenY + yOffset) + 1, color);
 		}
 	}
+
+	drawArrows();
+
+	writeLine("START TO", 8, 23, 1, 15);
+	writeLine("CONTINUE", 8, 23, 16, 15);
+
 	vid_flip();
+}
+
+int renderPause2nd()
+{
+	int selection = 0;
 
 	while (1)
 	{
 		key_poll();
 
-		if (key_hit(KEY_START))
+		if (key_hit(KEY_RIGHT) || key_hit(KEY_LEFT) || key_hit(KEY_R) || key_hit(KEY_L))
 		{
-			break;
+			return 0;
+		}
+		if (key_hit(KEY_A))
+		{
+			if (selection == 0)
+			{
+				return 1;
+			}
+			else if (selection == 1)
+			{
+				return -1;
+			}
+		}
+		if (key_hit(KEY_DOWN))
+		{
+			selection += 1;
+			selection = CLAMP(selection, 0, 2);
+		}
+		if (key_hit(KEY_UP))
+		{
+			selection -= 1;
+			selection = CLAMP(selection, 0, 2);
+		}
+
+		castRays();
+		// drawEntities();
+		drawArrows();
+		writeLine("RESUME", 6, 38, 50, 15);
+		writeLine("QUIT", 4, 38, 66, 15);
+		writeLine(">", 1, 27, 50 + selection * 16, 15);
+
+		vid_flip();
+	}
+}
+
+bool renderPauseMenu(char *map, char *visited, int playerX, int playerY)
+{
+	while (1)
+	{
+		renderPause1st(map, visited, playerX, playerY);
+
+		while (1)
+		{
+			key_poll();
+
+			if (key_hit(KEY_RIGHT) || key_hit(KEY_LEFT) || key_hit(KEY_R) || key_hit(KEY_L))
+			{
+				int selection = renderPause2nd();
+				if (selection == 1)
+				{
+					return true;
+				}
+				if (selection == -1)
+				{
+					return false;
+				}
+				break;
+			}
+
+			if (key_hit(KEY_START))
+			{
+				return true;
+			}
 		}
 	}
 }

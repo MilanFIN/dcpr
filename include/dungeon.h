@@ -13,6 +13,21 @@ static int MAXDEPTH = 25;
 
 int mapSize = MAPSIZE;
 
+EWRAM_DATA char MAP[MAPSIZE * MAPSIZE] = {0};
+
+/*
+		1, 1, 1, 1, 1, 1, 1, 1,
+		1, 0, 0, 0, 0, 0, 0, 1,
+		1, 0, 0, 0, 0, 0, 0, 1,
+		1, 0, 0, 0, 0, 0, 0, 1,
+		1, 0, 0, 0, 0, 0, 0, 1,
+		1, 0, 0, 0, 0, 0, 0, 1,
+		1, 0, 0, 0, 0, 0, 0, 1,
+		1, 1, 1, 1, 4, 1, 1, 1
+	};
+	*/
+
+
 struct Leaf
 {
 	int active;
