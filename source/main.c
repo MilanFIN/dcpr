@@ -7,6 +7,7 @@
 #include "menu.h"
 #include "utils.h"
 #include "raycaster.h"
+#include "audio.h"
 
 #define TILESIZE 1
 #define FOV 60
@@ -340,6 +341,8 @@ void fire()
 		entities[i].moving = true;
 		entities[i].yOffset = 256;
 		entities[i].hit = 0;
+
+		playSound(0);
 
 		break;
 	}
@@ -796,6 +799,7 @@ void checkEntityCollisions()
 					player.hp -= entities[i].damage;
 					updateHud = 2;
 					entities[i].attackDelay = entities[i].attackFrequency;
+					playSound(1);
 				}
 			}
 			if (entities[i].attackDelay)
@@ -820,6 +824,7 @@ void checkEntityCollisions()
 					setNotification(i);
 					removeEntity(i);
 					updateHud = 2;
+					playSound(2);
 				}
 			}
 		}
@@ -835,6 +840,7 @@ void checkEntityCollisions()
 					setNotification(i);
 					removeEntity(i);
 					updateHud = 2;
+					playSound(3);
 				}
 			}
 		}
@@ -1274,6 +1280,7 @@ int main()
 {
 	REG_DISPCNT = DCNT_MODE4 | DCNT_BG2;
 
+	initAudio();
 	sqran(1);
 	initCameraXLu();
 	initTextureStepLu();

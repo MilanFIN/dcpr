@@ -1,6 +1,7 @@
 #include "menu.h"
 #include "textures.h"
 #include "dungeon.h"
+#include "audio.h"
 
 int keyX = 0;
 int keyXAdd = 2;
@@ -48,6 +49,7 @@ void renderStart()
 		vid_flip();
 	}
 
+	playSound(7);
 	sqran(seed);
 }
 
@@ -61,17 +63,24 @@ void renderMenu()
 
 		if (key_hit(KEY_A) || key_hit(KEY_START))
 		{
+			playSound(10);
 			break;
 		}
 		if (key_hit(KEY_DOWN))
 		{
 			if (size < 2)
+			{
 				size++;
+				playSound(9);
+			}
 		}
 		if (key_hit(KEY_UP))
 		{
 			if (size > 0)
+			{
 				size--;
+				playSound(9);
+			}
 		}
 
 		fillArea(0, 128, 240, 160, 16);
@@ -171,6 +180,7 @@ int renderPause2nd()
 
 		if (key_hit(KEY_RIGHT) || key_hit(KEY_LEFT) || key_hit(KEY_R) || key_hit(KEY_L))
 		{
+			playSound(9);
 			return 0;
 		}
 		if (key_hit(KEY_A))
@@ -186,11 +196,13 @@ int renderPause2nd()
 		}
 		if (key_hit(KEY_DOWN))
 		{
+			playSound(9);
 			selection += 1;
 			selection = CLAMP(selection, 0, 2);
 		}
 		if (key_hit(KEY_UP))
 		{
+			playSound(9);
 			selection -= 1;
 			selection = CLAMP(selection, 0, 2);
 		}
@@ -218,6 +230,7 @@ bool renderPauseMenu(char *map, char *visited, int playerX, int playerY)
 
 			if (key_hit(KEY_RIGHT) || key_hit(KEY_LEFT) || key_hit(KEY_R) || key_hit(KEY_L))
 			{
+				playSound(9);
 				int selection = renderPause2nd();
 				if (selection == 1)
 				{
