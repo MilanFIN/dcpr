@@ -220,6 +220,8 @@ int renderPause2nd()
 
 bool renderPauseMenu(char *map, char *visited, int playerX, int playerY)
 {
+	playSound(9);
+
 	while (1)
 	{
 		renderPause1st(map, visited, playerX, playerY);
@@ -234,10 +236,12 @@ bool renderPauseMenu(char *map, char *visited, int playerX, int playerY)
 				int selection = renderPause2nd();
 				if (selection == 1)
 				{
+					playSound(9);
 					return true;
 				}
 				if (selection == -1)
 				{
+					playSound(9);
 					return false;
 				}
 				break;
@@ -245,6 +249,7 @@ bool renderPauseMenu(char *map, char *visited, int playerX, int playerY)
 
 			if (key_hit(KEY_START))
 			{
+				playSound(9);
 				return true;
 			}
 		}

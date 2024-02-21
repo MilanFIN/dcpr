@@ -11,7 +11,8 @@
 
 #define TILESIZE 1
 #define FOV 60
-#define MAXENTITYCOUNT 20
+// actually only 31 elements are used, see note below
+#define MAXENTITYCOUNT 32
 
 const float PI = 3.1415;
 
@@ -19,18 +20,23 @@ EWRAM_DATA int UTILITYMAPDATA[MAPSIZE * MAPSIZE] = {0};
 EWRAM_DATA char VISITEDLOCATIONS[MAPSIZE * MAPSIZE] = {0};
 
 const int HALFFOV = FOV / 2;
-const FIXED FIXEDTILESIZE = TILESIZE * 256; // equal to int2fx(TILESIZE);
+const FIXED FIXEDTILESIZE = TILESIZE * 256;
 const int HUDHEIGHT = 160 - SCREENHEIGHT;
 
 const int PROJECTILETEXTURES[3] = {6, 9, 10};
 const int ENEMYTEXTURES[6] = {7, 8, 13, 14, 15, 16};
+const int ENEMYSIZES[6] = {1, 1, 3, 3, 2, 1};
+const int ENEMYSPEEDS[6] = {8, 8, 5, 5, 8, 10};
 const int ENEMYTEXCOUNT = 6;
 
 int updateHud = 2;
 
+// note: 0th element of this array is evil and not used
+// Any lookup to the 0th index causes unexplainable lag
+// not dependent on the sprite, entity type etc.
 EWRAM_DATA struct Entity entities[MAXENTITYCOUNT];
 
-int entityOrder[MAXENTITYCOUNT] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
+int entityOrder[MAXENTITYCOUNT] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31};
 
 volatile unsigned short *palette = (volatile unsigned short *)0x5000000;
 int nextPaletteIndex = 0;
@@ -107,24 +113,6 @@ void initTextureStepLu()
 	}
 }
 
-/// @brief initialize "key" entity position, key is always first in entity array
-/// @param x tile position (0 to mapsize)
-/// @param y -||-
-void initKey(int x, int y)
-{
-	entities[0].active = true;
-	entities[0].x = int2fx(x) + 128;
-	entities[0].y = int2fx(y) + 128;
-	entities[0].texture = 3;
-	entities[0].type = 1;
-	entities[0].scale = 128;
-	entities[0].moving = false;
-	entities[0].yOffset = 128;
-	entities[0].hit = 0;
-	copyText(entities[0].notification, "KEY", 3);
-	entities[0].notificationLength = 3;
-}
-
 /// @brief initialize an enemy entity
 /// @param id position of the entity in entity array
 /// @param x tile position (0 to mapsize)
@@ -132,7 +120,6 @@ void initKey(int x, int y)
 void initEnemy(int id, int x, int y)
 {
 
-	int level = qran_range(0, 8);
 	int enemyType = qran_range(0, ENEMYTEXCOUNT);
 
 	entities[id].active = true;
@@ -140,14 +127,14 @@ void initEnemy(int id, int x, int y)
 	entities[id].y = int2fx(y) + 128;
 	entities[id].texture = ENEMYTEXTURES[enemyType];
 	entities[id].type = 3;
-	entities[id].scale = 92 + (level * 32);
+	entities[id].scale = 92 + (ENEMYSIZES[enemyType] * 32);
 	entities[id].moving = true;
 	entities[id].yOffset = 192 - entities[id].scale * 2 / 3;
-	entities[id].speed = 4;
+	entities[id].speed = ENEMYSPEEDS[enemyType];
 	entities[id].attackDelay = 20;
 	entities[id].attackFrequency = 20;
-	entities[id].damage = 10 + 2 * level;
-	entities[id].hp = level;
+	entities[id].damage = 10 + 2 * enemyType;
+	entities[id].hp = enemyType;
 	entities[id].hit = 0;
 }
 
@@ -190,6 +177,23 @@ void initPickup(int id, int x, int y)
 	}
 }
 
+/// @brief initialize "key" entity position, key is always first in entity array
+/// @param x tile position (0 to mapsize)
+/// @param y -||-
+void initKey(int x, int y)
+{
+	entities[1].active = true;
+	entities[1].x = int2fx(x) + 128;
+	entities[1].y = int2fx(y) + 128;
+	entities[1].texture = 3;
+	entities[1].type = 1;
+	entities[1].scale = 128;
+	entities[1].moving = false;
+	entities[1].yOffset = 128;
+	entities[1].hit = 0;
+	copyText(entities[1].notification, "KEY", 3);
+	entities[1].notificationLength = 3;
+}
 /// @brief initialize entity array with unused values
 void initEntities()
 {
@@ -323,7 +327,7 @@ int castRay(int targetType)
 /// @brief create a new projectile entity with speed and direction
 void fire()
 {
-	for (int i = 0; i < MAXENTITYCOUNT; i++)
+	for (int i = 1; i < MAXENTITYCOUNT; i++)
 	{
 		if (entities[i].active)
 		{
@@ -342,7 +346,7 @@ void fire()
 		entities[i].yOffset = 256;
 		entities[i].hit = 0;
 
-		playSound(0);
+		playSound(13);
 
 		break;
 	}
@@ -381,7 +385,7 @@ void moveEntities()
 		if (entities[i].type == 3)
 		{
 
-			if (entities[i].distance < 3000 && entities[i].distance > 128)
+			if (entities[i].distance < 9000 && entities[i].distance > 128)
 			{
 				if (entities[i].x < player.x)
 				{
@@ -507,7 +511,7 @@ void drawEntities()
 {
 
 	// update distances to player
-	for (int i = 0; i < MAXENTITYCOUNT; i++)
+	for (int i = 1; i < MAXENTITYCOUNT; i++)
 	{
 		if (!entities[i].active)
 		{
@@ -524,10 +528,6 @@ void drawEntities()
 	for (int i = 0; i < MAXENTITYCOUNT; i++)
 	{
 		if (!entities[entityOrder[i]].active || entities[entityOrder[i]].distance < 64)
-		{
-			continue;
-		}
-		if (entities[entityOrder[i]].type == 1 && entities[entityOrder[i]].distance < 150)
 		{
 			continue;
 		}
@@ -656,7 +656,7 @@ void refillEnemies()
 
 	int count = 0;
 	int firstFreeSlot = -1;
-	for (int i = 0; i < MAXENTITYCOUNT; i++)
+	for (int i = 1; i < MAXENTITYCOUNT; i++)
 	{
 		if (entities[i].active && entities[i].type == 3)
 		{
@@ -668,7 +668,7 @@ void refillEnemies()
 		}
 	}
 
-	if (firstFreeSlot >= 0 && count < goalEnemyCount)
+	if (firstFreeSlot >= 1 && count < goalEnemyCount)
 	{
 		int counter = 0;
 		int playerX = fx2int(player.x);
@@ -690,8 +690,6 @@ void refillEnemies()
 			}
 		}
 
-		// shuffleArray(UTILITYMAPDATA, counter);
-		// TODO CONTINUE
 		int position = qran_range(0, counter);
 		int x = UTILITYMAPDATA[position] % MAPSIZE;
 		int y = UTILITYMAPDATA[position] / MAPSIZE;
@@ -736,7 +734,7 @@ void checkEntityCollisions()
 		// check if a key is near a player
 		if (type == 1)
 		{
-			if (entities[i].distance < 150)
+			if (entities[i].distance < 64)
 			{
 				setNotification(i);
 				removeEntity(i);
@@ -772,6 +770,7 @@ void checkEntityCollisions()
 					if (entities[j].hp <= 0)
 					{
 						removeEntity(j);
+						playSound(12);
 					}
 				}
 			}
@@ -1056,7 +1055,7 @@ void populateMap()
 		{
 			if (openTile(x, y))
 			{
-				if (!MAP[MAPSIZE * y + x] && MAPSIZE * y + x != playerPosition)
+				if (MAP[MAPSIZE * y + x] == 0 && MAPSIZE * y + x != playerPosition)
 				{
 					UTILITYMAPDATA[counter] = MAPSIZE * y + x;
 					counter++;
@@ -1068,32 +1067,17 @@ void populateMap()
 	shuffleArray(UTILITYMAPDATA, counter);
 	counter--;
 
-	// spawn a bunch of enemies
-	int i = 0;
-
-	for (i = 0; i < 3; i++)
+	// spawn a bunch of items (hp, weapon upgrades etc.)
+	for (int j = 0; j < 4; j++)
 	{
 		counter--;
 		if (counter < 0)
 		{
 			break;
 		}
-		int enemyX = UTILITYMAPDATA[counter] % MAPSIZE;
-		int enemyY = UTILITYMAPDATA[counter] / MAPSIZE;
-		initEnemy(i + 1, enemyX, enemyY);
-	}
-
-	// todo: spawn a bunch of items (hp, weapon upgrades etc.)
-	for (int j = i; j < 6; j++)
-	{
-		counter--;
-		if (counter < 0)
-		{
-			break;
-		}
-		int x = UTILITYMAPDATA[counter] / MAPSIZE;
-		int y = UTILITYMAPDATA[counter] % MAPSIZE;
-		initPickup(j + 1, x, y);
+		int x = UTILITYMAPDATA[counter] % MAPSIZE;
+		int y = UTILITYMAPDATA[counter] / MAPSIZE;
+		initPickup(j + 2, x, y);
 	}
 }
 
@@ -1166,7 +1150,6 @@ void updatePlayerVisited()
 	}
 	player.previousX = fx2int(player.x);
 	player.previousY = fx2int(player.y);
-
 }
 
 /// @brief main game logic
@@ -1244,6 +1227,7 @@ void mainGameLoop()
 
 		if (player.hp <= 0)
 		{
+			playSound(11);
 			break;
 		}
 
@@ -1287,7 +1271,7 @@ int main()
 	initPalette();
 	renderStart();
 
-	mapSize = 50; // 60 or 70 highest tested
+	mapSize = 10; // 50 default, 60 or 70 highest tested
 
 	while (1)
 	{

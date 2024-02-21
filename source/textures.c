@@ -311,7 +311,7 @@ const int TEXTURES[20*16*16] = {
   
 };
 
-const int LETTERS[50*8*8] = {
+const int LETTERS[43*8*8] = {
 
     0,1,1,1,1,1,1,0, //0
     1,0,0,0,0,0,1,1,

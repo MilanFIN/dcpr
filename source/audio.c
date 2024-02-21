@@ -21,7 +21,6 @@ void playSound(int id)
 
 		REG_SND1CNT = volume << 12 | direction << 11 | step << 8 | duty << 6 | length;
 		REG_SND1SWEEP = SSW_DEC | SSW_TIME(1) | SSW_SHIFT(5);
-
 		REG_SND1FREQ = SFREQ_RESET | SND_RATE(NOTE_D, 0) | SFREQ_HOLD; // SFREQ_TIMED;
 	}
 	// basic player getting hit sound
@@ -30,6 +29,7 @@ void playSound(int id)
 		REG_SND4CNT = SSQR_ENV_BUILD(12, 0, 2); // | SSQR_DUTY1_4;
 		REG_SND4FREQ = SFREQ_RESET | SND_RATE(NOTE_F, 0);
 	}
+	// hp pickup
 	else if (id == 2)
 	{
 		const uint8_t volume = 15;	 // 0-15
@@ -42,6 +42,7 @@ void playSound(int id)
 		REG_SND1SWEEP = SSW_INC | SSW_TIME(7) | SSW_SHIFT(3);
 		REG_SND1FREQ = SFREQ_RESET | SND_RATE(NOTE_D, 0) | SFREQ_HOLD; // SFREQ_TIMED;
 	}
+	// spell pickup
 	else if (id == 3)
 	{
 		const uint8_t volume = 15;	 // 0-15
@@ -83,18 +84,43 @@ void playSound(int id)
 		REG_SND1SWEEP = SSW_INC | SSW_TIME(7) | SSW_SHIFT(3);
 		REG_SND1FREQ = SFREQ_RESET | SND_RATE(NOTE_D, -2);
 	}
-	//up/down
+	// menu move
 	else if (id == 9)
 	{
 		REG_SND1CNT = SSQR_ENV_BUILD(12, 0, 7) | SSQR_DUTY1_2;
 		REG_SND1SWEEP = SSW_INC | SSW_TIME(5) | SSW_SHIFT(5);
 		REG_SND1FREQ = SFREQ_RESET | SND_RATE(NOTE_C, 2);
 	}
-	//menu ok
+	// menu ok
 	else if (id == 10)
 	{
 		REG_SND1CNT = SSQR_ENV_BUILD(12, 0, 7) | SSQR_DUTY1_2;
 		REG_SND1SWEEP = SSW_INC | SSW_TIME(5) | SSW_SHIFT(5);
 		REG_SND1FREQ = SFREQ_RESET | SND_RATE(NOTE_C, -1);
+	}
+	// death sound (noise)?
+	else if (id == 11)
+	{
+		REG_SND4CNT = SSQR_ENV_BUILD(12, 0, 7) | SSQR_DUTY1_8;
+		REG_SND4FREQ = SFREQ_RESET | SND_RATE(NOTE_E, 0);
+	}
+	// enemy death sound
+	else if (id == 12)
+	{
+		REG_SND1CNT = SSQR_ENV_BUILD(12, 0, 3) | SSQR_DUTY1_8;
+		REG_SND1SWEEP = SSW_DEC | SSW_TIME(1) | SSW_SHIFT(7);
+		REG_SND1FREQ = SFREQ_RESET | SND_RATE(NOTE_C, -1);
+	}
+	// fire 1
+	else if (id == 13)
+	{
+		REG_SND2CNT = SSQR_ENV_BUILD(7, 0, 2) | SSQR_DUTY1_2;
+		REG_SND2FREQ = SFREQ_RESET | SND_RATE(NOTE_CIS, -1) | SFREQ_TIMED;
+	}
+	// fire 2
+	else if (id == 14)
+	{
+		REG_SND2CNT = SSQR_ENV_BUILD(7, 0, 5) | SSQR_DUTY1_2;
+		REG_SND2FREQ = SFREQ_RESET | SND_RATE(NOTE_C, -2) | SFREQ_TIMED;
 	}
 }

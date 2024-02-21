@@ -32,7 +32,6 @@ void drawWall(int i, FIXED distance, int type, int vertical, int textureColumn)
 	{
 		m4_reduced_res_textured_dual_line(TEXTURES, i, HALFSCREENPOINT - halfHeight, HALFSCREENPOINT + halfHeight, type, vertical, textureColumn, yStep, TEXTURESIZE, 2);
 	}
-	// floor
 	m4_dual_vline(i, HALFSCREENPOINT + halfHeight, SCREENHEIGHT, color);
 }
 

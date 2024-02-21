@@ -4,7 +4,7 @@
 #include <tonc.h>
 #include "textures.h"
 
-#define SCREENHEIGHT 135
+#define SCREENHEIGHT 134
 #define SCREENWIDTH 240
 
 extern FIXED CAMERAX_LU[SCREENWIDTH / 2];

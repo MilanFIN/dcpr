@@ -6,7 +6,7 @@
 
 extern const int TEXTURES[20*16*16];
 
-extern const int LETTERS[50*8*8];
+extern const int LETTERS[43*8*8];
 
 
 #endif //TEXTURES_H
