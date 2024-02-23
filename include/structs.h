@@ -2,6 +2,8 @@
 #define STRUCTS_H
 #include <tonc.h>
 
+
+/// @brief an actor in the game that is drawn with a sprite
 struct Entity
 {
 	bool active;
@@ -10,7 +12,7 @@ struct Entity
 	FIXED y;
 	FIXED xDir;
 	FIXED yDir;
-	char type; // 1: key, 2: projectile, 3:enemy
+	char type; // 1: key, 2: projectile, 3:enemy, 4 hp pack, 5 gun level up
 	char texture;
 	FIXED distance;
 	FIXED scale;
@@ -27,6 +29,7 @@ struct Entity
 	size_t notificationLength;
 };
 
+
 struct Player
 {
 	FIXED x;
@@ -35,6 +38,8 @@ struct Player
 	bool hasKey;
 	int hp;
 	int maxHp;
+	int ammo;
+	int maxAmmo;
 	char gunLevel;
 	char maxGunLevel;
 	char damage;

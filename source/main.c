@@ -11,10 +11,7 @@
 
 #define TILESIZE 1
 #define FOV 60
-// actually only 31 elements are used, see note below
 #define MAXENTITYCOUNT 32
-
-const float PI = 3.1415;
 
 EWRAM_DATA int UTILITYMAPDATA[MAPSIZE * MAPSIZE] = {0};
 EWRAM_DATA char VISITEDLOCATIONS[MAPSIZE * MAPSIZE] = {0};
@@ -31,9 +28,6 @@ const int ENEMYTEXCOUNT = 6;
 
 int updateHud = 2;
 
-// note: 0th element of this array is evil and not used
-// Any lookup to the 0th index causes unexplainable lag
-// not dependent on the sprite, entity type etc.
 EWRAM_DATA struct Entity entities[MAXENTITYCOUNT];
 
 int entityOrder[MAXENTITYCOUNT] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31};
@@ -44,8 +38,8 @@ int nextPaletteIndex = 0;
 int utilityCounter = 0;
 const int UTILITYRESET = 10;
 
-const int goalEnemyCount = 3;
-const int pruneEnemyDistance = 12;
+const int goalEnemyCount = 6;
+const int PRUNEENEMYDISTANCE = 17;
 
 char notification[5] = "ABCDE";
 size_t notificationLength = 5;
@@ -142,11 +136,10 @@ void initEnemy(int id, int x, int y)
 /// @param id position in entity array
 /// @param x tile position (0 to mapsize)
 /// @param y
-void initPickup(int id, int x, int y)
+void initPickup(int type, int id, int x, int y)
 {
-	int pickupType = qran_range(0, 2);
 
-	if (pickupType == 0)
+	if (type == 0)
 	{ // healthpack
 		entities[id].active = true;
 		entities[id].x = int2fx(x) + 128;
@@ -161,7 +154,7 @@ void initPickup(int id, int x, int y)
 		copyText(entities[id].notification, "HP:", 3);
 		entities[id].notificationLength = 3;
 	}
-	else if (pickupType == 1)
+	else if (type == 1)
 	{ // gun level up
 		entities[id].active = true;
 		entities[id].x = int2fx(x) + 128;
@@ -182,17 +175,17 @@ void initPickup(int id, int x, int y)
 /// @param y -||-
 void initKey(int x, int y)
 {
-	entities[1].active = true;
-	entities[1].x = int2fx(x) + 128;
-	entities[1].y = int2fx(y) + 128;
-	entities[1].texture = 3;
-	entities[1].type = 1;
-	entities[1].scale = 128;
-	entities[1].moving = false;
-	entities[1].yOffset = 128;
-	entities[1].hit = 0;
-	copyText(entities[1].notification, "KEY", 3);
-	entities[1].notificationLength = 3;
+	entities[0].active = true;
+	entities[0].x = int2fx(x) + 128;
+	entities[0].y = int2fx(y) + 128;
+	entities[0].texture = 3;
+	entities[0].type = 1;
+	entities[0].scale = 128;
+	entities[0].moving = false;
+	entities[0].yOffset = 128;
+	entities[0].hit = 0;
+	copyText(entities[0].notification, "KEY", 3);
+	entities[0].notificationLength = 3;
 }
 /// @brief initialize entity array with unused values
 void initEntities()
@@ -207,14 +200,39 @@ void initEntities()
 void drawHud()
 {
 	// background
-	fillArea(0, 160 - HUDHEIGHT, 2 * CASTEDRAYS, 160, 29);
-	// key icon
+	fillArea(1, 160 - HUDHEIGHT + 2, 2 * CASTEDRAYS - 4, 158, 29);
+	// borders
+	fillArea(0, 160 - HUDHEIGHT+1, 2 * CASTEDRAYS, 160 - HUDHEIGHT + 2, 26);
+	fillArea(0, 158, 2 * CASTEDRAYS, 160, 26);
+	fillArea(0, 160 - HUDHEIGHT, 1, 160, 26);
+	fillArea(238, 160 - HUDHEIGHT, 240, 160, 26);
+
+	// key icon and border
 	if (player.hasKey)
 	{
-		drawFlat(TEXTURES, 3, 10, 160 - HUDHEIGHT - 10, 16, 16, 0, TEXTURESIZE);
+		drawFlat(TEXTURES, 3, 19, 160 - HUDHEIGHT - 10, 16, 16, 0, TEXTURESIZE);
 	}
+	fillArea(74, 160 - HUDHEIGHT + 1, 76, 159, 26);
+
 	// health bar
-	fillArea(120, 160 - HUDHEIGHT + 5, 120 + player.hp / 2, 160 - 5, 15);
+	fillArea(92, 160 - HUDHEIGHT + 5, 92 + player.hp / 2, 160 - 5, 15);
+	fillArea(92 + player.hp / 2, 160 - HUDHEIGHT + 5, 141, 160 - 5, 27);
+
+	fillArea(158, 160 - HUDHEIGHT + 1, 160, 159, 26);
+
+	// gun icon and border
+	fillArea(30, 160 - HUDHEIGHT + 1, 32, 159, 26);
+	drawFlat(TEXTURES, PROJECTILETEXTURES[player.gunLevel - 1], 3, 160 - HUDHEIGHT + 3, 10, 10, 0, TEXTURESIZE);
+}
+
+void updateAmmo()
+{
+	fillArea(174, 160 - HUDHEIGHT + 5, 174 + player.ammo / 2 - 1, 160 - 5, 31);
+	fillArea(174 + player.ammo / 2, 160 - HUDHEIGHT + 5, 223, 160 - 5, 27);
+	if (player.ammo < player.maxAmmo)
+	{
+		player.ammo += 1;
+	}
 }
 
 /// @brief cast a ray forward in 2d plane, and check if specified wall is hit
@@ -327,28 +345,33 @@ int castRay(int targetType)
 /// @brief create a new projectile entity with speed and direction
 void fire()
 {
-	for (int i = 1; i < MAXENTITYCOUNT; i++)
+	if (player.ammo - 20 >= 0)
 	{
-		if (entities[i].active)
+		for (int i = 0; i < MAXENTITYCOUNT; i++)
 		{
-			continue;
+			if (entities[i].active)
+			{
+				continue;
+			}
+
+			entities[i].x = player.x;
+			entities[i].y = player.y;
+			entities[i].texture = PROJECTILETEXTURES[player.gunLevel - 1];
+			entities[i].type = 2;
+			entities[i].active = true;
+			entities[i].scale = 64;
+			entities[i].xDir = dirX;
+			entities[i].yDir = dirY;
+			entities[i].moving = true;
+			entities[i].yOffset = 256;
+			entities[i].hit = 0;
+
+			playSound(13);
+
+			player.ammo -= 20;
+
+			break;
 		}
-
-		entities[i].x = player.x;
-		entities[i].y = player.y;
-		entities[i].texture = PROJECTILETEXTURES[player.gunLevel - 1];
-		entities[i].type = 2;
-		entities[i].active = true;
-		entities[i].scale = 64;
-		entities[i].xDir = dirX;
-		entities[i].yDir = dirY;
-		entities[i].moving = true;
-		entities[i].yOffset = 256;
-		entities[i].hit = 0;
-
-		playSound(13);
-
-		break;
 	}
 }
 
@@ -385,7 +408,7 @@ void moveEntities()
 		if (entities[i].type == 3)
 		{
 
-			if (entities[i].distance < 9000 && entities[i].distance > 128)
+			if (entities[i].distance < 12000 && entities[i].distance > 128)
 			{
 				if (entities[i].x < player.x)
 				{
@@ -511,7 +534,7 @@ void drawEntities()
 {
 
 	// update distances to player
-	for (int i = 1; i < MAXENTITYCOUNT; i++)
+	for (int i = 0; i < MAXENTITYCOUNT; i++)
 	{
 		if (!entities[i].active)
 		{
@@ -571,7 +594,7 @@ void drawEntities()
 		// keeps track of which column of the texture should be drawn, (FIXED point fractional)
 		// starting from zero leads to artifacting on the very first vertical stripe
 		// instead first column set to 32/256 => 0.125
-		FIXED hTexPos = 32;
+		FIXED hTexPos = 1;
 		if (transformY > 0)
 		{
 
@@ -603,14 +626,7 @@ void drawEntities()
 						else
 						{
 							const int color = 11;
-							if (height < downScaledDistance)
-							{
-								m4_sprite_color_textured_dual_line(TEXTURES, 2 * stripe, drawStartY, drawEndY, texture, texX, color, yStep, TEXTURESIZE);
-							}
-							else
-							{
-								m4_downscaled_sprite_color_textured_dual_line(TEXTURES, 2 * stripe, drawStartY, drawEndY, texture, texX, color, yStep, TEXTURESIZE, 2);
-							}
+							m4_sprite_color_textured_dual_line(TEXTURES, 2 * stripe, drawStartY, drawEndY, texture, texX, color, yStep, TEXTURESIZE);
 						}
 					}
 				}
@@ -681,7 +697,7 @@ void refillEnemies()
 				if (MAP[y * MAPSIZE + x] == 0)
 				{
 					int distance = simpleDistance(x, y, playerX, playerY);
-					if (distance > 5 && distance < 8)
+					if (distance > 7 && distance < 13)
 					{
 						UTILITYMAPDATA[counter] = y * MAPSIZE + x;
 						counter++;
@@ -705,7 +721,7 @@ void pruneFarAwayEnemies()
 		if (entities[i].active && entities[i].type == 3)
 		{
 			int distance = simpleDistance(fx2int(entities[i].x), fx2int(entities[i].y), fx2int(player.x), fx2int(player.y));
-			if (distance >= pruneEnemyDistance)
+			if (distance >= PRUNEENEMYDISTANCE)
 			{
 				removeEntity(i);
 			}
@@ -837,10 +853,10 @@ void checkEntityCollisions()
 				{
 					player.gunLevel++;
 					setNotification(i);
-					removeEntity(i);
 					updateHud = 2;
-					playSound(3);
 				}
+				removeEntity(i);
+				playSound(3);
 			}
 		}
 	}
@@ -852,8 +868,8 @@ void updateDirection()
 
 	FIXED viewPlaneMultiplier = 200; // 168;
 
-	const FIXED PI2 = int2fx(0x10000 >> 1);
-	FIXED luAngle = fxmul(PI2, fxdiv(player.direction, int2fx(360))) >> 7;
+	const FIXED PI = int2fx(0x10000 >> 1);
+	FIXED luAngle = fxmul(PI, fxdiv(player.direction, int2fx(360))) >> 7;
 
 	FIXED cosine = lu_cos(luAngle);
 	FIXED sine = lu_sin(luAngle);
@@ -1068,7 +1084,7 @@ void populateMap()
 	counter--;
 
 	// spawn a bunch of items (hp, weapon upgrades etc.)
-	for (int j = 0; j < 4; j++)
+	for (int j = 0; j < mapSize / 4; j++)
 	{
 		counter--;
 		if (counter < 0)
@@ -1077,7 +1093,7 @@ void populateMap()
 		}
 		int x = UTILITYMAPDATA[counter] % MAPSIZE;
 		int y = UTILITYMAPDATA[counter] / MAPSIZE;
-		initPickup(j + 2, x, y);
+		initPickup(j < 2, j + 2, x, y);
 	}
 }
 
@@ -1085,8 +1101,8 @@ void populateMap()
 void initLevel()
 {
 
-	player.hp = 100;
-	player.maxHp = 100;
+	player.hp = player.maxHp;
+	player.ammo = player.maxAmmo;
 	player.speed = float2fx(0.15);
 	player.hasKey = false;
 	player.gunLevel = 1;
@@ -1100,7 +1116,7 @@ void initLevel()
 
 	// player.direction = int2fx(0);//int2fx(45);
 
-	getDungeon(MAP, mapSize, &player.x, &player.y);
+	getDungeon(MAP, mapSize);
 
 	for (int i = 0; i < MAPSIZE * MAPSIZE; i++)
 	{
@@ -1130,7 +1146,7 @@ void updatePlayerVisited()
 {
 	if (player.previousX != fx2int(player.x) || player.previousY != fx2int(player.y))
 	{
-		if (!VISITEDLOCATIONS[fx2int(player.y) * MAPSIZE + fx2int(player.x)])
+		if (VISITEDLOCATIONS[fx2int(player.y) * MAPSIZE + fx2int(player.x)] != 2)
 		{
 			int x = fx2int(player.x);
 			int y = fx2int(player.y);
@@ -1142,10 +1158,14 @@ void updatePlayerVisited()
 				{
 					if (i >= 0 && i < mapSize && j >= 0 && j < mapSize)
 					{
-						VISITEDLOCATIONS[MAPSIZE * j + i] = 1;
+						if ((i - x) * (i - x) + (j - y) * (j - y) <= MINIMAPVISIBLERADIUS * MINIMAPVISIBLERADIUS)
+						{
+							VISITEDLOCATIONS[MAPSIZE * j + i] = 1;
+						}
 					}
 				}
 			}
+			VISITEDLOCATIONS[MAPSIZE * y + x] = 2;
 		}
 	}
 	player.previousX = fx2int(player.x);
@@ -1224,6 +1244,8 @@ void mainGameLoop()
 			drawHud();
 			updateHud--;
 		}
+
+		updateAmmo();
 
 		if (player.hp <= 0)
 		{

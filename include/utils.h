@@ -4,8 +4,6 @@
 #include <tonc.h>
 
 /// @brief floating point absolute value
-/// @param a source value
-/// @return absolute value of a
 inline float floatAbs(float a)
 {
 	if (a < 0.0)
@@ -19,8 +17,6 @@ inline float floatAbs(float a)
 }
 
 /// @brief libtonc builtin fixed point absolute value
-/// @param a source value
-/// @return absolute value
 inline static FIXED fixedAbs(FIXED a)
 {
 	if (a < 0)
@@ -34,8 +30,6 @@ inline static FIXED fixedAbs(FIXED a)
 }
 
 /// @brief integer absolute value
-/// @param a
-/// @return
 inline int intAbs(int a)
 {
 	if (a < 0)
@@ -48,5 +42,8 @@ inline int intAbs(int a)
 	}
 }
 
+/// @brief Copy char array contents to another
 void copyText(char target[], char source[], size_t length);
+
+
 #endif // UTILS_H

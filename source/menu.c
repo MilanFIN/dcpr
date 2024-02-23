@@ -100,16 +100,7 @@ void renderMenu()
 	mapSize = 30 + size * 10;
 }
 
-bool checkAround(char *map, int x, int y)
-{
 
-	if (map[MAPSIZE * y + x] != 0)
-	{
-		return true;
-	}
-
-	return false;
-}
 
 void drawArrows()
 {
@@ -154,7 +145,8 @@ void renderPause1st(char *map, char *visited, int playerX, int playerY)
 					color = 15; // player
 				}
 			}
-			if (!checkAround(visited, x, y))
+			//hide unvisited areas
+			if (visited[MAPSIZE * y + x] == 0)
 			{
 				color = 0;
 			}

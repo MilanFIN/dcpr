@@ -204,7 +204,7 @@ void shrink(struct Leaf leaves[MAXITERATIONS])
 }
 
 
-void getDungeon(char *map, int mapsize, FIXED *playerX, FIXED *playerY)
+void getDungeon(char *map, int mapsize)
 {
 	PAIRID = 0;
 	ID = 0;
