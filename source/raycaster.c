@@ -1,13 +1,11 @@
 #include "raycaster.h"
 
-
 const int HALFSCREENPOINT = SCREENHEIGHT / 2;
 FIXED zBuffer[SCREENWIDTH / 2] = {0};
 const int CASTEDRAYS = SCREENWIDTH / 2;
 
 FIXED dirX, dirY;
 FIXED planeX, planeY;
-
 
 void drawWall(int i, FIXED distance, int type, int vertical, int textureColumn)
 {

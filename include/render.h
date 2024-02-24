@@ -152,12 +152,11 @@ INLINE void m4_sprite_color_textured_dual_line(const int *textures, int x, int y
 	}
 }
 
-
 // draws a rectangular texture to arbitary point on screen
 // texture as in id from TEXTURES
 // scale: 0 for 16px, 1 for 8, 2 for 4 etc
 
-/// @brief draw a flat texture on screen 
+/// @brief draw a flat texture on screen
 /// @param textures source array for textures (1d buffer)
 /// @param texture texture index in array
 /// @param x top left coordinate on screen
@@ -168,7 +167,7 @@ INLINE void m4_sprite_color_textured_dual_line(const int *textures, int x, int y
 /// @param textureSize 8 or 16
 void drawFlat(const int *textures, int texture, int x, int y, int w, int h, int scale, int textureSize);
 
-/// @brief Same as drawFlat, but flipped horizontally 
+/// @brief Same as drawFlat, but flipped horizontally
 void drawFlatMirrored(const int *textures, int texture, int x, int y, int w, int h, int scale, int textureSize);
 
 /// @brief Same as drawFlat, but using texture as a mask for single color
@@ -177,7 +176,7 @@ void drawFlatColorTexture(const int *textures, int texture, int x, int y, int w,
 
 // writes an individual letter (number or capital) to a specific position on screen
 
-/// @brief write a letter on screen 
+/// @brief write a letter on screen
 /// @param letter supported: A-Z, 0-9
 /// @param x top left coordinate
 /// @param y -||-
@@ -196,5 +195,9 @@ void writeLine(char *content, char length, int x, int y, int color);
 
 /// @brief fill an area on screen with flat color
 void fillArea(int x0, int y0, int x1, int y1, char color);
+
+void shiftPixelDown(int x, int y, char amount);
+
+void endAnimation(char backgroundColor);
 
 #endif // RENDER_H

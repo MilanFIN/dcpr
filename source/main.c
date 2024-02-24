@@ -202,7 +202,7 @@ void drawHud()
 	// background
 	fillArea(1, 160 - HUDHEIGHT + 2, 2 * CASTEDRAYS - 4, 158, 29);
 	// borders
-	fillArea(0, 160 - HUDHEIGHT+1, 2 * CASTEDRAYS, 160 - HUDHEIGHT + 2, 26);
+	fillArea(0, 160 - HUDHEIGHT + 1, 2 * CASTEDRAYS, 160 - HUDHEIGHT + 2, 26);
 	fillArea(0, 158, 2 * CASTEDRAYS, 160, 26);
 	fillArea(0, 160 - HUDHEIGHT, 1, 160, 26);
 	fillArea(238, 160 - HUDHEIGHT, 240, 160, 26);
@@ -366,7 +366,7 @@ void fire()
 			entities[i].yOffset = 256;
 			entities[i].hit = 0;
 
-			playSound(13);
+			playSound(13 + player.gunLevel - 1);
 
 			player.ammo -= 20;
 
@@ -756,6 +756,7 @@ void checkEntityCollisions()
 				removeEntity(i);
 				player.hasKey = true;
 				updateHud = 2;
+				playSound(16);
 			}
 		}
 
@@ -1129,17 +1130,24 @@ void initLevel()
 }
 
 /// @brief check if player is looking at anything special (walls)
-void castForward()
+bool castForward()
 {
 	// check if player has key and is looking at a door
-	if (player.hasKey)
+	int distance = castRay(5);
+	if (distance >= 0 && distance < 2)
 	{
-		int distance = castRay(5);
-		if (distance >= 0 && distance < 2)
+
+		if (!player.hasKey)
 		{
-			initLevel();
+			playSound(18);
+			return true;
+		}
+		else {
+			playSound(17);
+			return false;
 		}
 	}
+	return false;
 }
 
 void updatePlayerVisited()
@@ -1170,6 +1178,21 @@ void updatePlayerVisited()
 	}
 	player.previousX = fx2int(player.x);
 	player.previousY = fx2int(player.y);
+}
+
+
+void syncVideoBuffers()
+{
+	// clean up difference between video buffers due to movement
+	castRays();
+	drawEntities();
+	drawHud();
+	updateAmmo();
+	vid_flip();
+	castRays();
+	drawEntities();
+	drawHud();
+	updateAmmo();
 }
 
 /// @brief main game logic
@@ -1214,7 +1237,11 @@ void mainGameLoop()
 
 		if (key_hit(KEY_A))
 		{
-			castForward();
+			if (castForward()) {
+				syncVideoBuffers();
+				endAnimation(16);
+				break;
+			}
 		}
 		if (key_hit(KEY_B))
 		{
@@ -1250,6 +1277,8 @@ void mainGameLoop()
 		if (player.hp <= 0)
 		{
 			playSound(11);
+			syncVideoBuffers();
+			endAnimation(14);
 			break;
 		}
 
@@ -1297,11 +1326,8 @@ int main()
 
 	while (1)
 	{
-
 		renderMenu();
-
 		initLevel();
-
 		mainGameLoop();
 	}
 }

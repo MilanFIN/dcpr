@@ -1,9 +1,7 @@
 #include "render.h"
 
-
 FIXED CAMERAX_LU[SCREENWIDTH / 2] = {0};
 FIXED TEXTURESTEP_LU[SCREENHEIGHT] = {0};
-
 
 void drawFlat(const int *textures, int texture, int x, int y, int w, int h, int scale, int textureSize)
 {
@@ -12,7 +10,7 @@ void drawFlat(const int *textures, int texture, int x, int y, int w, int h, int 
 	FIXED textureX = 0;
 	const FIXED xStep = TEXTURESTEP_LU[w] >> scale;
 	const FIXED yStep = TEXTURESTEP_LU[h] >> scale;
-	int maxW = CLAMP(x+w, 0, 120);
+	int maxW = CLAMP(x + w, 0, 121);
 
 	for (int x1 = x; x1 < maxW; x1++)
 	{
@@ -28,7 +26,7 @@ void drawFlatMirrored(const int *textures, int texture, int x, int y, int w, int
 	FIXED textureX = int2fx(15);
 	const FIXED xStep = TEXTURESTEP_LU[w] >> scale;
 	const FIXED yStep = TEXTURESTEP_LU[h] >> scale;
-	int maxW = CLAMP(x+w, 0, 120);
+	int maxW = CLAMP(x + w, 0, 121);
 
 	for (int x1 = x; x1 < maxW; x1++)
 	{
@@ -71,5 +69,38 @@ void fillArea(int x0, int y0, int x1, int y1, char color)
 	for (int x = x0; x <= x1; x++)
 	{
 		m4_dual_vline(x, y0, y1, color);
+	}
+}
+
+void shiftPixelDown(int x, int y, char amount)
+{
+	vid_page[((y + amount) * M4_WIDTH + x) >> 1] = vid_page[(y * M4_WIDTH + x) >> 1];
+}
+
+void endAnimation(char backgroundColor)
+{
+	char speeds[120] = {0};
+	char top[240] = {0};
+	for (int i = 0; i < 120; i++)
+	{
+		speeds[i] = qran_range(0, 5);
+	}
+
+	for (int i = 0; i < 40; i++)
+	{
+		for (int x = 0; x < 240; x += 2)
+		{
+			char amount = speeds[x >> 1];
+			for (int y = 159; y > 0; y--)
+			{
+				if (y + amount < 159)
+				{
+					shiftPixelDown(x, y, amount);
+				}
+			}
+			top[(x >> 1)] += amount;
+			m4_dual_vline(x, 0, top[(x >> 1)], backgroundColor);
+		}
+		vid_flip();
 	}
 }
