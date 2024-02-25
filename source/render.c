@@ -11,10 +11,11 @@ void drawFlat(const int *textures, int texture, int x, int y, int w, int h, int 
 	const FIXED xStep = TEXTURESTEP_LU[w] >> scale;
 	const FIXED yStep = TEXTURESTEP_LU[h] >> scale;
 	int maxW = CLAMP(x + w, 0, 121);
+	int maxH = CLAMP(y + h, 0, 160);
 
 	for (int x1 = x; x1 < maxW; x1++)
 	{
-		m4_sprite_textured_dual_line(textures, 2 * x1, y, y + h, texture, fx2int(textureX), yStep, textureSize);
+		m4_sprite_textured_dual_line(textures, 2 * x1, y, maxH, texture, fx2int(textureX), yStep, textureSize);
 		textureX = fxadd(textureX, xStep);
 	}
 }
@@ -27,10 +28,11 @@ void drawFlatMirrored(const int *textures, int texture, int x, int y, int w, int
 	const FIXED xStep = TEXTURESTEP_LU[w] >> scale;
 	const FIXED yStep = TEXTURESTEP_LU[h] >> scale;
 	int maxW = CLAMP(x + w, 0, 121);
+	int maxH = CLAMP(y + h, 0, 160);
 
 	for (int x1 = x; x1 < maxW; x1++)
 	{
-		m4_sprite_textured_dual_line(textures, 2 * x1, y, y + h, texture, fx2int(textureX), yStep, textureSize);
+		m4_sprite_textured_dual_line(textures, 2 * x1, y, maxH, texture, fx2int(textureX), yStep, textureSize);
 		textureX = fxsub(textureX, xStep);
 	}
 }

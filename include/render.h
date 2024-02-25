@@ -174,8 +174,6 @@ void drawFlatMirrored(const int *textures, int texture, int x, int y, int w, int
 /// @param color color palette index
 void drawFlatColorTexture(const int *textures, int texture, int x, int y, int w, int h, int color, int scale, int textureSize);
 
-// writes an individual letter (number or capital) to a specific position on screen
-
 /// @brief write a letter on screen
 /// @param letter supported: A-Z, 0-9
 /// @param x top left coordinate

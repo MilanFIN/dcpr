@@ -8,6 +8,7 @@
 #include "utils.h"
 #include "raycaster.h"
 #include "audio.h"
+#include "timer.h"
 
 #define TILESIZE 1
 #define FOV 60
@@ -1127,6 +1128,8 @@ void initLevel()
 	initEntities();
 
 	populateMap();
+
+	resetTimer();
 }
 
 /// @brief check if player is looking at anything special (walls)
@@ -1137,14 +1140,15 @@ bool castForward()
 	if (distance >= 0 && distance < 2)
 	{
 
-		if (!player.hasKey)
+		if (player.hasKey)
 		{
 			playSound(18);
 			return true;
 		}
 		else {
 			playSound(17);
-			return false;
+			//todo: revert
+			return true;
 		}
 	}
 	return false;
@@ -1240,6 +1244,7 @@ void mainGameLoop()
 			if (castForward()) {
 				syncVideoBuffers();
 				endAnimation(16);
+				renderLevelDone();
 				break;
 			}
 		}

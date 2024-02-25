@@ -45,4 +45,6 @@ int renderPause2nd();
 /// @return true: resume game, false: exit
 bool renderPauseMenu(char *map, char *visited, int playerX, int playerY);
 
+void renderLevelDone();
+
 #endif // MENU_H
