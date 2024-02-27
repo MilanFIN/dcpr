@@ -157,7 +157,7 @@ void castRays()
 
 			if (side == 0 && rayDirX < 0)
 				textureColumn = TEXTURESIZE - textureColumn - 1;
-			if (side == 1 && rayDirY > 0)
+			else if (side == 1 && rayDirY > 0)
 				textureColumn = TEXTURESIZE - textureColumn - 1;
 
 			zBuffer[i] = perpWallDistance;

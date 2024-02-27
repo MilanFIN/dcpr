@@ -10,8 +10,8 @@ void drawFlat(const int *textures, int texture, int x, int y, int w, int h, int 
 	FIXED textureX = 0;
 	const FIXED xStep = TEXTURESTEP_LU[w] >> scale;
 	const FIXED yStep = TEXTURESTEP_LU[h] >> scale;
-	int maxW = CLAMP(x + w, 0, 121);
-	int maxH = CLAMP(y + h, 0, 160);
+	const int maxW = CLAMP(x + w, 0, 121);
+	const int maxH = CLAMP(y + h, 0, 161);
 
 	for (int x1 = x; x1 < maxW; x1++)
 	{
@@ -27,8 +27,8 @@ void drawFlatMirrored(const int *textures, int texture, int x, int y, int w, int
 	FIXED textureX = int2fx(15);
 	const FIXED xStep = TEXTURESTEP_LU[w] >> scale;
 	const FIXED yStep = TEXTURESTEP_LU[h] >> scale;
-	int maxW = CLAMP(x + w, 0, 121);
-	int maxH = CLAMP(y + h, 0, 160);
+	const int maxW = CLAMP(x + w, 0, 121);
+	const int maxH = CLAMP(y + h, 0, 161);
 
 	for (int x1 = x; x1 < maxW; x1++)
 	{

@@ -1,6 +1,6 @@
 #include "timer.h"
 
-void resetTimer()
+void startTimer1s()
 {
 	//reset timers
 	REG_TM2D = 0;

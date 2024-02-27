@@ -152,7 +152,7 @@ void initPickup(int type, int id, int x, int y)
 		entities[id].yOffset = 128;
 		entities[id].hit = 0;
 		entities[id].damage = 50;
-		copyText(entities[id].notification, "HP:", 3);
+		copyText(entities[id].notification, "HP;", 3);
 		entities[id].notificationLength = 3;
 	}
 	else if (type == 1)
@@ -223,7 +223,7 @@ void drawHud()
 
 	// gun icon and border
 	fillArea(30, 160 - HUDHEIGHT + 1, 32, 159, 26);
-	drawFlat(TEXTURES, PROJECTILETEXTURES[player.gunLevel - 1], 3, 160 - HUDHEIGHT + 3, 10, 10, 0, TEXTURESIZE);
+	drawFlat(TEXTURES, PROJECTILETEXTURES[player.gunLevel - 1], 2, 160 - HUDHEIGHT + 3, 12, 10, 0, TEXTURESIZE);
 }
 
 void updateAmmo()
@@ -1129,7 +1129,7 @@ void initLevel()
 
 	populateMap();
 
-	resetTimer();
+	startTimer1s();
 }
 
 /// @brief check if player is looking at anything special (walls)
@@ -1145,10 +1145,10 @@ bool castForward()
 			playSound(18);
 			return true;
 		}
-		else {
+		else
+		{
 			playSound(17);
-			//todo: revert
-			return true;
+			return false;
 		}
 	}
 	return false;
@@ -1183,7 +1183,6 @@ void updatePlayerVisited()
 	player.previousX = fx2int(player.x);
 	player.previousY = fx2int(player.y);
 }
-
 
 void syncVideoBuffers()
 {
@@ -1241,8 +1240,10 @@ void mainGameLoop()
 
 		if (key_hit(KEY_A))
 		{
-			if (castForward()) {
+			if (castForward())
+			{
 				syncVideoBuffers();
+				pauseTimer();
 				endAnimation(16);
 				renderLevelDone();
 				break;

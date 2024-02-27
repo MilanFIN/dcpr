@@ -3,7 +3,7 @@
 
 #include <tonc.h>
 
-void resetTimer();
+void startTimer1s();
 
 void pauseTimer();
 

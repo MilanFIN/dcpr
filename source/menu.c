@@ -5,15 +5,18 @@
 #include "timer.h"
 
 int keyX = 0;
-int keyXAdd = 2;
+int keyXAdd = 1;
 int keyY = -32;
-int keyYAdd = 2;
+int keyYAdd = 1;
 
 void renderBkg()
 {
+	const int startX = CLAMP(2*keyX - 4, 0, 238);
+	const int startY = CLAMP((keyY + 32) - 4, 0, 138);
+	const int endX = CLAMP(2*keyX + 64 +4, 0, 238);
+	const int endY = CLAMP((keyY + 32) + 32 + 4, 0, 138);
 
-	drawFlat(TEXTURES, 1, 0, 0, 64, 64, 0, TEXTURESIZE);
-	drawFlat(TEXTURES, 1, 64, 0, 64, 64, 0, TEXTURESIZE);
+	fillArea(startX, startY, endX, endY, 16);
 
 	drawFlat(TEXTURES, 3, keyX, keyY, 32, 32, 0, TEXTURESIZE);
 
@@ -36,18 +39,23 @@ void renderStart()
 {
 
 	int seed = 0;
+	// renderBkg();
+
 	while (1)
 	{
-		seed++;
 		if (key_hit(KEY_START) || key_hit(KEY_A))
 		{
 			break;
 		}
 
 		key_poll();
-
 		renderBkg();
-		writeLine("PRESS START", 11, 10, 140, 15);
+		if (seed < 2)
+		{
+			writeLine("PRESS START", 11, 10, 140, 15);
+		}
+		seed++;
+
 		vid_flip();
 	}
 
@@ -207,14 +215,21 @@ int renderPause2nd()
 		castRays();
 		// drawEntities();
 		drawArrows();
-		writeLine("RESUME", 6, 38, 50, 15);
-		writeLine("QUIT", 4, 38, 66, 15);
-		writeLine(">", 1, 27, 50 + selection * 16, 15);
 
-		if (time > 5)
-		{
-			writeLine("TIMER TEST", 10, 0, 0, 15);
-		}
+		const char s1 = (time % 60 % 10) + '0';
+		const char s0 = (time % 60 / 10) + '0';
+		const char m1 = (time / 60) + '0';
+		const char m0 = (time / 60 / 10) + '0';
+		const char h1 = (time / 3600) + '0';
+		const char h0 = (time / 3600 / 10) + '0';
+
+		char timeLabel[8] = {h0, h1, ':', m0, m1, ':', s0, s1};
+		writeLine("TIME", 4, 42, 40, 15);
+		writeLine(timeLabel, 8, 25, 56, 15);
+
+		writeLine("RESUME", 6, 38, 88, 15);
+		writeLine("QUIT", 4, 38, 104, 15);
+		writeLine(">", 1, 27, 88 + selection * 16, 15);
 
 		vid_flip();
 	}
@@ -264,6 +279,8 @@ bool renderPauseMenu(char *map, char *visited, int playerX, int playerY)
 
 void renderLevelDone()
 {
+	int time = readTimer();
+
 	drawFlat(TEXTURES, 1, 0, 0, 64, 64, 0, TEXTURESIZE);
 	drawFlat(TEXTURES, 1, 64, 0, 64, 64, 0, TEXTURESIZE);
 	fillArea(0, 128, 240, 136, 1);
@@ -271,10 +288,21 @@ void renderLevelDone()
 	drawFlat(TEXTURES, 1, 0, 136, 64, 64, 0, TEXTURESIZE);
 	drawFlat(TEXTURES, 1, 64, 136, 64, 64, 0, TEXTURESIZE);
 
-	writeLine("LEVEL DONE", 10, 15, 40, 15);
+	writeLine("LEVEL DONE", 10, 15, 20, 15);
 
-	writeLine("PRESS A", 7, 28, 100, 15);
-	writeLine("TO CONTINUE", 11, 10, 116, 15);
+	const char s1 = (time % 60 % 10) + '0';
+	const char s0 = (time % 60 / 10) + '0';
+	const char m1 = (time / 60) + '0';
+	const char m0 = (time / 60 / 10) + '0';
+	const char h1 = (time / 3600) + '0';
+	const char h0 = (time / 3600 / 10) + '0';
+
+	char timeLabel[8] = {h0, h1, ':', m0, m1, ':', s0, s1};
+	writeLine("TIME", 4, 42, 40, 15);
+	writeLine(timeLabel, 8, 25, 56, 15);
+
+	writeLine("PRESS A", 7, 28, 80, 15);
+	writeLine("TO CONTINUE", 11, 10, 96, 15);
 
 	vid_flip();
 
