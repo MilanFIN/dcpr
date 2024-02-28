@@ -24,7 +24,9 @@ extern int MAXDEPTH;
 
 extern int mapSize;
 
-extern EWRAM_DATA char MAP[MAPSIZE * MAPSIZE];
+extern char MAP[MAPSIZE * MAPSIZE];
+extern EWRAM_DATA int UTILITYMAPDATA[MAPSIZE * MAPSIZE];
+extern EWRAM_DATA char VISITEDLOCATIONS[MAPSIZE * MAPSIZE];
 
 extern EWRAM_DATA struct Leaf finalLeaves[MAXITERATIONS];
 extern EWRAM_DATA struct Leaf pairTree[MAXITERATIONS];
@@ -61,5 +63,7 @@ void shrink(struct Leaf leaves[MAXITERATIONS]);
 /// @param map pointer to game map array, 1d buffer that contains a 2d map
 /// @param mapsize map size (eg 50x50 => 50)
 void getDungeon(char *map, int mapsize);
+
+bool collisionCheck(FIXED x, FIXED y);
 
 #endif // DUNGEON_H

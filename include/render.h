@@ -3,12 +3,13 @@
 
 #include <tonc.h>
 #include "textures.h"
+#include "lut.h"
 
 #define SCREENHEIGHT 134
 #define SCREENWIDTH 240
 
-extern FIXED CAMERAX_LU[SCREENWIDTH / 2];
-extern FIXED TEXTURESTEP_LU[SCREENHEIGHT];
+extern const int CASTEDRAYS;
+extern FIXED zBuffer[SCREENWIDTH / 2];
 
 /// @brief write value to video memory (2 horizontal pixels due to mode4)
 /// @param x x coordinate of the leftmost pixel on screen

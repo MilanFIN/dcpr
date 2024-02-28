@@ -2,7 +2,6 @@
 #define STRUCTS_H
 #include <tonc.h>
 
-
 /// @brief an actor in the game that is drawn with a sprite
 struct Entity
 {
@@ -29,7 +28,6 @@ struct Entity
 	size_t notificationLength;
 };
 
-
 struct Player
 {
 	FIXED x;
@@ -44,12 +42,11 @@ struct Player
 	char maxGunLevel;
 	char damage;
 	FIXED speed;
-	//in map tile space
+	// in map tile space
 	int previousX;
 	int previousY;
 };
 
 extern struct Player player;
-
 
 #endif // STRUCTS_H

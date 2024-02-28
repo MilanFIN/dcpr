@@ -8,7 +8,9 @@ int MAXDEPTH = 25;
 
 int mapSize = MAPSIZE;
 
-EWRAM_DATA char MAP[MAPSIZE * MAPSIZE] = {0};
+char MAP[MAPSIZE * MAPSIZE] = {0};
+EWRAM_DATA int UTILITYMAPDATA[MAPSIZE * MAPSIZE] = {0};
+EWRAM_DATA char VISITEDLOCATIONS[MAPSIZE * MAPSIZE] = {0};
 
 EWRAM_DATA struct Leaf finalLeaves[MAXITERATIONS] = {};
 EWRAM_DATA struct Leaf pairTree[MAXITERATIONS] = {};
@@ -83,7 +85,6 @@ void divide(struct Leaf *leaves, struct Leaf *leaf, int horizontal)
 	}
 }
 
-
 void getCorridor(struct Leaf *first, struct Leaf *second, int *x, int *y, int *xend, int *yend)
 {
 
@@ -111,7 +112,6 @@ void getCorridor(struct Leaf *first, struct Leaf *second, int *x, int *y, int *x
 		*yend = temp;
 	}
 }
-
 
 void generate(struct Leaf *leaf, struct Leaf finalLeaves[MAXITERATIONS], struct Leaf pairTree[MAXITERATIONS], int maxDepth, int depth)
 {
@@ -169,7 +169,6 @@ void generate(struct Leaf *leaf, struct Leaf finalLeaves[MAXITERATIONS], struct 
 	}
 }
 
-
 void shrink(struct Leaf leaves[MAXITERATIONS])
 {
 	for (int i = 0; i < MAXITERATIONS; i++)
@@ -202,7 +201,6 @@ void shrink(struct Leaf leaves[MAXITERATIONS])
 		}
 	}
 }
-
 
 void getDungeon(char *map, int mapsize)
 {
@@ -273,5 +271,21 @@ void getDungeon(char *map, int mapsize)
 				map[MAPSIZE * y + x] = 0;
 			}
 		}
+	}
+}
+
+/// @brief check if a point collides with a wall
+/// @param x fixed point position
+/// @param y fixed point position
+/// @return
+bool collisionCheck(FIXED x, FIXED y)
+{
+	if (MAP[fx2int(y) * MAPSIZE + fx2int(x)] != 0)
+	{
+		return true;
+	}
+	else
+	{
+		return false;
 	}
 }

@@ -7,11 +7,10 @@
 #include "structs.h"
 #include "utils.h"
 #include "dungeon.h"
-
+#include "lut.h"
+#include "audio.h"
 
 extern const int HALFSCREENPOINT;
-extern FIXED zBuffer[SCREENWIDTH / 2];
-extern const int CASTEDRAYS;
 
 extern FIXED dirX, dirY;
 extern FIXED planeX, planeY;
@@ -30,5 +29,9 @@ void drawWithoutWall(int i);
 
 /// @brief main raycast method. Loops through the columns of screen (120 even numbers, when at half resolution)
 void castRays();
+
+int castRay(int targetType, FIXED dirX, FIXED dirY);
+
+bool castForward(FIXED dirX, FIXED dirY);
 
 #endif // RAYCASTER_H

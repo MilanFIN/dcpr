@@ -1,8 +1,6 @@
 #include "raycaster.h"
 
 const int HALFSCREENPOINT = SCREENHEIGHT / 2;
-FIXED zBuffer[SCREENWIDTH / 2] = {0};
-const int CASTEDRAYS = SCREENWIDTH / 2;
 
 FIXED dirX, dirY;
 FIXED planeX, planeY;
@@ -19,7 +17,7 @@ void drawWall(int i, FIXED distance, int type, int vertical, int textureColumn)
 	m4_dual_vline(i, 0, HALFSCREENPOINT - halfHeight, color);
 
 	color = 131; // 59;//4;
-	const FIXED yStep = TEXTURESTEP_LU[wallHeight];
+	const FIXED yStep = TEXTURESTEPLUT[wallHeight];
 
 	// the actual wall
 	if (distance > 1024)
@@ -48,7 +46,7 @@ void castRays()
 	for (int i = 0; i < CASTEDRAYS; i++)
 	{
 
-		const FIXED cameraX = CAMERAX_LU[i]; // x-coordinate in camera space
+		const FIXED cameraX = CAMERAXLUT[i]; // x-coordinate in camera space
 		const FIXED rayDirX = fxadd(dirX, fxmul(planeX, cameraX));
 		const FIXED rayDirY = fxadd(dirY, fxmul(planeY, cameraX));
 
@@ -66,7 +64,8 @@ void castRays()
 		}
 		else
 		{
-			deltaDistX = fixedAbs(fxdiv(int2fx(1), rayDirX));
+			// deltaDistX = fixedAbs(fxdiv(int2fx(1), rayDirX));
+			deltaDistX = fixedAbs(SIDEDISTLUT[rayDirX + 350]);
 		}
 
 		if (rayDirY == 0)
@@ -75,7 +74,8 @@ void castRays()
 		}
 		else
 		{
-			deltaDistY = fixedAbs(fxdiv(int2fx(1), rayDirY));
+			// deltaDistY = fixedAbs(fxdiv(int2fx(1), rayDirY));
+			deltaDistY = fixedAbs(SIDEDISTLUT[rayDirY + 350]);
 		}
 
 		FIXED stepX;
@@ -91,7 +91,7 @@ void castRays()
 		else
 		{
 			stepX = int2fx(1);
-			sideDistX = fxmul(fxsub(fxadd(mapX, int2fx(1.0)), player.x), deltaDistX);
+			sideDistX = fxmul(fxsub(fxadd(mapX, int2fx(1)), player.x), deltaDistX);
 		}
 		if (rayDirY < 0)
 		{
@@ -101,7 +101,7 @@ void castRays()
 		else
 		{
 			stepY = int2fx(1);
-			sideDistY = fxmul(fxsub(fxadd(mapY, int2fx(1.0)), player.y), deltaDistY);
+			sideDistY = fxmul(fxsub(fxadd(mapY, int2fx(1)), player.y), deltaDistY);
 		}
 
 		int hit = 0;
@@ -161,11 +161,140 @@ void castRays()
 				textureColumn = TEXTURESIZE - textureColumn - 1;
 
 			zBuffer[i] = perpWallDistance;
-			drawWall(2 * i, perpWallDistance, MAP[yCell * MAPSIZE + xCell], side, textureColumn);
+			drawWall(i << 1, perpWallDistance, MAP[yCell * MAPSIZE + xCell], side, textureColumn);
 		}
 		else
 		{
-			drawWithoutWall(2 * i);
+			drawWithoutWall(i << 1);
 		}
 	}
+}
+
+/// @brief cast a ray forward in 2d plane, and check if specified wall is hit
+/// @param targetType texture of target wall
+/// @return true, if specified target was hit
+int castRay(int targetType, FIXED dirX, FIXED dirY)
+{
+	const FIXED cameraX = CAMERAXLUT[CASTEDRAYS / 2]; // x-coordinate in camera space
+	const FIXED rayDirX = fxadd(dirX, fxmul(planeX, cameraX));
+	const FIXED rayDirY = fxadd(dirY, fxmul(planeY, cameraX));
+
+	FIXED mapX = int2fx(fx2int(player.x));
+	FIXED mapY = int2fx(fx2int(player.y));
+
+	FIXED sideDistX;
+	FIXED sideDistY;
+
+	FIXED deltaDistX;
+	FIXED deltaDistY;
+	if (rayDirX == 0)
+	{
+		deltaDistX = int2fx(1024);
+	}
+	else
+	{
+		deltaDistX = fixedAbs(fxdiv(int2fx(1), rayDirX));
+	}
+
+	if (rayDirY == 0)
+	{
+		deltaDistY = int2fx(1024);
+	}
+	else
+	{
+		deltaDistY = fixedAbs(fxdiv(int2fx(1), rayDirY));
+	}
+
+	FIXED stepX;
+	FIXED stepY;
+
+	int side;
+
+	if (rayDirX < 0)
+	{
+		stepX = int2fx(-1);
+		sideDistX = fxmul(fxsub(player.x, mapX), deltaDistX);
+	}
+	else
+	{
+		stepX = int2fx(1);
+		sideDistX = fxmul(fxsub(fxadd(mapX, int2fx(1.0)), player.x), deltaDistX);
+	}
+	if (rayDirY < 0)
+	{
+		stepY = int2fx(-1);
+		sideDistY = fxmul(fxsub(player.y, mapY), deltaDistY);
+	}
+	else
+	{
+		stepY = int2fx(1);
+		sideDistY = fxmul(fxsub(fxadd(mapY, int2fx(1.0)), player.y), deltaDistY);
+	}
+
+	int hit = 0;
+	for (int j = 0; j < 100; j++)
+	{
+		if (sideDistX < sideDistY)
+		{
+			sideDistX = fxadd(sideDistX, deltaDistX);
+			mapX = fxadd(mapX, stepX);
+			side = 0;
+		}
+		else
+		{
+			sideDistY = fxadd(sideDistY, deltaDistY);
+			mapY = fxadd(mapY, stepY);
+			side = 1;
+		}
+
+		int currentXCell = fx2int(mapX);
+		int currentYCell = fx2int(mapY);
+		if (MAP[currentYCell * MAPSIZE + currentXCell] > 0)
+		{
+			if (MAP[currentYCell * MAPSIZE + currentXCell] == targetType)
+			{
+				hit = 1;
+			}
+			break;
+		}
+	}
+
+	FIXED perpWallDistance = -256;
+
+	if (hit)
+	{
+		if (side == 0)
+		{
+			perpWallDistance = fxsub(sideDistX, deltaDistX);
+		}
+		// vertical
+		else
+		{
+			perpWallDistance = fxsub(sideDistY, deltaDistY);
+		}
+	}
+
+	return fx2int(perpWallDistance);
+}
+
+/// @brief check if player is looking at anything special (walls)
+bool castForward(FIXED dirX, FIXED dirY)
+{
+	// check if player has key and is looking at a door
+	int distance = castRay(5, dirX, dirY);
+	if (distance >= 0 && distance < 2)
+	{
+
+		if (player.hasKey)
+		{
+			playSound(18);
+			return true;
+		}
+		else
+		{
+			playSound(17);
+			return false;
+		}
+	}
+	return false;
 }

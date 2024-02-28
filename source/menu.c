@@ -11,9 +11,9 @@ int keyYAdd = 1;
 
 void renderBkg()
 {
-	const int startX = CLAMP(2*keyX - 4, 0, 238);
+	const int startX = CLAMP(2 * keyX - 4, 0, 238);
 	const int startY = CLAMP((keyY + 32) - 4, 0, 138);
-	const int endX = CLAMP(2*keyX + 64 +4, 0, 238);
+	const int endX = CLAMP(2 * keyX + 64 + 4, 0, 238);
 	const int endY = CLAMP((keyY + 32) + 32 + 4, 0, 138);
 
 	fillArea(startX, startY, endX, endY, 16);

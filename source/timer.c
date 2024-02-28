@@ -2,12 +2,12 @@
 
 void startTimer1s()
 {
-	//reset timers
+	// reset timers
 	REG_TM2D = 0;
 	REG_TM3D = 0;
 	REG_TM2CNT = 0;
 	REG_TM3CNT = 0;
-	//init
+	// init
 	REG_TM2D = -0x4000;		   // 0x4000 ticks till overflow
 	REG_TM2CNT = TM_FREQ_1024; // we're using the 1024 cycle timer
 
@@ -15,7 +15,7 @@ void startTimer1s()
 
 	// cascade into tm3
 	REG_TM3CNT = TM_ENABLE | TM_CASCADE;
-	//start timer
+	// start timer
 	REG_TM2CNT |= TM_ENABLE;
 }
 

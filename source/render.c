@@ -1,21 +1,21 @@
 #include "render.h"
 
-FIXED CAMERAX_LU[SCREENWIDTH / 2] = {0};
-FIXED TEXTURESTEP_LU[SCREENHEIGHT] = {0};
+const int CASTEDRAYS = SCREENWIDTH / 2;
+FIXED zBuffer[SCREENWIDTH / 2] = {0};
 
 void drawFlat(const int *textures, int texture, int x, int y, int w, int h, int scale, int textureSize)
 {
 	// scale h to account for width being at half resolution
 	h = h << 1;
 	FIXED textureX = 0;
-	const FIXED xStep = TEXTURESTEP_LU[w] >> scale;
-	const FIXED yStep = TEXTURESTEP_LU[h] >> scale;
+	const FIXED xStep = TEXTURESTEPLUT[w] >> scale;
+	const FIXED yStep = TEXTURESTEPLUT[h] >> scale;
 	const int maxW = CLAMP(x + w, 0, 121);
 	const int maxH = CLAMP(y + h, 0, 161);
 
 	for (int x1 = x; x1 < maxW; x1++)
 	{
-		m4_sprite_textured_dual_line(textures, 2 * x1, y, maxH, texture, fx2int(textureX), yStep, textureSize);
+		m4_sprite_textured_dual_line(textures, x1 << 1, y, maxH, texture, fx2int(textureX), yStep, textureSize);
 		textureX = fxadd(textureX, xStep);
 	}
 }
@@ -25,14 +25,14 @@ void drawFlatMirrored(const int *textures, int texture, int x, int y, int w, int
 	// scale h to account for width being at half resolution
 	h = h << 1;
 	FIXED textureX = int2fx(15);
-	const FIXED xStep = TEXTURESTEP_LU[w] >> scale;
-	const FIXED yStep = TEXTURESTEP_LU[h] >> scale;
+	const FIXED xStep = TEXTURESTEPLUT[w] >> scale;
+	const FIXED yStep = TEXTURESTEPLUT[h] >> scale;
 	const int maxW = CLAMP(x + w, 0, 121);
 	const int maxH = CLAMP(y + h, 0, 161);
 
 	for (int x1 = x; x1 < maxW; x1++)
 	{
-		m4_sprite_textured_dual_line(textures, 2 * x1, y, maxH, texture, fx2int(textureX), yStep, textureSize);
+		m4_sprite_textured_dual_line(textures, x1 << 1, y, maxH, texture, fx2int(textureX), yStep, textureSize);
 		textureX = fxsub(textureX, xStep);
 	}
 }
@@ -41,12 +41,12 @@ void drawFlatColorTexture(const int *textures, int texture, int x, int y, int w,
 {
 	// h = h << 1;
 	FIXED textureX = 0;
-	const FIXED xStep = TEXTURESTEP_LU[w] >> scale;
-	const FIXED yStep = TEXTURESTEP_LU[h] >> scale; // >> (2*scale);
+	const FIXED xStep = TEXTURESTEPLUT[w] >> scale;
+	const FIXED yStep = TEXTURESTEPLUT[h] >> scale; // >> (2*scale);
 
 	for (int x1 = x; x1 < x + w; x1++)
 	{
-		m4_sprite_color_textured_dual_line(textures, 2 * x1, y, y + h, texture, fx2int(textureX), color, yStep, textureSize);
+		m4_sprite_color_textured_dual_line(textures, x1 << 1, y, y + h, texture, fx2int(textureX), color, yStep, textureSize);
 		textureX = fxadd(textureX, xStep);
 	}
 }
