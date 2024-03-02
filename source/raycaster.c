@@ -9,26 +9,89 @@ void drawWall(int i, FIXED distance, int type, int vertical, int textureColumn)
 {
 
 	int wallHeight = fx2int(fxdiv(int2fx(SCREENHEIGHT), distance));
-	wallHeight = CLAMP(wallHeight, 1, SCREENHEIGHT);
-	int halfHeight = (wallHeight >> 1);
+	wallHeight = CLAMP(wallHeight, 1, SCREENHEIGHT + 4);
+	const int halfHeight = (wallHeight >> 1);
 	int color = 1;
+	const int startY = HALFSCREENPOINT - halfHeight;
+	const int endY = HALFSCREENPOINT + halfHeight;
 
 	// roof
-	m4_dual_vline(i, 0, HALFSCREENPOINT - halfHeight, color);
+	m4_dual_vline(i, 0, startY, color);
 
-	color = 131; // 59;//4;
+	color = 131;
 	const FIXED yStep = TEXTURESTEPLUT[wallHeight];
 
 	// the actual wall
 	if (distance > 1024)
 	{
-		m4_textured_dual_line(TEXTURES, i, HALFSCREENPOINT - halfHeight, HALFSCREENPOINT + halfHeight, type, vertical, textureColumn, yStep, TEXTURESIZE);
+		m4_textured_dual_line(TEXTURES, i, startY, endY, type, vertical, textureColumn, yStep, TEXTURESIZE);
 	}
 	else
 	{
-		m4_reduced_res_textured_dual_line(TEXTURES, i, HALFSCREENPOINT - halfHeight, HALFSCREENPOINT + halfHeight, type, vertical, textureColumn, yStep, TEXTURESIZE, 2);
+		m4_reduced_res_textured_dual_line(TEXTURES, i, startY, endY, type, vertical, textureColumn, yStep, TEXTURESIZE, 2);
 	}
-	m4_dual_vline(i, HALFSCREENPOINT + halfHeight, SCREENHEIGHT, color);
+	m4_dual_vline(i, endY, SCREENHEIGHT, color);
+}
+
+void drawWallCroppedTop(int i, FIXED distance, int type, int vertical, int textureColumn)
+{
+
+	const int cropPoint = 32;
+
+	int wallHeight = fx2int(fxdiv(int2fx(SCREENHEIGHT), distance));
+	wallHeight = CLAMP(wallHeight, 1, SCREENHEIGHT + 4);
+	const int halfHeight = (wallHeight >> 1);
+	int color = 1;
+	FIXED yStep = TEXTURESTEPLUT[wallHeight];
+	int skipNFirst = 0;
+
+	int startY = HALFSCREENPOINT - halfHeight;
+	const int endY = HALFSCREENPOINT + halfHeight;
+
+	// roof only draw the part visible after crop point
+	if (startY > cropPoint)
+	{
+		m4_dual_vline(i, cropPoint, HALFSCREENPOINT - halfHeight, color);
+	}
+	if (startY < cropPoint)
+	{
+		skipNFirst = cropPoint - startY;
+		startY = cropPoint;
+	}
+
+	m4_textured_dual_line_skip_first_y(TEXTURES, i, startY, endY, type, vertical, textureColumn, yStep, TEXTURESIZE, skipNFirst);
+	color = 131;
+
+	m4_dual_vline(i, endY, SCREENHEIGHT, color);
+}
+
+void drawWallCroppedBottom(int i, FIXED distance, int type, int vertical, int textureColumn)
+{
+
+	const int cropPoint = SCREENHEIGHT - 18;
+
+	int wallHeight = fx2int(fxdiv(int2fx(SCREENHEIGHT), distance));
+	wallHeight = CLAMP(wallHeight, 1, SCREENHEIGHT + 4);
+	const int halfHeight = (wallHeight >> 1);
+	int color = 1;
+	const FIXED yStep = TEXTURESTEPLUT[wallHeight];
+
+	const int startY = HALFSCREENPOINT - halfHeight;
+	const int endY = HALFSCREENPOINT + halfHeight;
+	int adjustedEndY = endY;
+
+	m4_dual_vline(i, 0, startY, color);
+	if (endY > cropPoint)
+	{
+		adjustedEndY = cropPoint;
+	}
+	m4_textured_dual_line(TEXTURES, i, startY, adjustedEndY, type, vertical, textureColumn, yStep, TEXTURESIZE);
+
+	if (endY < cropPoint)
+	{
+		color = 131;
+		m4_dual_vline(i, endY, cropPoint, color);
+	}
 }
 
 void drawWithoutWall(int i)
@@ -65,7 +128,7 @@ void castRays()
 		else
 		{
 			// deltaDistX = fixedAbs(fxdiv(int2fx(1), rayDirX));
-			deltaDistX = fixedAbs(SIDEDISTLUT[rayDirX + 350]);
+			deltaDistX = fixedAbs(RECIPROCALLUT[rayDirX + 350]);
 		}
 
 		if (rayDirY == 0)
@@ -75,7 +138,7 @@ void castRays()
 		else
 		{
 			// deltaDistY = fixedAbs(fxdiv(int2fx(1), rayDirY));
-			deltaDistY = fixedAbs(SIDEDISTLUT[rayDirY + 350]);
+			deltaDistY = fixedAbs(RECIPROCALLUT[rayDirY + 350]);
 		}
 
 		FIXED stepX;
@@ -161,7 +224,19 @@ void castRays()
 				textureColumn = TEXTURESIZE - textureColumn - 1;
 
 			zBuffer[i] = perpWallDistance;
-			drawWall(i << 1, perpWallDistance, MAP[yCell * MAPSIZE + xCell], side, textureColumn);
+
+			if (i > 54 || (i > 15 && i < 25))
+			{
+				drawWall(i << 1, perpWallDistance, MAP[yCell * MAPSIZE + xCell], side, textureColumn);
+			}
+			else if (i < 16)
+			{
+				drawWallCroppedTop(i << 1, perpWallDistance, MAP[yCell * MAPSIZE + xCell], side, textureColumn);
+			}
+			else
+			{
+				drawWallCroppedBottom(i << 1, perpWallDistance, MAP[yCell * MAPSIZE + xCell], side, textureColumn);
+			}
 		}
 		else
 		{

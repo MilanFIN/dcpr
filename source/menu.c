@@ -3,11 +3,14 @@
 #include "dungeon.h"
 #include "audio.h"
 #include "timer.h"
+#include "hud.h"
 
 int keyX = 0;
 int keyXAdd = 1;
 int keyY = -32;
 int keyYAdd = 1;
+
+int difficulty = 0;
 
 void renderBkg()
 {
@@ -63,53 +66,123 @@ void renderStart()
 	sqran(seed);
 }
 
+void renderMenuBkg()
+{
+	drawFlat(TEXTURES, 1, 0, 0, 64, 64, 0, TEXTURESIZE);
+	drawFlat(TEXTURES, 1, 64, 0, 64, 64, 0, TEXTURESIZE);
+	fillArea(0, 128, 240, 136, 1);
+	drawFlat(TEXTURES, 1, 0, 136, 64, 64, 0, TEXTURESIZE);
+	drawFlat(TEXTURES, 1, 64, 136, 64, 64, 0, TEXTURESIZE);
+}
+
 void renderMenu()
 {
-	int size = 0;
 
 	while (1)
 	{
-		key_poll();
+		int size = 0;
+		int diff = 0;
 
-		drawFlat(TEXTURES, 1, 0, 0, 64, 64, 0, TEXTURESIZE);
-		drawFlat(TEXTURES, 1, 64, 0, 64, 64, 0, TEXTURESIZE);
-		fillArea(0, 128, 240, 136, 1);
+		int count = 0;
 
-		drawFlat(TEXTURES, 1, 0, 136, 64, 64, 0, TEXTURESIZE);
-		drawFlat(TEXTURES, 1, 64, 136, 64, 64, 0, TEXTURESIZE);
-
-		writeLine("LEVEL SIZE", 10, 10, 10, 15);
-		writeLine("SMALL", 5, 20, 40, 15);
-		writeLine("MEDIUM", 6, 20, 60, 15);
-		writeLine("LARGE", 5, 20, 80, 15);
-
-		writeLine(">", 1, 10, 40 + 20 * size, 15);
-		vid_flip();
-
-		if (key_hit(KEY_A) || key_hit(KEY_START))
+		while (1)
 		{
-			playSound(10);
-			break;
-		}
-		if (key_hit(KEY_DOWN))
-		{
-			if (size < 2)
+			key_poll();
+
+			if (count < 2)
 			{
-				size++;
+				renderMenuBkg();
+				fillArea(18, 4, 222, 32, 16);
+				writeLine("LEVEL SIZE", 10, 16, 15, 15);
+				fillArea(44, 45, 200, 115, 16);
+
+				writeLine("SMALL", 5, 37, 55, 15);
+				writeLine("MEDIUM", 6, 37, 75, 15);
+				writeLine("LARGE", 5, 37, 95, 15);
+				count++;
+			}
+
+			fillArea(54, 50, 70, 110, 16);
+
+			writeLine(">", 1, 27, 55 + 20 * size, 15);
+			vid_flip();
+
+			if (key_hit(KEY_A) || key_hit(KEY_START))
+			{
 				playSound(9);
+				mapSize = 30 + size * 10;
+				break;
+			}
+			if (key_hit(KEY_DOWN))
+			{
+				playSound(9);
+				if (size < 2)
+				{
+					size++;
+				}
+			}
+			if (key_hit(KEY_UP))
+			{
+				playSound(9);
+				if (size > 0)
+				{
+					size--;
+				}
 			}
 		}
-		if (key_hit(KEY_UP))
+
+		count = 0;
+		while (1)
 		{
-			if (size > 0)
+			key_poll();
+
+			if (count < 2)
 			{
-				size--;
+				renderMenuBkg();
+				fillArea(18, 4, 222, 32, 16);
+				writeLine("DIFFICULTY", 10, 16, 15, 15);
+				fillArea(44, 45, 200, 115, 16);
+
+				writeLine("EASY", 4, 37, 55, 15);
+				writeLine("NORMAL", 6, 37, 75, 15);
+				writeLine("HARD", 4, 37, 95, 15);
+				count++;
+			}
+
+			fillArea(54, 50, 70, 110, 16);
+
+			writeLine(">", 1, 27, 55 + 20 * diff, 15);
+			vid_flip();
+
+			if (key_hit(KEY_A) || key_hit(KEY_START))
+			{
+				difficulty = diff;
+				playSound(10);
+				return;
+			}
+			if (key_hit(KEY_B))
+			{
+				playSound(5);
+				break;
+			}
+			if (key_hit(KEY_DOWN))
+			{
 				playSound(9);
+				if (diff < 2)
+				{
+					diff++;
+				}
+			}
+			if (key_hit(KEY_UP))
+			{
+				playSound(9);
+				if (diff > 0)
+				{
+					diff--;
+				}
 			}
 		}
 	}
-
-	mapSize = 30 + size * 10;
 }
 
 void drawArrows()
@@ -165,9 +238,10 @@ void renderPause1st(char *map, char *visited, int playerX, int playerY)
 	}
 
 	drawArrows();
-
+	/*
 	writeLine("START TO", 8, 23, 1, 15);
 	writeLine("CONTINUE", 8, 23, 16, 15);
+	*/
 
 	vid_flip();
 }
@@ -175,13 +249,37 @@ void renderPause1st(char *map, char *visited, int playerX, int playerY)
 int renderPause2nd()
 {
 	int time = readTimer();
+
+	const char s1 = (time % 60 % 10) + '0';
+	const char s0 = (time % 60 / 10) + '0';
+	const char m1 = (time / 60) + '0';
+	const char m0 = (time / 60 / 10) + '0';
+	const char h1 = (time / 3600) + '0';
+	const char h0 = (time / 3600 / 10) + '0';
+
+	char timeLabel[8] = {h0, h1, ':', m0, m1, ':', s0, s1};
+
 	int selection = 0;
+	int count = 0;
 
 	while (1)
 	{
-		vid_vsync();
-
 		key_poll();
+
+		if (count < 2)
+		{
+			castRays();
+			drawArrows();
+
+			fillArea(40, 32, 200, 122, 16);
+
+			writeLine("TIME", 4, 42, 40, 15);
+			writeLine(timeLabel, 8, 25, 56, 15);
+
+			writeLine("RESUME", 6, 38, 88, 15);
+			writeLine("QUIT", 4, 38, 104, 15);
+			count++;
+		}
 
 		if (key_hit(KEY_RIGHT) || key_hit(KEY_LEFT) || key_hit(KEY_R) || key_hit(KEY_L))
 		{
@@ -212,23 +310,8 @@ int renderPause2nd()
 			selection = CLAMP(selection, 0, 2);
 		}
 
-		castRays();
-		// drawEntities();
-		drawArrows();
+		fillArea(50, 86, 70, 116, 16);
 
-		const char s1 = (time % 60 % 10) + '0';
-		const char s0 = (time % 60 / 10) + '0';
-		const char m1 = (time / 60) + '0';
-		const char m0 = (time / 60 / 10) + '0';
-		const char h1 = (time / 3600) + '0';
-		const char h0 = (time / 3600 / 10) + '0';
-
-		char timeLabel[8] = {h0, h1, ':', m0, m1, ':', s0, s1};
-		writeLine("TIME", 4, 42, 40, 15);
-		writeLine(timeLabel, 8, 25, 56, 15);
-
-		writeLine("RESUME", 6, 38, 88, 15);
-		writeLine("QUIT", 4, 38, 104, 15);
 		writeLine(">", 1, 27, 88 + selection * 16, 15);
 
 		vid_flip();
@@ -238,6 +321,8 @@ int renderPause2nd()
 bool renderPauseMenu(char *map, char *visited, int playerX, int playerY)
 {
 	pauseTimer();
+	drawHud();
+	updateAmmo();
 
 	playSound(9);
 
@@ -287,6 +372,8 @@ void renderLevelDone()
 
 	drawFlat(TEXTURES, 1, 0, 136, 64, 64, 0, TEXTURESIZE);
 	drawFlat(TEXTURES, 1, 64, 136, 64, 64, 0, TEXTURESIZE);
+
+	fillArea(10, 10, 230, 115, 16);
 
 	writeLine("LEVEL DONE", 10, 15, 20, 15);
 

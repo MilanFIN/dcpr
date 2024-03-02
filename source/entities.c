@@ -2,6 +2,8 @@
 
 const int ENEMYSIZES[6] = {1, 1, 3, 3, 2, 1};
 const int ENEMYSPEEDS[6] = {8, 8, 5, 5, 8, 10};
+const int ENEMYLEVELS[6] = {1, 1, 3, 3, 2, 1};
+
 const int ENEMYTEXCOUNT = 6;
 
 struct Entity entities[MAXENTITYCOUNT];
@@ -18,6 +20,7 @@ void initEnemy(int id, int x, int y)
 {
 
 	int enemyType = qran_range(0, ENEMYTEXCOUNT);
+	int enemyLevel = ENEMYLEVELS[enemyType];
 
 	entities[id].active = true;
 	entities[id].x = int2fx(x) + 128;
@@ -30,8 +33,8 @@ void initEnemy(int id, int x, int y)
 	entities[id].speed = ENEMYSPEEDS[enemyType];
 	entities[id].attackDelay = 20;
 	entities[id].attackFrequency = 20;
-	entities[id].damage = 10 + 2 * enemyType;
-	entities[id].hp = enemyType;
+	entities[id].damage = 10 + 2 * enemyLevel + difficulty;
+	entities[id].hp = enemyLevel / 2 + 1 + difficulty;
 	entities[id].hit = 0;
 }
 
@@ -43,6 +46,20 @@ void initPickup(int type, int id, int x, int y)
 {
 
 	if (type == 0)
+	{ // gun level up
+		entities[id].active = true;
+		entities[id].x = int2fx(x) + 128;
+		entities[id].y = int2fx(y) + 128;
+		entities[id].texture = 11;
+		entities[id].type = 5;
+		entities[id].scale = 128;
+		entities[id].moving = false;
+		entities[id].yOffset = 128;
+		entities[id].hit = 0;
+		copyText(entities[id].notification, "SPELL", 5);
+		entities[id].notificationLength = 5;
+	}
+	else if (type == 1)
 	{ // healthpack
 		entities[id].active = true;
 		entities[id].x = int2fx(x) + 128;
@@ -57,19 +74,19 @@ void initPickup(int type, int id, int x, int y)
 		copyText(entities[id].notification, "HP;", 3);
 		entities[id].notificationLength = 3;
 	}
-	else if (type == 1)
-	{ // gun level up
+	else if (type == 2)
+	{
 		entities[id].active = true;
 		entities[id].x = int2fx(x) + 128;
 		entities[id].y = int2fx(y) + 128;
-		entities[id].texture = 11;
-		entities[id].type = 5;
+		entities[id].texture = 18;
+		entities[id].type = 6;
 		entities[id].scale = 128;
 		entities[id].moving = false;
 		entities[id].yOffset = 128;
 		entities[id].hit = 0;
-		copyText(entities[id].notification, "SPELL", 5);
-		entities[id].notificationLength = 5;
+		copyText(entities[id].notification, "MANA", 4);
+		entities[id].notificationLength = 4;
 	}
 }
 
@@ -101,7 +118,7 @@ void initEntities()
 
 void fire(FIXED dirX, FIXED dirY)
 {
-	if (player.ammo - 20 >= 0)
+	if (player.ammo - 20 >= 0 || player.overdrive)
 	{
 		for (int i = 0; i < MAXENTITYCOUNT; i++)
 		{
@@ -123,8 +140,10 @@ void fire(FIXED dirX, FIXED dirY)
 			entities[i].hit = 0;
 
 			playSound(13 + player.gunLevel - 1);
-
-			player.ammo -= 20;
+			if (!player.overdrive)
+			{
+				player.ammo -= 20;
+			}
 
 			break;
 		}
@@ -262,6 +281,18 @@ void checkEntityCollisions()
 				playSound(3);
 			}
 		}
+		else if (type == 6)
+		{
+			if (entities[i].distance < 64)
+			{
+				player.overdrive = player.maxOverDrive;
+				player.ammo = player.maxAmmo;
+				setNotification(&entities[i]);
+				// updateHud = 2;
+				removeEntity(i);
+				playSound(3);
+			}
+		}
 	}
 }
 
@@ -395,8 +426,6 @@ void drawEntities()
 		}
 	}
 
-	// sortEntities();
-
 	for (int i = 0; i < MAXENTITYCOUNT; i++)
 	{
 		if (!entities[entityOrder[i]].active || entities[entityOrder[i]].distance < 64)
@@ -406,7 +435,8 @@ void drawEntities()
 		FIXED entityX = fxsub(entities[entityOrder[i]].x, player.x);
 		FIXED entityY = fxsub(entities[entityOrder[i]].y, player.y);
 
-		FIXED invDet = fxdiv(int2fx(1), fxsub(fxmul(planeX, dirY), fxmul(dirX, planeY)));
+		FIXED invDet = RECIPROCALLUT[fxsub(fxmul(planeX, dirY), fxmul(dirX, planeY)) + 350];
+		//fxdiv(int2fx(1), fxsub(fxmul(planeX, dirY), fxmul(dirX, planeY)));
 		FIXED transformX = fxmul(invDet, fxsub(fxmul(dirY, entityX), fxmul(dirX, entityY)));
 		FIXED transformY = fxmul(invDet, fxadd(fxmul(-planeY, entityX), fxmul(planeX, entityY)));
 
@@ -442,7 +472,7 @@ void drawEntities()
 		FIXED horizontalTexFrag = fxdiv(int2fx(TEXTURESIZE << 1), int2fx(spriteWidth));
 		// keeps track of which column of the texture should be drawn, (FIXED point fractional)
 		// starting from zero leads to artifacting on the very first vertical stripe
-		// instead first column set to 32/256 => 0.125
+		// instead first column set to a small value
 		FIXED hTexPos = 1;
 		if (transformY > 0)
 		{

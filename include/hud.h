@@ -18,4 +18,8 @@ void setNotification(struct Entity *entity);
 
 void drawHud();
 
+void updateAmmo();
+
+void drawCompass();
+
 #endif // HUD_H

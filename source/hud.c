@@ -43,3 +43,28 @@ void drawHud()
 	fillArea(30, 160 - HUDHEIGHT + 1, 32, 159, 26);
 	drawFlat(TEXTURES, PROJECTILETEXTURES[player.gunLevel - 1], 2, 160 - HUDHEIGHT + 3, 12, 10, 0, TEXTURESIZE);
 }
+
+void updateAmmo()
+{
+	if (!player.overdrive)
+	{
+		fillArea(174, 160 - HUDHEIGHT + 5, 174 + player.ammo / 2 - 1, 160 - 5, 31);
+		fillArea(174 + player.ammo / 2, 160 - HUDHEIGHT + 5, 223, 160 - 5, 27);
+		if (player.ammo < player.maxAmmo)
+		{
+			player.ammo += 1;
+		}
+	}
+	else
+	{
+		fillArea(174, 160 - HUDHEIGHT + 5, 174 + player.overdrive / 4 - 1, 160 - 5, 47);
+		fillArea(174 + player.overdrive / 4, 160 - HUDHEIGHT + 5, 223, 160 - 5, 27);
+	}
+}
+
+void drawCompass()
+{
+	//fillArea(0, 0, 32, 32, 47);
+	drawFlat(COMPASSDIRECTIONS, 1, 0,0, 16, 16, 0, TEXTURESIZE);
+
+}

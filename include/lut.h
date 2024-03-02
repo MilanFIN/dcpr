@@ -3,7 +3,7 @@
 
 #include <tonc.h>
 
-extern const FIXED SIDEDISTLUT[700];
+extern const FIXED RECIPROCALLUT[700];
 
 extern const FIXED CAMERAXLUT[120];
 

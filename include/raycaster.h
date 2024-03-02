@@ -23,6 +23,10 @@ extern FIXED planeX, planeY;
 /// @param textureColumn which column of the texture is to be read
 void drawWall(int i, FIXED distance, int type, int vertical, int textureColumn);
 
+void drawWallCroppedTop(int i, FIXED distance, int type, int vertical, int textureColumn);
+void drawWallCroppedBottom(int i, FIXED distance, int type, int vertical, int textureColumn);
+
+
 /// @brief similar idea to drawWall, but instead draw only floor and ceiling
 /// @param i column on screen (0-240), use even numbers
 void drawWithoutWall(int i);

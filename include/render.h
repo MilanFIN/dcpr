@@ -54,6 +54,17 @@ INLINE void m4_textured_dual_line(const int *textures, int x, int y1, int y2, in
 	}
 }
 
+INLINE void m4_textured_dual_line_skip_first_y(const int *textures, int x, int y1, int y2, int type, int vertical, int column, FIXED step, int textureSize, int skipFirstY)
+{
+	FIXED textureY = fxmul(int2fx(skipFirstY) , step);
+	for (int y = y1; y < y2; y++)
+	{
+		const int color = textures[(type - 1) * textureSize * textureSize + fx2int(textureY) * textureSize + column] - vertical;
+		m4_dual_plot(x, y, color);
+		textureY = fxadd(textureY, step);
+	}
+}
+
 /// @brief similar to m4_textured_dual_line, but with half vertical resolution
 /// @param textures texture source array
 /// @param x screen column

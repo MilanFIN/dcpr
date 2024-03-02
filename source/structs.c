@@ -9,5 +9,6 @@ struct Player player = {
 	.gunLevel = 1,
 	.maxGunLevel = 3,
 	.damage = 1,
-
+	.overdrive = 0,
+	.maxOverDrive = 200,
 };

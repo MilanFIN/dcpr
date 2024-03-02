@@ -9,11 +9,13 @@
 #include "dungeon.h"
 #include "hud.h"
 #include "raycaster.h"
+#include "menu.h"
 
 #define MAXENTITYCOUNT 32
 
 extern const int ENEMYSIZES[6];
 extern const int ENEMYSPEEDS[6];
+extern const int ENEMYLEVELS[6];
 extern const int ENEMYTEXCOUNT;
 extern const int goalEnemyCount;
 extern const int PRUNEENEMYDISTANCE;

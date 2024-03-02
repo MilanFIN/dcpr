@@ -11,6 +11,7 @@
 #include "timer.h"
 #include "entities.h"
 #include "hud.h"
+#include "toplayer.h"
 
 #define TILESIZE 1
 #define FOV 60
@@ -65,16 +66,6 @@ void initPalette()
 	initShadeOfColor(1, 0.8, 0.5);
 
 	initShadeOfColor(1, 0.9, 0.7);
-}
-
-void updateAmmo()
-{
-	fillArea(174, 160 - HUDHEIGHT + 5, 174 + player.ammo / 2 - 1, 160 - 5, 31);
-	fillArea(174 + player.ammo / 2, 160 - HUDHEIGHT + 5, 223, 160 - 5, 27);
-	if (player.ammo < player.maxAmmo)
-	{
-		player.ammo += 1;
-	}
 }
 
 /// @brief set player direction vectors based on player view angle
@@ -133,6 +124,7 @@ void move(int type)
 	{
 		player.y = fxadd(player.y, moveY);
 	}
+	moveHands();
 }
 
 /// @brief check if a tile value is 0 (open)
@@ -308,7 +300,8 @@ void populateMap()
 		}
 		int x = UTILITYMAPDATA[counter] % MAPSIZE;
 		int y = UTILITYMAPDATA[counter] / MAPSIZE;
-		initPickup(j < 2, j + 2, x, y);
+		int type = j < 2 ? 0 : qran_range(1, 3);
+		initPickup(type, j + 2, x, y);
 	}
 }
 
@@ -323,6 +316,7 @@ void initLevel()
 	player.gunLevel = 1;
 	player.maxGunLevel = 3;
 	player.damage = 1;
+	player.overdrive = 0;
 
 	updateHud = 2;
 
@@ -460,12 +454,15 @@ void mainGameLoop()
 		castRays();
 		moveEntities();
 		drawEntities();
+		drawHands();
 		checkEntityCollisions();
 		updatePlayerVisited();
 
 		if (updateHud)
 		{
 			drawHud();
+			drawCompass();
+
 			updateHud--;
 		}
 
@@ -491,7 +488,10 @@ void mainGameLoop()
 		{
 			refillEnemies();
 		}
-
+		if (player.overdrive > 0)
+		{
+			player.overdrive--;
+		}
 		utilityCounter--;
 		if (utilityCounter < 0)
 		{
@@ -517,7 +517,7 @@ int main()
 	initPalette();
 	renderStart();
 
-	mapSize = 10; // 50 default, 60 or 70 highest tested
+	mapSize = 50; // 50 default, 60 or 70 highest tested
 
 	while (1)
 	{

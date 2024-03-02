@@ -12,4 +12,10 @@ extern const int LETTERS[43*8*8];
 extern const int PROJECTILETEXTURES[3];
 extern const int ENEMYTEXTURES[6];
 
+extern const int FPSHAND[25*15];
+extern const int FPSBOOK[35*15];
+
+extern const int COMPASSDIRECTIONS[8*16*16];
+
+
 #endif //TEXTURES_H

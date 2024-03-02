@@ -14,6 +14,8 @@ extern EWRAM_DATA int keyXAdd;
 extern EWRAM_DATA int keyY;
 extern EWRAM_DATA int keyYAdd;
 
+extern int difficulty;
+
 /// @brief render start menu bkg with a moving icon
 void renderBkg();
 
@@ -46,5 +48,7 @@ int renderPause2nd();
 bool renderPauseMenu(char *map, char *visited, int playerX, int playerY);
 
 void renderLevelDone();
+
+void renderMenuBkg();
 
 #endif // MENU_H

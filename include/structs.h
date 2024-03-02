@@ -11,7 +11,7 @@ struct Entity
 	FIXED y;
 	FIXED xDir;
 	FIXED yDir;
-	char type; // 1: key, 2: projectile, 3:enemy, 4 hp pack, 5 gun level up
+	char type; // 1: key, 2: projectile, 3:enemy, 4 hp pack, 5 gun level up, 6 mana
 	char texture;
 	FIXED distance;
 	FIXED scale;
@@ -41,6 +41,8 @@ struct Player
 	char gunLevel;
 	char maxGunLevel;
 	char damage;
+	int overdrive; // not using ammo when this is != 0, counts toward 0
+	int maxOverDrive;
 	FIXED speed;
 	// in map tile space
 	int previousX;
