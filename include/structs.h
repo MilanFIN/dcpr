@@ -11,14 +11,14 @@ struct Entity
 	FIXED y;
 	FIXED xDir;
 	FIXED yDir;
-	char type; // 1: key, 2: projectile, 3:enemy, 4 hp pack, 5 gun level up, 6 mana
+	char type; // 1: key, 2: projectile, 3:enemy, 4 hp pack, 5 gun level up, 6 mana, 7 splatter
 	char texture;
 	FIXED distance;
 	FIXED scale;
 	FIXED yOffset;
 	FIXED speed;
-	char attackDelay;
-	char attackFrequency;
+	char actionDelay;
+	char actionFrequency;
 	// amount of damage dealth or healed
 	int damage;
 	char level;

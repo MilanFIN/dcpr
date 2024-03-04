@@ -40,6 +40,8 @@ void initPickup(int type, int id, int x, int y);
 /// @param y -||-
 void initKey(int x, int y);
 
+void initSplatter(int id);
+
 /// @brief initialize entity array with unused values
 void initEntities();
 

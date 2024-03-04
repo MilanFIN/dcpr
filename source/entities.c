@@ -31,8 +31,8 @@ void initEnemy(int id, int x, int y)
 	entities[id].moving = true;
 	entities[id].yOffset = 192 - entities[id].scale * 2 / 3;
 	entities[id].speed = ENEMYSPEEDS[enemyType];
-	entities[id].attackDelay = 20;
-	entities[id].attackFrequency = 20;
+	entities[id].actionDelay = 20;
+	entities[id].actionFrequency = 20;
 	entities[id].damage = 10 + 2 * enemyLevel + difficulty;
 	entities[id].hp = enemyLevel / 2 + 1 + difficulty;
 	entities[id].hit = 0;
@@ -107,6 +107,17 @@ void initKey(int x, int y)
 	copyText(entities[0].notification, "KEY", 3);
 	entities[0].notificationLength = 3;
 }
+
+void initSplatter(int id)
+{
+	entities[id].active = true;
+	entities[id].texture = 19;
+	entities[id].type = 7;
+	entities[id].hp = 3;
+	entities[id].actionDelay = 2;
+	entities[id].actionFrequency = 2;
+}
+
 /// @brief initialize entity array with unused values
 void initEntities()
 {
@@ -208,6 +219,7 @@ void checkEntityCollisions()
 					if (entities[j].hp <= 0)
 					{
 						removeEntity(j);
+						initSplatter(j);
 						playSound(12);
 					}
 				}
@@ -231,17 +243,17 @@ void checkEntityCollisions()
 		{
 			if (entities[i].distance < 150)
 			{
-				if (!entities[i].attackDelay)
+				if (!entities[i].actionDelay)
 				{
 					player.hp -= entities[i].damage;
 					updateHud = 2;
-					entities[i].attackDelay = entities[i].attackFrequency;
+					entities[i].actionDelay = entities[i].actionFrequency;
 					playSound(1);
 				}
 			}
-			if (entities[i].attackDelay)
+			if (entities[i].actionDelay)
 			{
-				entities[i].attackDelay--;
+				entities[i].actionDelay--;
 			}
 		}
 
@@ -291,6 +303,19 @@ void checkEntityCollisions()
 				// updateHud = 2;
 				removeEntity(i);
 				playSound(3);
+			}
+		}
+		else if (type == 7) {
+			entities[i].actionDelay--;
+			if (entities[i].actionDelay == 0) {
+				entities[i].hp--;
+				if (entities[i].hp <= 0) {
+					removeEntity(i);
+				}
+				else {
+					entities[i].actionDelay = entities[i].actionFrequency;
+					entities[i].texture++;
+				}
 			}
 		}
 	}
@@ -436,7 +461,7 @@ void drawEntities()
 		FIXED entityY = fxsub(entities[entityOrder[i]].y, player.y);
 
 		FIXED invDet = RECIPROCALLUT[fxsub(fxmul(planeX, dirY), fxmul(dirX, planeY)) + 350];
-		//fxdiv(int2fx(1), fxsub(fxmul(planeX, dirY), fxmul(dirX, planeY)));
+		// fxdiv(int2fx(1), fxsub(fxmul(planeX, dirY), fxmul(dirX, planeY)));
 		FIXED transformX = fxmul(invDet, fxsub(fxmul(dirY, entityX), fxmul(dirX, entityY)));
 		FIXED transformY = fxmul(invDet, fxadd(fxmul(-planeY, entityX), fxmul(planeX, entityY)));
 
@@ -453,9 +478,10 @@ void drawEntities()
 
 		// calculate height of the sprite on screen
 		const int spriteHeight = fixedAbs(fx2int(fxdiv(fxmul(int2fx(SCREENHEIGHT), entities[entityOrder[i]].scale), (transformY)))); // using 'transformY' instead of the real distance prevents fisheye
-		
-		//crappy method for getting rid of flickers of an unknown bug
-		if (spriteHeight > 250) {
+
+		// crappy method for getting rid of flickers of an unknown bug
+		if (spriteHeight > 250)
+		{
 			continue;
 		}
 
