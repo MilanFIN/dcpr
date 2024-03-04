@@ -11,14 +11,12 @@ void drawWall(int i, FIXED distance, int type, int vertical, int textureColumn)
 	int wallHeight = fx2int(fxdiv(int2fx(SCREENHEIGHT), distance));
 	wallHeight = CLAMP(wallHeight, 1, SCREENHEIGHT + 4);
 	const int halfHeight = (wallHeight >> 1);
-	int color = 1;
 	const int startY = HALFSCREENPOINT - halfHeight;
 	const int endY = HALFSCREENPOINT + halfHeight;
 
 	// roof
-	m4_dual_vline(i, 0, startY, color);
+	m4_dual_vline(i, 0, startY, ROOFCOLOR);
 
-	color = 131;
 	const FIXED yStep = TEXTURESTEPLUT[wallHeight];
 
 	// the actual wall
@@ -30,7 +28,7 @@ void drawWall(int i, FIXED distance, int type, int vertical, int textureColumn)
 	{
 		m4_reduced_res_textured_dual_line(TEXTURES, i, startY, endY, type, vertical, textureColumn, yStep, TEXTURESIZE, 2);
 	}
-	m4_dual_vline(i, endY, SCREENHEIGHT, color);
+	m4_dual_vline(i, endY, SCREENHEIGHT, FLOORCOLOR);
 }
 
 void drawWallCroppedTop(int i, FIXED distance, int type, int vertical, int textureColumn)
@@ -41,7 +39,6 @@ void drawWallCroppedTop(int i, FIXED distance, int type, int vertical, int textu
 	int wallHeight = fx2int(fxdiv(int2fx(SCREENHEIGHT), distance));
 	wallHeight = CLAMP(wallHeight, 1, SCREENHEIGHT + 4);
 	const int halfHeight = (wallHeight >> 1);
-	int color = 1;
 	FIXED yStep = TEXTURESTEPLUT[wallHeight];
 	int skipNFirst = 0;
 
@@ -51,7 +48,7 @@ void drawWallCroppedTop(int i, FIXED distance, int type, int vertical, int textu
 	// roof only draw the part visible after crop point
 	if (startY > cropPoint)
 	{
-		m4_dual_vline(i, cropPoint, HALFSCREENPOINT - halfHeight, color);
+		m4_dual_vline(i, cropPoint, HALFSCREENPOINT - halfHeight, ROOFCOLOR);
 	}
 	if (startY < cropPoint)
 	{
@@ -60,9 +57,8 @@ void drawWallCroppedTop(int i, FIXED distance, int type, int vertical, int textu
 	}
 
 	m4_textured_dual_line_skip_first_y(TEXTURES, i, startY, endY, type, vertical, textureColumn, yStep, TEXTURESIZE, skipNFirst);
-	color = 131;
 
-	m4_dual_vline(i, endY, SCREENHEIGHT, color);
+	m4_dual_vline(i, endY, SCREENHEIGHT, FLOORCOLOR);
 }
 
 void drawWallCroppedBottom(int i, FIXED distance, int type, int vertical, int textureColumn)
@@ -73,14 +69,13 @@ void drawWallCroppedBottom(int i, FIXED distance, int type, int vertical, int te
 	int wallHeight = fx2int(fxdiv(int2fx(SCREENHEIGHT), distance));
 	wallHeight = CLAMP(wallHeight, 1, SCREENHEIGHT + 4);
 	const int halfHeight = (wallHeight >> 1);
-	int color = 1;
 	const FIXED yStep = TEXTURESTEPLUT[wallHeight];
 
 	const int startY = HALFSCREENPOINT - halfHeight;
 	const int endY = HALFSCREENPOINT + halfHeight;
 	int adjustedEndY = endY;
 
-	m4_dual_vline(i, 0, startY, color);
+	m4_dual_vline(i, 0, startY, ROOFCOLOR);
 	if (endY > cropPoint)
 	{
 		adjustedEndY = cropPoint;
@@ -89,19 +84,16 @@ void drawWallCroppedBottom(int i, FIXED distance, int type, int vertical, int te
 
 	if (endY < cropPoint)
 	{
-		color = 131;
-		m4_dual_vline(i, endY, cropPoint, color);
+		m4_dual_vline(i, endY, cropPoint, FLOORCOLOR);
 	}
 }
 
 void drawWithoutWall(int i)
 {
-	int color = 1;
 	// roof
-	m4_dual_vline(i, 0, HALFSCREENPOINT, color);
-	color = 131; // 59;//4;
+	m4_dual_vline(i, 0, HALFSCREENPOINT, ROOFCOLOR);
 	// floor
-	m4_dual_vline(i, HALFSCREENPOINT, SCREENHEIGHT, color);
+	m4_dual_vline(i, HALFSCREENPOINT, SCREENHEIGHT, FLOORCOLOR);
 }
 
 void castRays()
@@ -250,7 +242,7 @@ void castRays()
 /// @return true, if specified target was hit
 int castRay(int targetType, FIXED dirX, FIXED dirY)
 {
-	const FIXED cameraX = CAMERAXLUT[CASTEDRAYS / 2]; // x-coordinate in camera space
+	const FIXED cameraX = CAMERAXLUT[CASTEDRAYS >> 1]; // x-coordinate in camera space
 	const FIXED rayDirX = fxadd(dirX, fxmul(planeX, cameraX));
 	const FIXED rayDirY = fxadd(dirY, fxmul(planeY, cameraX));
 

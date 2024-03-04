@@ -10,6 +10,9 @@
 #include "lut.h"
 #include "audio.h"
 
+#define FLOORCOLOR 131
+#define ROOFCOLOR 1
+
 extern const int HALFSCREENPOINT;
 
 extern FIXED dirX, dirY;

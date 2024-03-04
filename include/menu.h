@@ -6,6 +6,7 @@
 #include "dungeon.h"
 #include "textures.h"
 #include "raycaster.h"
+#include "toplayer.h"
 
 #define MINIMAPVISIBLERADIUS 4
 

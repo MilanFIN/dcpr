@@ -449,11 +449,17 @@ void drawEntities()
 			transformY = 16;
 		}
 
-		int spriteScreenX = fx2int(fxmul(int2fx(SCREENWIDTH >> 1), (fxadd(int2fx(1), fxdiv(transformX, transformY)))));
+		const int spriteScreenX = fx2int(fxmul(int2fx(SCREENWIDTH >> 1), (fxadd(int2fx(1), fxdiv(transformX, transformY)))));
 
 		// calculate height of the sprite on screen
-		int spriteHeight = fixedAbs(fx2int(fxdiv(fxmul(int2fx(SCREENHEIGHT), entities[entityOrder[i]].scale), (transformY)))); // using 'transformY' instead of the real distance prevents fisheye
-		int offsetY = fx2int(fxmul(int2fx(spriteHeight), entities[entityOrder[i]].yOffset));
+		const int spriteHeight = fixedAbs(fx2int(fxdiv(fxmul(int2fx(SCREENHEIGHT), entities[entityOrder[i]].scale), (transformY)))); // using 'transformY' instead of the real distance prevents fisheye
+		
+		//crappy method for getting rid of flickers of an unknown bug
+		if (spriteHeight > 250) {
+			continue;
+		}
+
+		const int offsetY = fx2int(fxmul(int2fx(spriteHeight), entities[entityOrder[i]].yOffset));
 		// calculate lowest and highest pixel to fill in current stripe
 		int drawStartY = -spriteHeight / 2 + SCREENHEIGHT / 2 + offsetY;
 		if (drawStartY < 0)
@@ -462,8 +468,7 @@ void drawEntities()
 		if (drawEndY >= SCREENHEIGHT)
 			drawEndY = SCREENHEIGHT - 1;
 
-		// calculate width of the sprite
-		int spriteWidth = spriteHeight;
+		const int spriteWidth = spriteHeight;
 		int drawStartX = -spriteWidth / 2 + spriteScreenX;
 		int drawEndX = spriteWidth / 2 + spriteScreenX;
 		drawStartX /= 2;
@@ -477,8 +482,8 @@ void drawEntities()
 		if (transformY > 0)
 		{
 
-			int texture = entities[entityOrder[i]].texture;
-			int hit = entities[entityOrder[i]].hit;
+			const int texture = entities[entityOrder[i]].texture;
+			const int hit = entities[entityOrder[i]].hit;
 			const int height = drawEndY - drawStartY;
 			const FIXED yStep = TEXTURESTEPLUT[height];
 			const int downScaledDistance = 64;

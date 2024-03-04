@@ -375,11 +375,13 @@ void syncVideoBuffers()
 	castRays();
 	drawEntities();
 	drawHud();
+	drawHands();
 	updateAmmo();
 	vid_flip();
 	castRays();
 	drawEntities();
 	drawHud();
+	drawHands();
 	updateAmmo();
 }
 
@@ -461,11 +463,9 @@ void mainGameLoop()
 		if (updateHud)
 		{
 			drawHud();
-			drawCompass();
-
 			updateHud--;
 		}
-
+		checkCompass();
 		updateAmmo();
 
 		if (player.hp <= 0)

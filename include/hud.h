@@ -7,12 +7,14 @@
 #include "render.h"
 #include "textures.h"
 
+extern const int notificationDuration;
+extern const int HUDHEIGHT;
+
 extern int updateHud;
 extern char notification[5];
 extern size_t notificationLength;
 extern int notificationCounter;
-extern const int notificationDuration;
-extern const int HUDHEIGHT;
+extern int compassDirection;
 
 void setNotification(struct Entity *entity);
 
@@ -20,6 +22,6 @@ void drawHud();
 
 void updateAmmo();
 
-void drawCompass();
+void checkCompass();
 
 #endif // HUD_H

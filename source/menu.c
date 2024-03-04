@@ -194,6 +194,7 @@ void drawArrows()
 void renderPause1st(char *map, char *visited, int playerX, int playerY)
 {
 	castRays();
+	drawHands();
 	const int xOffset = 34;
 	const int yOffset = 15;
 
@@ -269,6 +270,7 @@ int renderPause2nd()
 		if (count < 2)
 		{
 			castRays();
+			drawHands();
 			drawArrows();
 
 			fillArea(40, 32, 200, 122, 16);
