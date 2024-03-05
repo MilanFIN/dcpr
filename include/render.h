@@ -56,7 +56,7 @@ INLINE void m4_textured_dual_line(const int *textures, int x, int y1, int y2, in
 
 INLINE void m4_textured_dual_line_skip_first_y(const int *textures, int x, int y1, int y2, int type, int vertical, int column, FIXED step, int textureSize, int skipFirstY)
 {
-	FIXED textureY = fxmul(int2fx(skipFirstY) , step);
+	FIXED textureY = fxmul(int2fx(skipFirstY), step);
 	for (int y = y1; y < y2; y++)
 	{
 		const int color = textures[(type - 1) * textureSize * textureSize + fx2int(textureY) * textureSize + column] - vertical;
@@ -164,9 +164,106 @@ INLINE void m4_sprite_color_textured_dual_line(const int *textures, int x, int y
 	}
 }
 
-// draws a rectangular texture to arbitary point on screen
-// texture as in id from TEXTURES
-// scale: 0 for 16px, 1 for 8, 2 for 4 etc
+INLINE void m4_sprite_masked_textured_dual_line(const int *textures, int x, int y1, int y2, int type, int mask, int column, FIXED step, int textureSize)
+{
+	FIXED textureY = 0;
+	for (int y = y1; y < y2; y++)
+	{
+		const int color = textures[(type - 1) * textureSize * textureSize + fx2int(textureY) * textureSize + column];
+		const int maskColor = textures[(mask - 1) * textureSize * textureSize + fx2int(textureY) * textureSize + column];
+		if (maskColor != 0 && color != 0)
+		{
+			m4_dual_plot(x, y, color);
+		}
+		textureY = fxadd(textureY, step);
+	}
+}
+
+INLINE void drawSprite(int startX, int endX, int startY, int endY, FIXED xStep, FIXED yStep, FIXED transformY, int texture)
+{
+	FIXED hTexPos = 1;
+	for (int stripe = startX; stripe < endX; stripe++)
+	{
+		if (stripe >= 0 && stripe < SCREENWIDTH / 2)
+		{
+			if (transformY < zBuffer[stripe])
+			{
+				const int texX = fx2int(hTexPos);
+				m4_sprite_textured_dual_line(TEXTURES, 2 * stripe, startY, endY, texture, texX, yStep, TEXTURESIZE);
+			}
+		}
+		else if (stripe > SCREENWIDTH / 2)
+		{
+			break;
+		}
+		hTexPos = fxadd(hTexPos, xStep);
+	}
+}
+
+INLINE void drawSpriteDownScaled(int startX, int endX, int startY, int endY, FIXED xStep, FIXED yStep, FIXED transformY, int texture, int downscale)
+{
+	FIXED hTexPos = 1;
+	for (int stripe = startX; stripe < endX; stripe++)
+	{
+		if (stripe >= 0 && stripe < SCREENWIDTH / 2)
+		{
+			if (transformY < zBuffer[stripe])
+			{
+				const int texX = fx2int(hTexPos);
+				m4_downscaled_sprite_textured_dual_line(TEXTURES, 2 * stripe, startY, endY, texture, texX, yStep, TEXTURESIZE, downscale);
+			}
+		}
+		else if (stripe > SCREENWIDTH / 2)
+		{
+			break;
+		}
+		hTexPos = fxadd(hTexPos, xStep);
+	}
+}
+
+
+INLINE void drawSpriteWithMask(int startX, int endX, int startY, int endY, FIXED xStep, FIXED yStep, FIXED transformY, int texture, int mask)
+{
+	FIXED hTexPos = 1;
+	for (int stripe = startX; stripe < endX; stripe++)
+	{
+		if (stripe >= 0 && stripe < SCREENWIDTH / 2)
+		{
+			if (transformY < zBuffer[stripe])
+			{
+				const int texX = fx2int(hTexPos);
+				m4_sprite_masked_textured_dual_line(TEXTURES, 2 * stripe, startY, endY, texture, mask, texX, yStep, TEXTURESIZE);
+			}
+		}
+		else if (stripe > SCREENWIDTH / 2)
+		{
+			break;
+		}
+		hTexPos = fxadd(hTexPos, xStep);
+	}
+}
+
+
+INLINE void drawSpriteFlatColor(int startX, int endX, int startY, int endY, FIXED xStep, FIXED yStep, FIXED transformY, int texture, int color)
+{
+	FIXED hTexPos = 1;
+	for (int stripe = startX; stripe < endX; stripe++)
+	{
+		if (stripe >= 0 && stripe < SCREENWIDTH / 2)
+		{
+			if (transformY < zBuffer[stripe])
+			{
+				const int texX = fx2int(hTexPos);
+				m4_sprite_color_textured_dual_line(TEXTURES, 2 * stripe, startY, endY, texture, texX, color, yStep, TEXTURESIZE);
+			}
+		}
+		else if (stripe > SCREENWIDTH / 2)
+		{
+			break;
+		}
+		hTexPos = fxadd(hTexPos, xStep);
+	}
+}
 
 /// @brief draw a flat texture on screen
 /// @param textures source array for textures (1d buffer)
@@ -185,6 +282,8 @@ void drawFlatMirrored(const int *textures, int texture, int x, int y, int w, int
 /// @brief Same as drawFlat, but using texture as a mask for single color
 /// @param color color palette index
 void drawFlatColorTexture(const int *textures, int texture, int x, int y, int w, int h, int color, int scale, int textureSize);
+
+void drawFlatMasked(const int *textures, int texture, int mask, int x, int y, int w, int h, int scale, int textureSize);
 
 /// @brief write a letter on screen
 /// @param letter supported: A-Z, 0-9

@@ -4,6 +4,7 @@ const int notificationDuration = 20;
 const int HUDHEIGHT = 160 - SCREENHEIGHT;
 
 int updateHud = 2;
+int updateCompass = 2;
 char notification[5] = "ABCDE";
 size_t notificationLength = 5;
 int notificationCounter = 0;
@@ -43,7 +44,10 @@ void drawHud()
 	// gun icon and border
 	fillArea(30, 160 - HUDHEIGHT + 1, 32, 159, 26);
 	drawFlat(TEXTURES, PROJECTILETEXTURES[player.gunLevel - 1], 2, 160 - HUDHEIGHT + 3, 12, 10, 0, TEXTURESIZE);
+}
 
+void drawCompass()
+{
 	drawFlat(COMPASSDIRECTIONS, compassDirection, 0, 0, 16, 16, 0, TEXTURESIZE);
 }
 
@@ -86,13 +90,16 @@ void checkCompass()
 	{
 		newDirection = 5;
 	}
-	else if (directionDeg > 202) {
+	else if (directionDeg > 202)
+	{
 		newDirection = 6;
 	}
-	else if (directionDeg > 157) {
+	else if (directionDeg > 157)
+	{
 		newDirection = 7;
 	}
-	else if (directionDeg > 112) {
+	else if (directionDeg > 112)
+	{
 		newDirection = 8;
 	}
 	else
@@ -103,6 +110,6 @@ void checkCompass()
 	if (newDirection != compassDirection)
 	{
 		compassDirection = newDirection;
-		updateHud = 2;
+		updateCompass = 2;
 	}
 }

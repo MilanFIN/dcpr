@@ -26,6 +26,7 @@ struct Entity
 	char hit; // set to 1, when should show hit frame
 	char notification[4];
 	size_t notificationLength;
+	char mask;
 };
 
 struct Player

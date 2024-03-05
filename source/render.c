@@ -51,6 +51,19 @@ void drawFlatColorTexture(const int *textures, int texture, int x, int y, int w,
 	}
 }
 
+void drawFlatMasked(const int *textures, int texture, int mask, int x, int y, int w, int h, int scale, int textureSize)
+{
+	FIXED textureX = 0;
+	const FIXED xStep = TEXTURESTEPLUT[w] >> scale;
+	const FIXED yStep = TEXTURESTEPLUT[h] >> scale; // >> (2*scale);
+
+	for (int x1 = x; x1 < x + w; x1++)
+	{
+		m4_sprite_masked_textured_dual_line(textures, x1 << 1, y, y+h, texture, mask, fx2int(textureX), yStep, textureSize);
+		textureX = fxadd(textureX, xStep);
+	}
+}
+
 void writeLetter(char *letter, int x, int y, int color)
 {
 	// shifting to match the existing letter array

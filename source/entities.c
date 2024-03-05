@@ -26,6 +26,7 @@ void initEnemy(int id, int x, int y)
 	entities[id].x = int2fx(x) + 128;
 	entities[id].y = int2fx(y) + 128;
 	entities[id].texture = ENEMYTEXTURES[enemyType];
+	entities[id].mask = ENEMYTEXTURES[enemyType];
 	entities[id].type = 3;
 	entities[id].scale = 92 + (ENEMYSIZES[enemyType] * 32);
 	entities[id].moving = true;
@@ -111,11 +112,12 @@ void initKey(int x, int y)
 void initSplatter(int id)
 {
 	entities[id].active = true;
-	entities[id].texture = 19;
+	entities[id].mask = 19;
 	entities[id].type = 7;
 	entities[id].hp = 3;
-	entities[id].actionDelay = 2;
+	entities[id].actionDelay = 3;
 	entities[id].actionFrequency = 2;
+	entities[id].hit = false;
 }
 
 /// @brief initialize entity array with unused values
@@ -305,16 +307,20 @@ void checkEntityCollisions()
 				playSound(3);
 			}
 		}
-		else if (type == 7) {
+		else if (type == 7)
+		{
 			entities[i].actionDelay--;
-			if (entities[i].actionDelay == 0) {
+			if (entities[i].actionDelay == 0)
+			{
 				entities[i].hp--;
-				if (entities[i].hp <= 0) {
+				if (entities[i].hp <= 0)
+				{
 					removeEntity(i);
 				}
-				else {
+				else
+				{
 					entities[i].actionDelay = entities[i].actionFrequency;
-					entities[i].texture++;
+					entities[i].mask++;
 				}
 			}
 		}
@@ -473,80 +479,71 @@ void drawEntities()
 		{
 			transformY = 16;
 		}
-
-		const int spriteScreenX = fx2int(fxmul(int2fx(SCREENWIDTH >> 1), (fxadd(int2fx(1), fxdiv(transformX, transformY)))));
-
-		// calculate height of the sprite on screen
-		const int spriteHeight = fixedAbs(fx2int(fxdiv(fxmul(int2fx(SCREENHEIGHT), entities[entityOrder[i]].scale), (transformY)))); // using 'transformY' instead of the real distance prevents fisheye
-
-		// crappy method for getting rid of flickers of an unknown bug
-		if (spriteHeight > 250)
-		{
-			continue;
-		}
-
-		const int offsetY = fx2int(fxmul(int2fx(spriteHeight), entities[entityOrder[i]].yOffset));
-		// calculate lowest and highest pixel to fill in current stripe
-		int drawStartY = -spriteHeight / 2 + SCREENHEIGHT / 2 + offsetY;
-		if (drawStartY < 0)
-			drawStartY = 0;
-		int drawEndY = spriteHeight / 2 + SCREENHEIGHT / 2 + offsetY;
-		if (drawEndY >= SCREENHEIGHT)
-			drawEndY = SCREENHEIGHT - 1;
-
-		const int spriteWidth = spriteHeight;
-		int drawStartX = -spriteWidth / 2 + spriteScreenX;
-		int drawEndX = spriteWidth / 2 + spriteScreenX;
-		drawStartX /= 2;
-		drawEndX /= 2;
-
-		FIXED horizontalTexFrag = fxdiv(int2fx(TEXTURESIZE << 1), int2fx(spriteWidth));
-		// keeps track of which column of the texture should be drawn, (FIXED point fractional)
-		// starting from zero leads to artifacting on the very first vertical stripe
-		// instead first column set to a small value
-		FIXED hTexPos = 1;
 		if (transformY > 0)
 		{
 
+			const int spriteScreenX = fx2int(fxmul(int2fx(SCREENWIDTH >> 1), (fxadd(int2fx(1), fxdiv(transformX, transformY)))));
+
+			// calculate height of the sprite on screen
+			const int spriteHeight = fixedAbs(fx2int(fxdiv(fxmul(int2fx(SCREENHEIGHT), entities[entityOrder[i]].scale), (transformY)))); // using 'transformY' instead of the real distance prevents fisheye
+
+			// crappy method for getting rid of flickers of an unknown bug
+			if (spriteHeight > 250)
+			{
+				continue;
+			}
+
+			const int offsetY = fx2int(fxmul(int2fx(spriteHeight), entities[entityOrder[i]].yOffset));
+			// calculate lowest and highest pixel to fill in current stripe
+			int drawStartY = -spriteHeight / 2 + SCREENHEIGHT / 2 + offsetY;
+			if (drawStartY < 0)
+				drawStartY = 0;
+			int drawEndY = spriteHeight / 2 + SCREENHEIGHT / 2 + offsetY;
+			if (drawEndY >= SCREENHEIGHT)
+				drawEndY = SCREENHEIGHT - 1;
+
+			const int spriteWidth = spriteHeight;
+			int drawStartX = -spriteWidth / 2 + spriteScreenX;
+			int drawEndX = spriteWidth / 2 + spriteScreenX;
+			drawStartX /= 2;
+			drawEndX /= 2;
+
+			FIXED horizontalTexFrag = fxdiv(int2fx(TEXTURESIZE << 1), int2fx(spriteWidth));
 			const int texture = entities[entityOrder[i]].texture;
-			const int hit = entities[entityOrder[i]].hit;
+			const int type = entities[entityOrder[i]].type;
+
 			const int height = drawEndY - drawStartY;
 			const FIXED yStep = TEXTURESTEPLUT[height];
-			const int downScaledDistance = 64;
+			// todo: use this
+			const int downScaledHeightLimit = 64;
 
-			for (int stripe = drawStartX; stripe < drawEndX; stripe++)
+			if (type != 7)
 			{
-				if (stripe >= 0 && stripe < SCREENWIDTH / 2)
+				const int hit = entities[entityOrder[i]].hit;
+				if (!hit)
 				{
-					if (transformY < zBuffer[stripe])
+					if (height < downScaledHeightLimit)
 					{
-						int texX = fx2int(hTexPos);
-
-						if (!hit)
-						{
-							if (height < downScaledDistance)
-							{
-								m4_sprite_textured_dual_line(TEXTURES, 2 * stripe, drawStartY, drawEndY, texture, texX, yStep, TEXTURESIZE);
-							}
-							else
-							{
-								m4_downscaled_sprite_textured_dual_line(TEXTURES, 2 * stripe, drawStartY, drawEndY, texture, texX, yStep, TEXTURESIZE, 2);
-							}
-						}
-						else
-						{
-							const int color = 11;
-							m4_sprite_color_textured_dual_line(TEXTURES, 2 * stripe, drawStartY, drawEndY, texture, texX, color, yStep, TEXTURESIZE);
-						}
+						drawSprite(drawStartX, drawEndX, drawStartY, drawEndY, horizontalTexFrag, yStep, transformY, texture);
+					}
+					else
+					{
+						drawSpriteDownScaled(drawStartX, drawEndX, drawStartY, drawEndY, horizontalTexFrag, yStep, transformY, texture, 2);
 					}
 				}
-				else if (stripe > SCREENWIDTH / 2)
+				else
 				{
-					break;
+					const int color = 11;
+					drawSpriteFlatColor(drawStartX, drawEndX, drawStartY, drawEndY, horizontalTexFrag, yStep, transformY, texture, color);
 				}
-				hTexPos = fxadd(hTexPos, horizontalTexFrag);
+			}
+			else
+			{
+				const int mask = entities[entityOrder[i]].mask;
+				drawSpriteWithMask(drawStartX, drawEndX, drawStartY, drawEndY, horizontalTexFrag, yStep, transformY, texture, mask);
 			}
 		}
+
 		entities[entityOrder[i]].hit = 0;
 	}
 }
