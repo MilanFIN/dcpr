@@ -11,6 +11,7 @@ int keyY = -32;
 int keyYAdd = 1;
 
 int difficulty = 0;
+bool randomInitialized = false;
 
 void renderBkg()
 {
@@ -42,6 +43,9 @@ void renderStart()
 {
 
 	int seed = 0;
+
+	startSeedTimer();
+
 	// renderBkg();
 
 	while (1)
@@ -63,7 +67,8 @@ void renderStart()
 	}
 
 	playSound(7);
-	sqran(seed);
+	//replaced by timer
+	// sqran(readSeedTimer());
 }
 
 void renderMenuBkg()
@@ -158,6 +163,11 @@ void renderMenu()
 			{
 				difficulty = diff;
 				playSound(10);
+				if (!randomInitialized)
+				{
+					randomInitialized = true;
+					sqran(readSeedTimer());
+				}
 				return;
 			}
 			if (key_hit(KEY_B))
@@ -400,6 +410,7 @@ void renderLevelDone()
 		key_poll();
 		if (key_hit(KEY_A))
 		{
+			playSound(9);
 			break;
 		}
 	}

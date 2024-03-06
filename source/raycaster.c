@@ -217,23 +217,25 @@ void castRays()
 
 			zBuffer[i] = perpWallDistance;
 
-			if (i > 54 || (i > 15 && i < 25))
+			if (i > 54 || (/*i > 15 &&*/ i < 25))
 			{
 				drawWall(i << 1, perpWallDistance, MAP[yCell * MAPSIZE + xCell], side, textureColumn);
 			}
+			/*
 			else if (i < 16)
 			{
 				drawWallCroppedTop(i << 1, perpWallDistance, MAP[yCell * MAPSIZE + xCell], side, textureColumn);
-			}
+			}*/
 			else
 			{
 				drawWallCroppedBottom(i << 1, perpWallDistance, MAP[yCell * MAPSIZE + xCell], side, textureColumn);
 			}
 		}
+		/*
 		else
 		{
 			drawWithoutWall(i << 1);
-		}
+		}*/
 	}
 }
 

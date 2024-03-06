@@ -5,9 +5,13 @@
 
 void startTimer1s();
 
+void startSeedTimer();
+
 void pauseTimer();
 
 void resumeTimer();
+
+int readSeedTimer();
 
 int readTimer();
 #endif // TIMER_H

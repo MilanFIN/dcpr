@@ -466,11 +466,7 @@ void mainGameLoop()
 			drawHud();
 			updateHud--;
 		}
-		if (updateCompass)
-		{
-			drawCompass();
-			updateCompass--;
-		}
+
 		checkCompass();
 		updateAmmo();
 

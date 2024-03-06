@@ -16,6 +16,8 @@ extern EWRAM_DATA int keyY;
 extern EWRAM_DATA int keyYAdd;
 
 extern int difficulty;
+extern bool randomInitialized;
+
 
 /// @brief render start menu bkg with a moving icon
 void renderBkg();

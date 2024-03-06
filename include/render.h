@@ -113,6 +113,20 @@ INLINE void m4_sprite_textured_dual_line(const int *textures, int x, int y1, int
 	}
 }
 
+INLINE void m4_sprite_textured_dual_line_skip_first_y(const int *textures, int x, int y1, int y2, int type, int column, FIXED step, int textureSize, int skipFirstY)
+{
+	FIXED textureY = fxmul(int2fx(skipFirstY), step);
+	for (int y = y1; y < y2; y++)
+	{
+		const int color = textures[(type - 1) * textureSize * textureSize + fx2int(textureY) * textureSize + column];
+		if (color != 0)
+		{
+			m4_dual_plot(x, y, color);
+		}
+		textureY = fxadd(textureY, step);
+	}
+}
+
 /// @brief A version of m4_sprite_textured_dual_line, that suppots reduced resolution
 /// @param textures texture source array
 /// @param x screen column
@@ -221,7 +235,6 @@ INLINE void drawSpriteDownScaled(int startX, int endX, int startY, int endY, FIX
 	}
 }
 
-
 INLINE void drawSpriteWithMask(int startX, int endX, int startY, int endY, FIXED xStep, FIXED yStep, FIXED transformY, int texture, int mask)
 {
 	FIXED hTexPos = 1;
@@ -242,7 +255,6 @@ INLINE void drawSpriteWithMask(int startX, int endX, int startY, int endY, FIXED
 		hTexPos = fxadd(hTexPos, xStep);
 	}
 }
-
 
 INLINE void drawSpriteFlatColor(int startX, int endX, int startY, int endY, FIXED xStep, FIXED yStep, FIXED transformY, int texture, int color)
 {

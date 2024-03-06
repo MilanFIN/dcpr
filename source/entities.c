@@ -72,8 +72,8 @@ void initPickup(int type, int id, int x, int y)
 		entities[id].yOffset = 128;
 		entities[id].hit = 0;
 		entities[id].damage = 50;
-		copyText(entities[id].notification, "HP;", 3);
-		entities[id].notificationLength = 3;
+		copyText(entities[id].notification, "HEALTH", 6);
+		entities[id].notificationLength = 6;
 	}
 	else if (type == 2)
 	{
@@ -114,9 +114,9 @@ void initSplatter(int id)
 	entities[id].active = true;
 	entities[id].mask = 19;
 	entities[id].type = 7;
-	entities[id].hp = 3;
-	entities[id].actionDelay = 3;
-	entities[id].actionFrequency = 2;
+	entities[id].hp = 4;
+	entities[id].actionDelay = 1;
+	entities[id].actionFrequency = 1;
 	entities[id].hit = false;
 }
 
@@ -304,7 +304,7 @@ void checkEntityCollisions()
 				setNotification(&entities[i]);
 				// updateHud = 2;
 				removeEntity(i);
-				playSound(3);
+				playSound(19);
 			}
 		}
 		else if (type == 7)

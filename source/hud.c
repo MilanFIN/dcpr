@@ -107,9 +107,13 @@ void checkCompass()
 		newDirection = 1;
 	}
 
+	compassDirection = newDirection;
+	drawCompass();
+	/*
 	if (newDirection != compassDirection)
 	{
 		compassDirection = newDirection;
 		updateCompass = 2;
 	}
+	*/
 }
