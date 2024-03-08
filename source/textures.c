@@ -1,7 +1,6 @@
 #include "textures.h"
 
 const int PROJECTILETEXTURES[3] = {6, 9, 10};
-const int ENEMYTEXTURES[6] = {7, 8, 13, 14, 15, 16};
 
 const int TEXTURES[25*16*16] = {
 

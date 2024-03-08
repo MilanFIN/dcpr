@@ -1,8 +1,16 @@
 #include "entities.h"
 
-const int ENEMYSIZES[6] = {1, 1, 3, 3, 2, 1};
-const int ENEMYSPEEDS[6] = {8, 8, 5, 5, 8, 10};
-const int ENEMYLEVELS[6] = {1, 1, 3, 3, 2, 1};
+const int ENEMYSIZES[6] = {1, 1, 2, 2, 3, 3};
+const int ENEMYSPEEDS[6] = {13, 11, 10, 10, 10, 10};
+const int ENEMYLEVELS[6] = {1, 1, 2, 2, 3, 3};
+const int ENEMYTEXTURES[6] = {16, 15, 7, 8, 13, 14};
+
+//7 eye
+//8 skull
+// 13 wiz
+//14 orc
+//15 spider
+//16 bat
 
 const int ENEMYTEXCOUNT = 6;
 
@@ -34,7 +42,7 @@ void initEnemy(int id, int x, int y)
 	entities[id].speed = ENEMYSPEEDS[enemyType];
 	entities[id].actionDelay = 20;
 	entities[id].actionFrequency = 20;
-	entities[id].damage = 10 + 2 * enemyLevel + difficulty;
+	entities[id].damage = 10 + enemyLevel + difficulty;
 	entities[id].hp = enemyLevel / 2 + 1 + difficulty;
 	entities[id].hit = 0;
 }
@@ -346,24 +354,17 @@ void moveEntities()
 
 			if (entities[i].distance < 12000 && entities[i].distance > 128)
 			{
-				if (entities[i].x < player.x)
-				{
-					entities[i].xDir = entities[i].speed;
-				}
-				else
-				{
-					entities[i].xDir = -entities[i].speed;
-				}
-				if (entities[i].y < player.y)
-				{
-					entities[i].yDir = entities[i].speed;
-				}
-				else
-				{
-					entities[i].yDir = -entities[i].speed;
-				}
-				FIXED newX = fxadd(entities[i].x, entities[i].xDir);
-				FIXED newY = fxadd(entities[i].y, entities[i].yDir);
+				// 
+				const FIXED xDiff = player.x - entities[i].x;
+				const FIXED yDiff = player.y - entities[i].y;
+
+				const FIXED len = fxadd(fixedAbs(xDiff), fixedAbs(yDiff));
+
+				const FIXED xU = fxmul(fxdiv(xDiff, len), entities[i].speed);
+				const FIXED yU = fxmul(fxdiv(yDiff, len), entities[i].speed);
+
+				const FIXED newX = fxadd(entities[i].x, xU);
+				const FIXED newY = fxadd(entities[i].y, yU);
 
 				if (!collisionCheck(newX, entities[i].y))
 				{

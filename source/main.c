@@ -427,6 +427,8 @@ void mainGameLoop()
 
 		if (key_hit(KEY_A))
 		{
+			renderLevelDone();
+			break;
 			if (castForward(dirX, dirY))
 			{
 				syncVideoBuffers();

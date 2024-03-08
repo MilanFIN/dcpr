@@ -385,7 +385,7 @@ void renderLevelDone()
 	drawFlat(TEXTURES, 1, 0, 136, 64, 64, 0, TEXTURESIZE);
 	drawFlat(TEXTURES, 1, 64, 136, 64, 64, 0, TEXTURESIZE);
 
-	fillArea(10, 10, 230, 115, 16);
+	fillArea(8, 10, 230, 115, 16);
 
 	writeLine("LEVEL DONE", 10, 15, 20, 15);
 

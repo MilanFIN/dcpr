@@ -16,6 +16,8 @@
 extern const int ENEMYSIZES[6];
 extern const int ENEMYSPEEDS[6];
 extern const int ENEMYLEVELS[6];
+extern const int ENEMYTEXTURES[6];
+
 extern const int ENEMYTEXCOUNT;
 extern const int goalEnemyCount;
 extern const int PRUNEENEMYDISTANCE;
