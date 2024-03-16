@@ -429,8 +429,10 @@ void mainGameLoop()
 		{
 			if (castForward(dirX, dirY))
 			{
-				syncVideoBuffers();
 				pauseTimer();
+				syncVideoBuffers();
+				VBlankIntrWait();
+				playSound(18);
 				endAnimation(16);
 				renderLevelDone();
 				break;
