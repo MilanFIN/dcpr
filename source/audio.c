@@ -65,7 +65,6 @@ void playSound(int id)
 	else if (id == 5)
 	{
 		REG_SND4CNT = SSQR_ENV_BUILD(12, 0, 2) | SSQR_DUTY1_2; // 4;
-		// REG_SND4FREQ = SFREQ_RESET | SND_RATE(NOTE_G, -1) | SFREQ_TIMED;
 		REG_SND4FREQ = SFREQ_RESET | SND_RATE(NOTE_F, -4) | SFREQ_TIMED;
 	}
 	else if (id == 6)

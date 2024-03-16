@@ -5,12 +5,12 @@ const int ENEMYSPEEDS[6] = {13, 11, 10, 10, 10, 10};
 const int ENEMYLEVELS[6] = {1, 1, 2, 2, 3, 3};
 const int ENEMYTEXTURES[6] = {16, 15, 7, 8, 13, 14};
 
-//7 eye
-//8 skull
-// 13 wiz
-//14 orc
-//15 spider
-//16 bat
+// 7 eye
+// 8 skull
+//  13 wiz
+// 14 orc
+// 15 spider
+// 16 bat
 
 const int ENEMYTEXCOUNT = 6;
 
@@ -198,6 +198,7 @@ void checkEntityCollisions()
 				removeEntity(i);
 				player.hasKey = true;
 				updateHud = 2;
+				VBlankIntrWait();
 				playSound(16);
 			}
 		}
@@ -283,6 +284,7 @@ void checkEntityCollisions()
 					setNotification(&entities[i]);
 					removeEntity(i);
 					updateHud = 2;
+					VBlankIntrWait();
 					playSound(2);
 				}
 			}
@@ -300,6 +302,7 @@ void checkEntityCollisions()
 					updateHud = 2;
 				}
 				removeEntity(i);
+				VBlankIntrWait();
 				playSound(3);
 			}
 		}
@@ -312,6 +315,7 @@ void checkEntityCollisions()
 				setNotification(&entities[i]);
 				// updateHud = 2;
 				removeEntity(i);
+				VBlankIntrWait();
 				playSound(19);
 			}
 		}
@@ -354,7 +358,7 @@ void moveEntities()
 
 			if (entities[i].distance < 12000 && entities[i].distance > 128)
 			{
-				// 
+				//
 				const FIXED xDiff = player.x - entities[i].x;
 				const FIXED yDiff = player.y - entities[i].y;
 

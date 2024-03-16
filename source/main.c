@@ -392,11 +392,11 @@ void mainGameLoop()
 	{
 
 		key_poll();
-		if (key_is_down(KEY_LEFT))
+		if (key_is_down(KEY_L))
 		{
 			move(0);
 		}
-		else if (key_is_down(KEY_RIGHT))
+		if (key_is_down(KEY_R))
 		{
 			move(1);
 		}
@@ -408,11 +408,11 @@ void mainGameLoop()
 		{
 			move(3);
 		}
-		if (key_is_down(KEY_R))
+		if (key_is_down(KEY_RIGHT))
 		{
 			player.direction -= int2fx(5);
 		}
-		else if (key_is_down(KEY_L))
+		if (key_is_down(KEY_LEFT))
 		{
 			player.direction += int2fx(5);
 		}
@@ -427,8 +427,6 @@ void mainGameLoop()
 
 		if (key_hit(KEY_A))
 		{
-			renderLevelDone();
-			break;
 			if (castForward(dirX, dirY))
 			{
 				syncVideoBuffers();
@@ -474,6 +472,7 @@ void mainGameLoop()
 
 		if (player.hp <= 0)
 		{
+			VBlankIntrWait();
 			playSound(11);
 			syncVideoBuffers();
 			endAnimation(14);
@@ -515,6 +514,9 @@ void mainGameLoop()
 int main()
 {
 	REG_DISPCNT = DCNT_MODE4 | DCNT_BG2;
+
+	irq_init(NULL);
+	irq_add(II_VBLANK, NULL);
 
 	initAudio();
 	sqran(1);
