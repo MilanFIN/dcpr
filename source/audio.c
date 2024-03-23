@@ -32,15 +32,9 @@ void playSound(int id)
 	// hp pickup
 	else if (id == 2)
 	{
-		const uint8_t volume = 10;	 // 0-15
-		const uint8_t direction = 0; // 0-1 envelope dir, 0 for down
-		const uint8_t step = 1;		 // 0-7 envelope step time
-		const uint16_t duty = 2;	 // duty cycle, 0-3
-		const uint8_t length = 7;	 // length 0-63
-
-		REG_SND1CNT = volume << 12 | direction << 11 | step << 8 | duty << 6 | length;
-		REG_SND1SWEEP = SSW_INC | SSW_TIME(7) | SSW_SHIFT(3);
-		REG_SND1FREQ = SFREQ_RESET | SND_RATE(NOTE_D, 0) | SFREQ_HOLD; // SFREQ_TIMED;
+		REG_SND1CNT = SSQR_ENV_BUILD(10, 0, 2) | SSQR_DUTY1_2;
+		REG_SND1SWEEP = SSW_INC | SSW_TIME(7) | SSW_SHIFT(4);
+		REG_SND1FREQ = SFREQ_RESET | SND_RATE(NOTE_G, -1) | SFREQ_HOLD; // SFREQ_TIMED;
 	}
 	// spell pickup
 	else if (id == 3)
@@ -146,9 +140,9 @@ void playSound(int id)
 	// door open
 	else if (id == 18)
 	{
-		REG_SND1CNT = SSQR_ENV_BUILD(4, 1, 7) | SSQR_DUTY1_2;
-		REG_SND1SWEEP = SSW_INC | SSW_TIME(7) | SSW_SHIFT(7);
-		REG_SND1FREQ = SFREQ_RESET | SND_RATE(NOTE_BES, 0) | SFREQ_TIMED;
+		REG_SND1CNT = SSQR_ENV_BUILD(10, 0, 7) | SSQR_DUTY1_2;
+		REG_SND1SWEEP = SSW_INC | SSW_TIME(3) | SSW_SHIFT(6);
+		REG_SND1FREQ = SFREQ_RESET | SND_RATE(NOTE_A, -1) | SFREQ_HOLD;
 	}
 	// mana pickup
 	else if (id == 19)
