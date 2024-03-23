@@ -18,9 +18,12 @@ extern EWRAM_DATA int keyYAdd;
 extern int difficulty;
 extern bool randomInitialized;
 
-
 /// @brief render start menu bkg with a moving icon
 void renderBkg();
+
+void renderMenuBkg();
+
+void renderSplash();
 
 /// @brief render "press start" screen and initialize random number generator based on user input
 void renderStart();
@@ -51,7 +54,5 @@ int renderPause2nd();
 bool renderPauseMenu(char *map, char *visited, int playerX, int playerY);
 
 void renderLevelDone();
-
-void renderMenuBkg();
 
 #endif // MENU_H

@@ -79,7 +79,7 @@ def addCameraX(f):
 
     
 def addTextureStepLu(f):
-    count = 160
+    count = 240
 
     table_name = "TEXTURESTEPLUT"
 

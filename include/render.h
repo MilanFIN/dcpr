@@ -178,6 +178,20 @@ INLINE void m4_sprite_color_textured_dual_line(const int *textures, int x, int y
 	}
 }
 
+INLINE void m4_sprite_color_textured_single_line(const int *textures, int x, int y1, int y2, int type, int column, int flatColor, FIXED step, int textureSize)
+{
+	FIXED textureY = 0;
+	for (int y = y1; y <= y2; y++)
+	{
+		const int realColor = textures[(type - 1) * textureSize * textureSize + fx2int(textureY) * textureSize + column];
+		if (realColor != 0)
+		{
+			m4_plot(x, y, flatColor);
+		}
+		textureY = fxadd(textureY, step);
+	}
+}
+
 INLINE void m4_sprite_masked_textured_dual_line(const int *textures, int x, int y1, int y2, int type, int mask, int column, FIXED step, int textureSize)
 {
 	FIXED textureY = 0;
@@ -296,6 +310,10 @@ void drawFlatMirrored(const int *textures, int texture, int x, int y, int w, int
 void drawFlatColorTexture(const int *textures, int texture, int x, int y, int w, int h, int color, int scale, int textureSize);
 
 void drawFlatMasked(const int *textures, int texture, int mask, int x, int y, int w, int h, int scale, int textureSize);
+
+/// @brief Same as drawFlat, but using full res instead of 1/2
+/// @param color color palette index
+void drawFlatColorFullResolution(const int *textures, int texture, int x, int y, int w, int h, int color, int scale, int textureSize);
 
 /// @brief write a letter on screen
 /// @param letter supported: A-Z, 0-9

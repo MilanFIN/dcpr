@@ -39,7 +39,6 @@ void drawFlatMirrored(const int *textures, int texture, int x, int y, int w, int
 
 void drawFlatColorTexture(const int *textures, int texture, int x, int y, int w, int h, int color, int scale, int textureSize)
 {
-	// h = h << 1;
 	FIXED textureX = 0;
 	const FIXED xStep = TEXTURESTEPLUT[w] >> scale;
 	const FIXED yStep = TEXTURESTEPLUT[h] >> scale; // >> (2*scale);
@@ -47,6 +46,20 @@ void drawFlatColorTexture(const int *textures, int texture, int x, int y, int w,
 	for (int x1 = x; x1 < x + w; x1++)
 	{
 		m4_sprite_color_textured_dual_line(textures, x1 << 1, y, y + h, texture, fx2int(textureX), color, yStep, textureSize);
+		textureX = fxadd(textureX, xStep);
+	}
+}
+
+void drawFlatColorFullResolution(const int *textures, int texture, int x, int y, int w, int h, int color, int scale, int textureSize)
+{
+	FIXED textureX = 0;
+	const FIXED xStep = TEXTURESTEPLUT[w] >> scale;
+	const FIXED yStep = TEXTURESTEPLUT[h] >> scale; // >> (2*scale);
+
+	for (int x1 = x; x1 <= x + w; x1++)
+	{
+		m4_sprite_color_textured_single_line(textures, x1, y, y + h, texture, fx2int(textureX), color, yStep, textureSize);
+
 		textureX = fxadd(textureX, xStep);
 	}
 }
@@ -59,7 +72,7 @@ void drawFlatMasked(const int *textures, int texture, int mask, int x, int y, in
 
 	for (int x1 = x; x1 < x + w; x1++)
 	{
-		m4_sprite_masked_textured_dual_line(textures, x1 << 1, y, y+h, texture, mask, fx2int(textureX), yStep, textureSize);
+		m4_sprite_masked_textured_dual_line(textures, x1 << 1, y, y + h, texture, mask, fx2int(textureX), yStep, textureSize);
 		textureX = fxadd(textureX, xStep);
 	}
 }

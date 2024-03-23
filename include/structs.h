@@ -15,7 +15,7 @@ struct Entity
 	char texture;
 	FIXED distance;
 	FIXED scale;
-	FIXED yOffset;
+	int yOffset;
 	FIXED speed;
 	char actionDelay;
 	char actionFrequency;

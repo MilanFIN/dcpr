@@ -7,7 +7,7 @@
 
 int keyX = 0;
 int keyXAdd = 1;
-int keyY = -32;
+int keyY = 0;
 int keyYAdd = 1;
 
 int difficulty = 0;
@@ -16,57 +16,25 @@ bool randomInitialized = false;
 void renderBkg()
 {
 	const int startX = CLAMP(2 * keyX - 4, 0, 238);
-	const int startY = CLAMP((keyY + 32) - 4, 0, 138);
+	const int startY = CLAMP((keyY ) - 4, 0, 138);
 	const int endX = CLAMP(2 * keyX + 64 + 4, 0, 238);
-	const int endY = CLAMP((keyY + 32) + 32 + 4, 0, 138);
+	const int endY = CLAMP((keyY )  + 4 + 32, 64, 138);
 
 	fillArea(startX, startY, endX, endY, 16);
 
-	drawFlat(TEXTURES, 3, keyX, keyY, 32, 32, 0, TEXTURESIZE);
+	drawFlat(TEXTURES, 23, keyX, keyY, 32, 32, 0, TEXTURESIZE);
 
 	keyX += keyXAdd;
 	keyY += keyYAdd;
 
-	if (keyX > 86 || keyX < 0)
+	if (keyX > 86 || keyX <= 0)
 	{
 		keyXAdd = -keyXAdd;
-		keyX += keyXAdd;
 	}
-	if (keyY > 64 || keyY < -32)
+	if (keyY > 96 || keyY <= 0)
 	{
 		keyYAdd = -keyYAdd;
-		keyY += keyYAdd;
 	}
-}
-
-void renderStart()
-{
-
-	int seed = 0;
-
-	startSeedTimer();
-
-	// renderBkg();
-
-	while (1)
-	{
-		if (key_hit(KEY_START) || key_hit(KEY_A))
-		{
-			break;
-		}
-
-		key_poll();
-		// renderBkg();
-		if (seed < 2)
-		{
-			writeLine("PRESS START", 11, 10, 140, 15);
-		}
-		seed++;
-
-		vid_flip();
-	}
-	VBlankIntrWait();
-	playSound(7);
 }
 
 void renderMenuBkg()
@@ -76,6 +44,51 @@ void renderMenuBkg()
 	fillArea(0, 128, 240, 136, 1);
 	drawFlat(TEXTURES, 1, 0, 136, 64, 64, 0, TEXTURESIZE);
 	drawFlat(TEXTURES, 1, 64, 136, 64, 64, 0, TEXTURESIZE);
+}
+
+void renderSplash()
+{
+
+	fillArea(14, 24, 226, 108, 16);
+
+	drawFlatColorFullResolution(LETTERS, 21, 34, 44, 40, 40, 15, 1, LETTERSIZE);
+	drawFlatColorFullResolution(LETTERS, 20, 78, 44, 40, 40, 15, 1, LETTERSIZE);
+	drawFlatColorFullResolution(LETTERS, 33, 122, 44, 40, 40, 15, 1, LETTERSIZE);
+	drawFlatColorFullResolution(LETTERS, 35, 166, 44, 40, 40, 15, 1, LETTERSIZE);
+}
+
+void renderStart()
+{
+	startSeedTimer();
+	// renderMenuBkg();
+	// renderSplash();
+
+	int init = 0;
+
+	while (1)
+	{
+		key_poll();
+
+		if (key_hit(KEY_START) || key_hit(KEY_A))
+		{
+			break;
+		}
+		if (init < 2)
+		{
+			fillArea(0, 0, 240, 140, 16);
+			fillArea(0, 128, 240, 160, 16);
+
+			writeLine("PRESS START", 11, 10, 140, 15);
+
+			init++;
+		}
+		renderBkg();
+		vid_flip();
+
+		//VBlankIntrWait();
+	}
+	VBlankIntrWait();
+	playSound(7);
 }
 
 void renderMenu()

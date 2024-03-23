@@ -4,6 +4,7 @@ const int ENEMYSIZES[6] = {1, 1, 2, 2, 3, 3};
 const int ENEMYSPEEDS[6] = {13, 11, 10, 10, 10, 10};
 const int ENEMYLEVELS[6] = {1, 1, 2, 2, 3, 3};
 const int ENEMYTEXTURES[6] = {16, 15, 7, 8, 13, 14};
+const int ENEMYOFFSETS[6] = {0,32,32,32,32,32};
 
 // 7 eye
 // 8 skull
@@ -38,7 +39,8 @@ void initEnemy(int id, int x, int y)
 	entities[id].type = 3;
 	entities[id].scale = 92 + (ENEMYSIZES[enemyType] * 32);
 	entities[id].moving = true;
-	entities[id].yOffset = 192 - entities[id].scale * 2 / 3;
+	entities[id].yOffset = ENEMYOFFSETS[enemyType];
+	//192 - entities[id].scale * 2 / 3;
 	entities[id].speed = ENEMYSPEEDS[enemyType];
 	entities[id].actionDelay = 20;
 	entities[id].actionFrequency = 20;
@@ -63,7 +65,7 @@ void initPickup(int type, int id, int x, int y)
 		entities[id].type = 5;
 		entities[id].scale = 128;
 		entities[id].moving = false;
-		entities[id].yOffset = 128;
+		entities[id].yOffset = 32;
 		entities[id].hit = 0;
 		copyText(entities[id].notification, "SPELL", 5);
 		entities[id].notificationLength = 5;
@@ -77,7 +79,7 @@ void initPickup(int type, int id, int x, int y)
 		entities[id].type = 4;
 		entities[id].scale = 128;
 		entities[id].moving = false;
-		entities[id].yOffset = 128;
+		entities[id].yOffset = 32;
 		entities[id].hit = 0;
 		entities[id].damage = 50;
 		copyText(entities[id].notification, "HEALTH", 6);
@@ -92,7 +94,7 @@ void initPickup(int type, int id, int x, int y)
 		entities[id].type = 6;
 		entities[id].scale = 128;
 		entities[id].moving = false;
-		entities[id].yOffset = 128;
+		entities[id].yOffset = 32;
 		entities[id].hit = 0;
 		copyText(entities[id].notification, "MANA", 4);
 		entities[id].notificationLength = 4;
@@ -111,7 +113,7 @@ void initKey(int x, int y)
 	entities[0].type = 1;
 	entities[0].scale = 128;
 	entities[0].moving = false;
-	entities[0].yOffset = 128;
+	entities[0].yOffset = 32;
 	entities[0].hit = 0;
 	copyText(entities[0].notification, "KEY", 3);
 	entities[0].notificationLength = 3;
@@ -157,7 +159,7 @@ void fire(FIXED dirX, FIXED dirY)
 			entities[i].xDir = dirX;
 			entities[i].yDir = dirY;
 			entities[i].moving = true;
-			entities[i].yOffset = 256;
+			entities[i].yOffset = 32;
 			entities[i].hit = 0;
 
 			playSound(13 + player.gunLevel - 1);
@@ -489,8 +491,7 @@ void drawEntities()
 
 			const int spriteScreenX = fx2int(fxmul(int2fx(SCREENWIDTH >> 1), (fxadd(int2fx(1), fxdiv(transformX, transformY)))));
 
-			// calculate height of the sprite on screen
-			const int spriteHeight = fixedAbs(fx2int(fxdiv(fxmul(int2fx(SCREENHEIGHT), entities[entityOrder[i]].scale), (transformY)))); // using 'transformY' instead of the real distance prevents fisheye
+			const int spriteHeight = fixedAbs(fx2int(fxdiv(fxmul(int2fx(SCREENHEIGHT), entities[entityOrder[i]].scale), (transformY))));
 
 			// crappy method for getting rid of flickers of an unknown bug
 			if (spriteHeight > 250)
@@ -498,7 +499,8 @@ void drawEntities()
 				continue;
 			}
 
-			const int offsetY = fx2int(fxmul(int2fx(spriteHeight), entities[entityOrder[i]].yOffset));
+			//fx2int(fxmul(int2fx(spriteHeight), entities[entityOrder[i]].yOffset));
+			const int offsetY = fx2int(fxdiv(int2fx(entities[entityOrder[i]].yOffset), transformY));
 			// calculate lowest and highest pixel to fill in current stripe
 			int drawStartY = -spriteHeight / 2 + SCREENHEIGHT / 2 + offsetY;
 			if (drawStartY < 0)
@@ -517,7 +519,7 @@ void drawEntities()
 			const int texture = entities[entityOrder[i]].texture;
 			const int type = entities[entityOrder[i]].type;
 
-			const int height = drawEndY - drawStartY;
+			const int height = spriteHeight;//drawEndY - drawStartY;
 			const FIXED yStep = TEXTURESTEPLUT[height];
 			// todo: use this
 			const int downScaledHeightLimit = 64;
