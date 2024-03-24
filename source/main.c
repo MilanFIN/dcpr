@@ -318,6 +318,8 @@ void initLevel()
 	player.damage = 1;
 	player.overdrive = 0;
 
+	player.ammoRecoveryRate = difficulty > 0 ? 1 : 2;
+
 	updateHud = 2;
 
 	// player.x = int2fx(5);//96;//2*64;//

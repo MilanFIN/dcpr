@@ -4,6 +4,7 @@ struct Player player = {
 	.maxHp = 100,
 	.ammo = 100,
 	.maxAmmo = 100,
+	.ammoRecoveryRate = 1,
 	.speed = 0,
 	.hasKey = false,
 	.gunLevel = 1,

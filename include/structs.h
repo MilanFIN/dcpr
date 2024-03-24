@@ -39,6 +39,7 @@ struct Player
 	int maxHp;
 	int ammo;
 	int maxAmmo;
+	int ammoRecoveryRate;
 	char gunLevel;
 	char maxGunLevel;
 	char damage;

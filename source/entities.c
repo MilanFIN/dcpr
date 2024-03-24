@@ -19,6 +19,8 @@ struct Entity entities[MAXENTITYCOUNT];
 int entityOrder[MAXENTITYCOUNT] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31};
 
 const int goalEnemyCount = 6;
+const int easyGoalEnemyCount = 6;
+
 const int PRUNEENEMYDISTANCE = 17;
 
 /// @brief initialize an enemy entity
@@ -31,6 +33,11 @@ void initEnemy(int id, int x, int y)
 	int enemyType = qran_range(0, ENEMYTEXCOUNT);
 	int enemyLevel = ENEMYLEVELS[enemyType];
 
+	const int speedModifier = difficulty > 0 ? 1 : 2;
+	const int damageModifier = difficulty > 0 ? difficulty : -5;
+	const int hpModifier = difficulty > 0 ? difficulty -1 : 0;
+
+
 	entities[id].active = true;
 	entities[id].x = int2fx(x) + 128;
 	entities[id].y = int2fx(y) + 128;
@@ -41,11 +48,11 @@ void initEnemy(int id, int x, int y)
 	entities[id].moving = true;
 	entities[id].yOffset = ENEMYOFFSETS[enemyType];
 	//192 - entities[id].scale * 2 / 3;
-	entities[id].speed = ENEMYSPEEDS[enemyType];
+	entities[id].speed = ENEMYSPEEDS[enemyType] / speedModifier;
 	entities[id].actionDelay = 20;
 	entities[id].actionFrequency = 20;
-	entities[id].damage = 10 + enemyLevel + difficulty;
-	entities[id].hp = enemyLevel / 2 + 1 + difficulty;
+	entities[id].damage = 10 + enemyLevel + damageModifier;
+	entities[id].hp = enemyLevel / 2 + 1 + hpModifier;
 	entities[id].hit = 0;
 }
 
@@ -559,6 +566,7 @@ void refillEnemies()
 {
 
 	int count = 0;
+	const int adjustedEnemyCount = difficulty > 0 ? goalEnemyCount : easyGoalEnemyCount;
 	int firstFreeSlot = -1;
 	for (int i = 1; i < MAXENTITYCOUNT; i++)
 	{
@@ -572,7 +580,7 @@ void refillEnemies()
 		}
 	}
 
-	if (firstFreeSlot >= 1 && count < goalEnemyCount)
+	if (firstFreeSlot >= 1 && count < adjustedEnemyCount)
 	{
 		int counter = 0;
 		int playerX = fx2int(player.x);

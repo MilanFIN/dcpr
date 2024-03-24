@@ -22,6 +22,8 @@ extern const int ENEMYOFFSETS[6];
 
 extern const int ENEMYTEXCOUNT;
 extern const int goalEnemyCount;
+extern const int easyGoalEnemyCount;
+
 extern const int PRUNEENEMYDISTANCE;
 
 extern struct Entity entities[MAXENTITYCOUNT];

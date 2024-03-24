@@ -161,15 +161,17 @@ void renderMenu()
 				renderMenuBkg();
 				fillArea(18, 4, 222, 32, 16);
 				writeLine("DIFFICULTY", 10, 16, 15, 15);
-				fillArea(44, 45, 200, 115, 16);
+				fillArea(44, 45, 200, 135, 16);
 
 				writeLine("EASY", 4, 37, 55, 15);
 				writeLine("NORMAL", 6, 37, 75, 15);
 				writeLine("HARD", 4, 37, 95, 15);
+				writeLine(";1", 2, 37, 115, 15);
+
 				count++;
 			}
 
-			fillArea(54, 50, 70, 110, 16);
+			fillArea(54, 50, 70, 130, 16);
 
 			writeLine(">", 1, 27, 55 + 20 * diff, 15);
 
@@ -195,7 +197,7 @@ void renderMenu()
 			{
 				VBlankIntrWait();
 				playSound(9);
-				if (diff < 2)
+				if (diff < 3)
 				{
 					diff++;
 				}
@@ -226,7 +228,7 @@ void renderPause1st(char *map, char *visited, int playerX, int playerY)
 	castRays();
 	drawHands();
 	const int xOffset = 34;
-	const int yOffset = 15;
+	const int yOffset = 10;
 
 	FIXED sizeMultiplier = fxdiv(int2fx(MAPSIZE), int2fx(mapSize));
 

@@ -57,9 +57,11 @@ void updateAmmo()
 	{
 		fillArea(174, 160 - HUDHEIGHT + 5, 174 + player.ammo / 2 - 1, 160 - 5, 31);
 		fillArea(174 + player.ammo / 2, 160 - HUDHEIGHT + 5, 223, 160 - 5, 27);
-		if (player.ammo < player.maxAmmo)
+		player.ammo += player.ammoRecoveryRate;
+
+		if (player.ammo > player.maxAmmo)
 		{
-			player.ammo += 1;
+			player.ammo = player.maxAmmo;
 		}
 	}
 	else
