@@ -8,6 +8,10 @@ endif
 
 include $(DEVKITARM)/gba_rules
 
+GAME_TITLE := DCPR
+GAME_CODE := DCPR
+MAKER_CODE := MILAN
+
 #---------------------------------------------------------------------------------
 # the LIBGBA path is defined in gba_rules, but we have to define LIBTONC ourselves
 #---------------------------------------------------------------------------------
