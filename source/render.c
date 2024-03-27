@@ -56,7 +56,7 @@ void drawFlatColorFullResolution(const int *textures, int texture, int x, int y,
 	const FIXED xStep = TEXTURESTEPLUT[w] >> scale;
 	const FIXED yStep = TEXTURESTEPLUT[h] >> scale; // >> (2*scale);
 
-	for (int x1 = x; x1 <= x + w; x1++)
+	for (int x1 = x; x1 < x + w; x1++)
 	{
 		m4_sprite_color_textured_single_line(textures, x1, y, y + h, texture, fx2int(textureX), color, yStep, textureSize);
 
@@ -77,18 +77,25 @@ void drawFlatMasked(const int *textures, int texture, int mask, int x, int y, in
 	}
 }
 
-void writeLetter(char *letter, int x, int y, int color)
+void writeLetter(char *letter, int x, int y, int color, bool big)
 {
 	// shifting to match the existing letter array
 	char characterIndex = letter[0] - 47;
-	drawFlatColorTexture(LETTERS, characterIndex, x, y, 8, 8, color, 1, LETTERSIZE);
+	if (big)
+	{
+		drawFlatColorTexture(LETTERS, characterIndex, x, y, 8, 8, color, 1, LETTERSIZE);
+	}
+	else {
+		drawFlatColorFullResolution(LETTERS, characterIndex, x, y, 8, 8, color, 1, LETTERSIZE);
+	}
 }
 
-void writeLine(char *content, char length, int x, int y, int color)
+void writeLine(char *content, char length, int x, int y, int color, bool big)
 {
+	
 	for (int i = 0; i < length; i++)
 	{
-		writeLetter(content + i, x + 9 * i, y, color);
+		writeLetter(content + i, x + 9 * i, y, color, big);
 	}
 }
 

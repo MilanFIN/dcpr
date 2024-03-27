@@ -28,8 +28,14 @@ void renderSplash();
 /// @brief render "press start" screen and initialize random number generator based on user input
 void renderStart();
 
-/// @brief render level size selection screen and initialize mapsize variable on exit
-void renderMenu();
+void renderMainMenu();
+
+bool renderPlayMenu();
+
+void renderKeysMenu();
+
+void renderGuideMenu();
+
 
 /// @brief draw pause menu l/r arrow icons
 void drawArrows();

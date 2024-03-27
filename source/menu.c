@@ -16,9 +16,9 @@ bool randomInitialized = false;
 void renderBkg()
 {
 	const int startX = CLAMP(2 * keyX - 4, 0, 238);
-	const int startY = CLAMP((keyY ) - 4, 0, 138);
+	const int startY = CLAMP((keyY)-4, 0, 138);
 	const int endX = CLAMP(2 * keyX + 64 + 4, 0, 238);
-	const int endY = CLAMP((keyY )  + 4 + 32, 64, 138);
+	const int endY = CLAMP((keyY) + 4 + 32, 64, 138);
 
 	fillArea(startX, startY, endX, endY, 16);
 
@@ -78,20 +78,92 @@ void renderStart()
 			fillArea(0, 0, 240, 140, 16);
 			fillArea(0, 128, 240, 160, 16);
 
-			writeLine("PRESS START", 11, 10, 140, 15);
+			writeLine("PRESS START", 11, 10, 140, 15, true);
 
 			init++;
 		}
 		renderBkg();
 		vid_flip();
 
-		//VBlankIntrWait();
+		// VBlankIntrWait();
 	}
 	VBlankIntrWait();
 	playSound(7);
 }
 
-void renderMenu()
+void renderMainMenu()
+{
+
+	int count = 0;
+
+	int selection = 0;
+	while (1)
+	{
+		key_poll();
+
+		if (count < 2)
+		{
+			renderMenuBkg();
+			fillArea(18, 4, 222, 32, 16);
+			writeLine("MAIN MENU", 9, 20, 15, 15, true);
+			fillArea(44, 45, 200, 115, 16);
+
+			writeLine("PLAY", 4, 37, 55, 15, true);
+			writeLine("KEYS", 4, 37, 75, 15, true);
+			writeLine("GUIDE", 5, 37, 95, 15, true);
+			count++;
+		}
+		fillArea(54, 50, 70, 110, 16);
+
+		writeLine(">", 1, 27, 55 + 20 * selection, 15, true);
+
+		if (key_hit(KEY_DOWN))
+		{
+			VBlankIntrWait();
+			playSound(9);
+			if (selection < 2)
+			{
+				selection++;
+			}
+		}
+		else if (key_hit(KEY_UP))
+		{
+			VBlankIntrWait();
+			playSound(9);
+			if (selection > 0)
+			{
+				selection--;
+			}
+		}
+
+		if (key_hit(KEY_A) || key_hit(KEY_START))
+		{
+			VBlankIntrWait();
+			playSound(9);
+
+			if (selection == 0)
+			{
+				if (renderPlayMenu())
+					return;
+			}
+			else if (selection == 1)
+			{
+				renderKeysMenu();
+			}
+			else if (selection == 2) {
+				renderGuideMenu();
+			}
+			count = 0;
+			VBlankIntrWait();
+			playSound(5);
+		}
+
+		vid_flip();
+		VBlankIntrWait();
+	}
+}
+
+bool renderPlayMenu()
 {
 
 	while (1)
@@ -109,18 +181,18 @@ void renderMenu()
 			{
 				renderMenuBkg();
 				fillArea(18, 4, 222, 32, 16);
-				writeLine("LEVEL SIZE", 10, 16, 15, 15);
+				writeLine("LEVEL SIZE", 10, 16, 15, 15, true);
 				fillArea(44, 45, 200, 115, 16);
 
-				writeLine("SMALL", 5, 37, 55, 15);
-				writeLine("MEDIUM", 6, 37, 75, 15);
-				writeLine("LARGE", 5, 37, 95, 15);
+				writeLine("SMALL", 5, 37, 55, 15, true);
+				writeLine("MEDIUM", 6, 37, 75, 15, true);
+				writeLine("LARGE", 5, 37, 95, 15, true);
 				count++;
 			}
 
 			fillArea(54, 50, 70, 110, 16);
 
-			writeLine(">", 1, 27, 55 + 20 * size, 15);
+			writeLine(">", 1, 27, 55 + 20 * size, 15, true);
 
 			if (key_hit(KEY_A) || key_hit(KEY_START))
 			{
@@ -128,6 +200,10 @@ void renderMenu()
 				playSound(9);
 				mapSize = 30 + size * 10;
 				break;
+			}
+			if (key_hit(KEY_B))
+			{
+				return false;
 			}
 			else if (key_hit(KEY_DOWN))
 			{
@@ -160,20 +236,20 @@ void renderMenu()
 			{
 				renderMenuBkg();
 				fillArea(18, 4, 222, 32, 16);
-				writeLine("DIFFICULTY", 10, 16, 15, 15);
+				writeLine("DIFFICULTY", 10, 16, 15, 15, true);
 				fillArea(44, 45, 200, 135, 16);
 
-				writeLine("EASY", 4, 37, 55, 15);
-				writeLine("NORMAL", 6, 37, 75, 15);
-				writeLine("HARD", 4, 37, 95, 15);
-				writeLine(";1", 2, 37, 115, 15);
+				writeLine("EASY", 4, 37, 55, 15, true);
+				writeLine("NORMAL", 6, 37, 75, 15, true);
+				writeLine("HARD", 4, 37, 95, 15, true);
+				writeLine(";1", 2, 37, 115, 15, true);
 
 				count++;
 			}
 
 			fillArea(54, 50, 70, 130, 16);
 
-			writeLine(">", 1, 27, 55 + 20 * diff, 15);
+			writeLine(">", 1, 27, 55 + 20 * diff, 15, true);
 
 			if (key_hit(KEY_A) || key_hit(KEY_START))
 			{
@@ -185,7 +261,7 @@ void renderMenu()
 					randomInitialized = true;
 					sqran(readSeedTimer());
 				}
-				return;
+				return true;
 			}
 			else if (key_hit(KEY_B))
 			{
@@ -214,6 +290,74 @@ void renderMenu()
 			vid_flip();
 			VBlankIntrWait();
 		}
+	}
+}
+
+void renderKeysMenu()
+{
+
+	int count = 0;
+
+	while (1)
+	{
+		key_poll();
+
+		if (count < 2)
+		{
+			renderMenuBkg();
+			fillArea(18, 4, 222, 32, 16);
+			writeLine("KEYS", 4, 42, 15, 15, true);
+			fillArea(10, 45, 230, 155, 16);
+
+			writeLine("DPAD          MOVE", 18, 39, 55, 15, false);
+			writeLine("L<R         STRAFE", 18, 39, 75, 15, false);
+			writeLine("A        OPEN DOOR", 18, 39, 95, 15, false);
+			writeLine("B           ATTACK", 18, 39, 115, 15, false);
+			writeLine("START    PAUSE<MAP", 18, 39, 135, 15, false);
+
+			count++;
+		}
+
+		if (key_hit(KEY_B))
+		{
+			return;
+		}
+		vid_flip();
+		VBlankIntrWait();
+	}
+}
+
+void renderGuideMenu()
+{
+
+	int count = 0;
+
+	while (1)
+	{
+		key_poll();
+
+		if (count < 2)
+		{
+			renderMenuBkg();
+			fillArea(18, 4, 222, 32, 16);
+			writeLine("GUIDE", 5, 38, 15, 15, true);
+			fillArea(10, 45, 230, 155, 16);
+
+			writeLine("THERE IS A KEY HIDDEN", 21, 25, 55, 15, false);
+			writeLine("SOMEWHERE IN THE DUNGEON", 24, 13, 70, 15, false);
+			writeLine("TRY TO FIND IT", 14, 57, 95, 15, false);
+			writeLine("AFTERWARDS FIND YOUR WAY", 24, 13, 120, 15, false);
+			writeLine("BACK TO TO THE DOOR", 19, 35, 135, 15, false);
+
+			count++;
+		}
+
+		if (key_hit(KEY_B))
+		{
+			return;
+		}
+		vid_flip();
+		VBlankIntrWait();
 	}
 }
 
@@ -304,11 +448,11 @@ int renderPause2nd()
 
 			fillArea(40, 32, 200, 122, 16);
 
-			writeLine("TIME", 4, 42, 40, 15);
-			writeLine(timeLabel, 8, 25, 56, 15);
+			writeLine("TIME", 4, 42, 40, 15, true);
+			writeLine(timeLabel, 8, 25, 56, 15, true);
 
-			writeLine("RESUME", 6, 38, 88, 15);
-			writeLine("QUIT", 4, 38, 104, 15);
+			writeLine("RESUME", 6, 38, 88, 15, true);
+			writeLine("QUIT", 4, 38, 104, 15, true);
 			count++;
 		}
 
@@ -346,7 +490,7 @@ int renderPause2nd()
 
 		fillArea(50, 86, 70, 116, 16);
 
-		writeLine(">", 1, 27, 88 + selection * 16, 15);
+		writeLine(">", 1, 27, 88 + selection * 16, 15, true);
 
 		vid_flip();
 		VBlankIntrWait();
@@ -417,7 +561,7 @@ void renderLevelDone()
 
 	fillArea(8, 10, 230, 115, 16);
 
-	writeLine("LEVEL DONE", 10, 15, 20, 15);
+	writeLine("LEVEL DONE", 10, 15, 20, 15, true);
 
 	const char s1 = (time % 60 % 10) + '0';
 	const char s0 = (time % 60 / 10) + '0';
@@ -427,11 +571,11 @@ void renderLevelDone()
 	const char h0 = (time / 3600 / 10) + '0';
 
 	char timeLabel[8] = {h0, h1, ':', m0, m1, ':', s0, s1};
-	writeLine("TIME", 4, 42, 40, 15);
-	writeLine(timeLabel, 8, 25, 56, 15);
+	writeLine("TIME", 4, 42, 40, 15, true);
+	writeLine(timeLabel, 8, 25, 56, 15, true);
 
-	writeLine("PRESS A", 7, 28, 80, 15);
-	writeLine("TO CONTINUE", 11, 10, 96, 15);
+	writeLine("PRESS A", 7, 28, 80, 15, true);
+	writeLine("TO CONTINUE", 11, 10, 96, 15, true);
 
 	vid_flip();
 	VBlankIntrWait();

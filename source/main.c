@@ -506,7 +506,7 @@ void mainGameLoop()
 		}
 		if (notificationCounter > 0)
 		{
-			writeLine(notification, notificationLength, 118 - 9 * notificationLength, 0, 15);
+			writeLine(notification, notificationLength, 118 - 9 * notificationLength, 0, 15, true);
 			notificationCounter--;
 		}
 
@@ -531,7 +531,7 @@ int main()
 
 	while (1)
 	{
-		renderMenu();
+		renderMainMenu();
 		initLevel();
 		mainGameLoop();
 	}

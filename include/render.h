@@ -181,7 +181,7 @@ INLINE void m4_sprite_color_textured_dual_line(const int *textures, int x, int y
 INLINE void m4_sprite_color_textured_single_line(const int *textures, int x, int y1, int y2, int type, int column, int flatColor, FIXED step, int textureSize)
 {
 	FIXED textureY = 0;
-	for (int y = y1; y <= y2; y++)
+	for (int y = y1; y < y2; y++)
 	{
 		const int realColor = textures[(type - 1) * textureSize * textureSize + fx2int(textureY) * textureSize + column];
 		if (realColor != 0)
@@ -320,7 +320,7 @@ void drawFlatColorFullResolution(const int *textures, int texture, int x, int y,
 /// @param x top left coordinate
 /// @param y -||-
 /// @param color color palette index
-void writeLetter(char *letter, int x, int y, int color);
+void writeLetter(char *letter, int x, int y, int color, bool big);
 
 // writes a line of text (number or capital) to a position on screen with a color based on palette index
 
@@ -330,7 +330,7 @@ void writeLetter(char *letter, int x, int y, int color);
 /// @param x top left coordinate
 /// @param y -||-
 /// @param color color palette index
-void writeLine(char *content, char length, int x, int y, int color);
+void writeLine(char *content, char length, int x, int y, int color, bool big);
 
 /// @brief fill an area on screen with flat color
 void fillArea(int x0, int y0, int x1, int y1, char color);
