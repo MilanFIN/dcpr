@@ -367,7 +367,7 @@ void drawArrows()
 	drawFlatMirrored(TEXTURES, 17, 4, 5, 16, 16, 0, TEXTURESIZE);
 }
 
-void renderPause1st(char *map, char *visited, int playerX, int playerY)
+void renderPause1st(int *map, char *visited, int playerX, int playerY)
 {
 	castRays();
 	drawHands();
@@ -497,7 +497,7 @@ int renderPause2nd()
 	}
 }
 
-bool renderPauseMenu(char *map, char *visited, int playerX, int playerY)
+bool renderPauseMenu(int *map, char *visited, int playerX, int playerY)
 {
 	pauseTimer();
 	drawHud();

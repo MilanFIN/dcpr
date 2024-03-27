@@ -11,22 +11,22 @@ struct Entity
 	FIXED y;
 	FIXED xDir;
 	FIXED yDir;
-	char type; // 1: key, 2: projectile, 3:enemy, 4 hp pack, 5 gun level up, 6 mana, 7 splatter
-	char texture;
+	int type; // 1: key, 2: projectile, 3:enemy, 4 hp pack, 5 gun level up, 6 mana, 7 splatter
+	int texture;
 	FIXED distance;
 	FIXED scale;
 	int yOffset;
 	FIXED speed;
-	char actionDelay;
-	char actionFrequency;
+	int actionDelay;
+	int actionFrequency;
 	// amount of damage dealth or healed
 	int damage;
-	char level;
+	int level;
 	int hp;
-	char hit; // set to 1, when should show hit frame
-	char notification[4];
+	int hit; // set to 1, when should show hit frame
+	char notification[10];
 	size_t notificationLength;
-	char mask;
+	int mask;
 };
 
 struct Player
@@ -40,9 +40,9 @@ struct Player
 	int ammo;
 	int maxAmmo;
 	int ammoRecoveryRate;
-	char gunLevel;
-	char maxGunLevel;
-	char damage;
+	int gunLevel;
+	int maxGunLevel;
+	int damage;
 	int overdrive; // not using ammo when this is != 0, counts toward 0
 	int maxOverDrive;
 	FIXED speed;

@@ -8,7 +8,7 @@ int MAXDEPTH = 25;
 
 int mapSize = MAPSIZE;
 
-char MAP[MAPSIZE * MAPSIZE] = {0};
+int MAP[MAPSIZE * MAPSIZE] = {0};
 int UTILITYMAPDATA[MAPSIZE * MAPSIZE] = {0};
 char VISITEDLOCATIONS[MAPSIZE * MAPSIZE] = {0};
 
@@ -202,7 +202,7 @@ void shrink(struct Leaf leaves[MAXITERATIONS])
 	}
 }
 
-void getDungeon(char *map, int mapsize)
+void getDungeon(int *map, int mapsize)
 {
 	PAIRID = 0;
 	ID = 0;
@@ -227,7 +227,7 @@ void getDungeon(char *map, int mapsize)
 	{
 		for (int x = 0; x < MAPSIZE; x++)
 		{
-			char wallVal = 1;
+			int wallVal = 1;
 			if (qran_range(0, 15) < 2)
 			{
 				wallVal = 2;

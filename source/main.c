@@ -14,9 +14,6 @@
 #include "toplayer.h"
 
 #define TILESIZE 1
-#define FOV 60
-
-const int HALFFOV = FOV / 2;
 const FIXED FIXEDTILESIZE = TILESIZE * 256;
 
 volatile unsigned short *palette = (volatile unsigned short *)0x5000000;
@@ -72,7 +69,7 @@ void initPalette()
 void updateDirection()
 {
 
-	FIXED viewPlaneMultiplier = 200; // 168;
+	FIXED viewPlaneMultiplier = 220; //84 ~30, 168 ~60, 210~70
 
 	const FIXED PI = int2fx(0x10000 >> 1);
 	FIXED luAngle = fxmul(PI, fxdiv(player.direction, int2fx(360))) >> 7;
@@ -234,9 +231,6 @@ void getOpenAdjacentTile(int oX, int oY, FIXED *x, FIXED *y, FIXED *direction)
 /// @brief take a map that only contains walls and open spaces and add items & door to that map
 void populateMap()
 {
-
-	// figure out a position for the door
-	int UTILITYMAPDATA[MAPSIZE * MAPSIZE] = {0};
 
 	int counter = 0;
 	for (int y = 0; y < MAPSIZE; y++)

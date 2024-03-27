@@ -24,7 +24,7 @@ extern int MAXDEPTH;
 
 extern int mapSize;
 
-extern char MAP[MAPSIZE * MAPSIZE];
+extern int MAP[MAPSIZE * MAPSIZE];
 extern int UTILITYMAPDATA[MAPSIZE * MAPSIZE];
 extern char VISITEDLOCATIONS[MAPSIZE * MAPSIZE];
 
@@ -62,7 +62,7 @@ void shrink(struct Leaf leaves[MAXITERATIONS]);
 /// @brief main interface to use the dungeon generator
 /// @param map pointer to game map array, 1d buffer that contains a 2d map
 /// @param mapsize map size (eg 50x50 => 50)
-void getDungeon(char *map, int mapsize);
+void getDungeon(int *map, int mapsize);
 
 bool collisionCheck(FIXED x, FIXED y);
 
