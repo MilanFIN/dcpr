@@ -243,10 +243,10 @@ bool renderPlayMenu()
 				writeLine("DIFFICULTY", 10, 16, 15, 15, true);
 				fillArea(44, 45, 200, 135, 16);
 
-				writeLine("EASY", 4, 37, 55, 15, true);
-				writeLine("NORMAL", 6, 37, 75, 15, true);
-				writeLine("HARD", 4, 37, 95, 15, true);
-				writeLine(";1", 2, 37, 115, 15, true);
+				writeLine("NOOB", 4, 37, 55, 15, true);
+				writeLine("EASY", 4, 37, 75, 15, true);
+				writeLine("NORMAL", 6, 37, 95, 15, true);
+				writeLine("HARD", 4, 37, 115, 15, true);
 
 				count++;
 			}
