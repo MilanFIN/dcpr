@@ -97,6 +97,8 @@ void renderMainMenu()
 	int count = 0;
 
 	int selection = 0;
+	VBlankIntrWait();
+
 	while (1)
 	{
 		key_poll();
@@ -112,6 +114,7 @@ void renderMainMenu()
 			writeLine("KEYS", 4, 37, 75, 15, true);
 			writeLine("GUIDE", 5, 37, 95, 15, true);
 			count++;
+			VBlankIntrWait();
 		}
 		fillArea(54, 50, 70, 110, 16);
 
@@ -150,7 +153,8 @@ void renderMainMenu()
 			{
 				renderKeysMenu();
 			}
-			else if (selection == 2) {
+			else if (selection == 2)
+			{
 				renderGuideMenu();
 			}
 			count = 0;
