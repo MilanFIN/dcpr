@@ -69,7 +69,7 @@ void initPalette()
 void updateDirection()
 {
 
-	FIXED viewPlaneMultiplier = 220; //84 ~30, 168 ~60, 210~70
+	FIXED viewPlaneMultiplier = 200; //84 ~30, 168 ~60, 210~70
 
 	const FIXED PI = int2fx(0x10000 >> 1);
 	FIXED luAngle = fxmul(PI, fxdiv(player.direction, int2fx(360))) >> 7;
