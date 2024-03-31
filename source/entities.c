@@ -207,7 +207,6 @@ void checkEntityCollisions()
 				removeEntity(i);
 				player.hasKey = true;
 				updateHud = 2;
-				VBlankIntrWait();
 				playSound(16);
 			}
 		}
@@ -293,7 +292,6 @@ void checkEntityCollisions()
 					setNotification(&entities[i]);
 					removeEntity(i);
 					updateHud = 2;
-					VBlankIntrWait();
 					playSound(2);
 				}
 			}
@@ -311,7 +309,6 @@ void checkEntityCollisions()
 					updateHud = 2;
 				}
 				removeEntity(i);
-				VBlankIntrWait();
 				playSound(3);
 			}
 		}

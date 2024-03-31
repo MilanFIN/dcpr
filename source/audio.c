@@ -10,9 +10,12 @@ void initAudio()
 
 void playSound(int id)
 {
+	// for channel1, must wait 1 frame, otherwise they won't play reliably on real hw
+
 	// blip
 	if (id == 0)
 	{
+		VBlankIntrDelay(1);
 		const uint8_t volume = 9;	 // 0-15
 		const uint8_t direction = 0; // 0-1 envelope dir, 0 for down
 		const uint8_t step = 1;		 // 0-7 envelope step time
@@ -32,6 +35,7 @@ void playSound(int id)
 	// hp pickup
 	else if (id == 2)
 	{
+		VBlankIntrDelay(1);
 		REG_SND1CNT = SSQR_ENV_BUILD(10, 0, 2) | SSQR_DUTY1_2;
 		REG_SND1SWEEP = SSW_INC | SSW_TIME(7) | SSW_SHIFT(4);
 		REG_SND1FREQ = SFREQ_RESET | SND_RATE(NOTE_G, -1) | SFREQ_HOLD; // SFREQ_TIMED;
@@ -39,6 +43,7 @@ void playSound(int id)
 	// spell pickup
 	else if (id == 3)
 	{
+		VBlankIntrDelay(1);
 		const uint8_t volume = 15;	 // 0-15
 		const uint8_t direction = 0; // 0-1 envelope dir, 0 for down
 		const uint8_t step = 1;		 // 0-7 envelope step time
@@ -69,12 +74,14 @@ void playSound(int id)
 	// start
 	else if (id == 7)
 	{
+		VBlankIntrDelay(1);
 		REG_SND2CNT = SSQR_ENV_BUILD(12, 0, 4) | SSQR_DUTY1_4;
 		REG_SND2FREQ = SFREQ_RESET | SND_RATE(NOTE_G, -2);
 	}
 	// maybe door open?
 	else if (id == 8)
 	{
+		VBlankIntrDelay(1);
 		REG_SND1CNT = SSQR_ENV_BUILD(12, 0, 7) | SSQR_DUTY1_2;
 		REG_SND1SWEEP = SSW_INC | SSW_TIME(7) | SSW_SHIFT(3);
 		REG_SND1FREQ = SFREQ_RESET | SND_RATE(NOTE_D, -2);
@@ -82,6 +89,7 @@ void playSound(int id)
 	// menu move
 	else if (id == 9)
 	{
+		VBlankIntrDelay(1);
 		REG_SND1CNT = SSQR_ENV_BUILD(8, 0, 7) | SSQR_DUTY1_2;
 		REG_SND1SWEEP = SSW_INC | SSW_TIME(5) | SSW_SHIFT(5);
 		REG_SND1FREQ = SFREQ_RESET | SND_RATE(NOTE_C, 2);
@@ -89,6 +97,7 @@ void playSound(int id)
 	// menu ok
 	else if (id == 10)
 	{
+		VBlankIntrDelay(1);
 		REG_SND1CNT = SSQR_ENV_BUILD(10, 0, 7) | SSQR_DUTY1_2;
 		REG_SND1SWEEP = SSW_INC | SSW_TIME(5) | SSW_SHIFT(5);
 		REG_SND1FREQ = SFREQ_RESET | SND_RATE(NOTE_C, -1);
@@ -102,6 +111,7 @@ void playSound(int id)
 	// enemy death sound
 	else if (id == 12)
 	{
+		VBlankIntrDelay(1);
 		REG_SND1CNT = SSQR_ENV_BUILD(6, 0, 3) | SSQR_DUTY1_8;
 		REG_SND1SWEEP = SSW_DEC | SSW_TIME(1) | SSW_SHIFT(7);
 		REG_SND1FREQ = SFREQ_RESET | SND_RATE(NOTE_C, -1);
@@ -127,9 +137,11 @@ void playSound(int id)
 	// key
 	else if (id == 16)
 	{
+		VBlankIntrDelay(1);
 		REG_SND1CNT = SSQR_ENV_BUILD(7, 0, 7) | SSQR_DUTY1_2;
 		REG_SND1SWEEP = SSW_INC | SSW_TIME(7) | SSW_SHIFT(7);
-		REG_SND1FREQ = SFREQ_RESET | SND_RATE(NOTE_A, 1) | SFREQ_TIMED;
+		// REG_SND1SWEEP = SSW_INC | SSW_TIME(5) | SSW_SHIFT(7);
+		REG_SND1FREQ = SFREQ_RESET | SND_RATE(NOTE_A, 1) | SFREQ_HOLD;
 	}
 	// door locked
 	else if (id == 17)
@@ -140,13 +152,15 @@ void playSound(int id)
 	// door open
 	else if (id == 18)
 	{
-		REG_SND1CNT = SSQR_ENV_BUILD(10, 0, 7) | SSQR_DUTY1_2;
-		REG_SND1SWEEP = SSW_INC | SSW_TIME(3) | SSW_SHIFT(6);
-		REG_SND1FREQ = SFREQ_RESET | SND_RATE(NOTE_A, -1) | SFREQ_HOLD;
+		VBlankIntrDelay(1);
+		REG_SND1CNT = SSQR_ENV_BUILD(3, 1, 7) | SSQR_DUTY1_2;
+		REG_SND1SWEEP = SSW_INC | SSW_TIME(3) | SSW_SHIFT(7);
+		REG_SND1FREQ = SFREQ_RESET | SND_RATE(NOTE_C, 0) | SFREQ_HOLD;
 	}
 	// mana pickup
 	else if (id == 19)
 	{
+		VBlankIntrDelay(1);
 		REG_SND1CNT = SSQR_ENV_BUILD(12, 0, 2) | SSQR_DUTY1_2;
 		REG_SND1SWEEP = SSW_INC | SSW_TIME(7) | SSW_SHIFT(3);
 		REG_SND1FREQ = SFREQ_RESET | SND_RATE(NOTE_DIS, -1) | SFREQ_HOLD;

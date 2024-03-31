@@ -356,13 +356,11 @@ bool castForward(FIXED dirX, FIXED dirY)
 
 		if (player.hasKey)
 		{
-			VBlankIntrWait();
 			playSound(18);
 			return true;
 		}
 		else
 		{
-			VBlankIntrWait();
 			playSound(17);
 			return false;
 		}

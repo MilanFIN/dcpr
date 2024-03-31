@@ -87,7 +87,6 @@ void renderStart()
 
 		// VBlankIntrWait();
 	}
-	VBlankIntrWait();
 	playSound(7);
 }
 
@@ -122,7 +121,6 @@ void renderMainMenu()
 
 		if (key_hit(KEY_DOWN))
 		{
-			VBlankIntrWait();
 			playSound(9);
 			if (selection < 2)
 			{
@@ -131,7 +129,6 @@ void renderMainMenu()
 		}
 		else if (key_hit(KEY_UP))
 		{
-			VBlankIntrWait();
 			playSound(9);
 			if (selection > 0)
 			{
@@ -141,7 +138,6 @@ void renderMainMenu()
 
 		if (key_hit(KEY_A) || key_hit(KEY_START))
 		{
-			VBlankIntrWait();
 			playSound(9);
 
 			if (selection == 0)
@@ -158,7 +154,6 @@ void renderMainMenu()
 				renderGuideMenu();
 			}
 			count = 0;
-			VBlankIntrWait();
 			playSound(5);
 		}
 
@@ -200,7 +195,6 @@ bool renderPlayMenu()
 
 			if (key_hit(KEY_A) || key_hit(KEY_START))
 			{
-				VBlankIntrWait();
 				playSound(9);
 				mapSize = 30 + size * 10;
 				break;
@@ -211,7 +205,6 @@ bool renderPlayMenu()
 			}
 			else if (key_hit(KEY_DOWN))
 			{
-				VBlankIntrWait();
 				playSound(9);
 				if (size < 2)
 				{
@@ -220,7 +213,6 @@ bool renderPlayMenu()
 			}
 			else if (key_hit(KEY_UP))
 			{
-				VBlankIntrWait();
 				playSound(9);
 				if (size > 0)
 				{
@@ -258,7 +250,6 @@ bool renderPlayMenu()
 			if (key_hit(KEY_A) || key_hit(KEY_START))
 			{
 				difficulty = diff;
-				VBlankIntrWait();
 				playSound(10);
 				if (!randomInitialized)
 				{
@@ -269,13 +260,11 @@ bool renderPlayMenu()
 			}
 			else if (key_hit(KEY_B))
 			{
-				VBlankIntrWait();
 				playSound(5);
 				break;
 			}
 			else if (key_hit(KEY_DOWN))
 			{
-				VBlankIntrWait();
 				playSound(9);
 				if (diff < 3)
 				{
@@ -284,7 +273,6 @@ bool renderPlayMenu()
 			}
 			else if (key_hit(KEY_UP))
 			{
-				VBlankIntrWait();
 				playSound(9);
 				if (diff > 0)
 				{
@@ -462,7 +450,6 @@ int renderPause2nd()
 
 		if (key_hit(KEY_RIGHT) || key_hit(KEY_LEFT) || key_hit(KEY_R) || key_hit(KEY_L))
 		{
-			VBlankIntrWait();
 			playSound(9);
 			return 0;
 		}
@@ -479,14 +466,12 @@ int renderPause2nd()
 		}
 		else if (key_hit(KEY_DOWN))
 		{
-			VBlankIntrWait();
 			playSound(9);
 			selection += 1;
 			selection = CLAMP(selection, 0, 2);
 		}
 		else if (key_hit(KEY_UP))
 		{
-			VBlankIntrWait();
 			playSound(9);
 			selection -= 1;
 			selection = CLAMP(selection, 0, 2);
@@ -507,7 +492,6 @@ bool renderPauseMenu(int *map, char *visited, int playerX, int playerY)
 	drawHud();
 	updateAmmo();
 
-	VBlankIntrWait();
 	playSound(9);
 
 	while (1)
@@ -520,12 +504,10 @@ bool renderPauseMenu(int *map, char *visited, int playerX, int playerY)
 
 			if (key_hit(KEY_RIGHT) || key_hit(KEY_LEFT) || key_hit(KEY_R) || key_hit(KEY_L))
 			{
-				VBlankIntrWait();
 				playSound(9);
 				int selection = renderPause2nd();
 				if (selection == 1)
 				{
-					VBlankIntrWait();
 					playSound(9);
 
 					resumeTimer();
@@ -533,7 +515,6 @@ bool renderPauseMenu(int *map, char *visited, int playerX, int playerY)
 				}
 				if (selection == -1)
 				{
-					VBlankIntrWait();
 					playSound(9);
 					return false;
 				}
@@ -542,7 +523,6 @@ bool renderPauseMenu(int *map, char *visited, int playerX, int playerY)
 
 			if (key_hit(KEY_START))
 			{
-				VBlankIntrWait();
 				playSound(9);
 
 				resumeTimer();
@@ -589,7 +569,6 @@ void renderLevelDone()
 		key_poll();
 		if (key_hit(KEY_A))
 		{
-			VBlankIntrWait();
 			playSound(9);
 			break;
 		}

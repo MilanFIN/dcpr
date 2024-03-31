@@ -427,7 +427,6 @@ void mainGameLoop()
 			{
 				pauseTimer();
 				syncVideoBuffers();
-				VBlankIntrWait();
 				playSound(18);
 				endAnimation(16);
 				renderLevelDone();
@@ -470,7 +469,6 @@ void mainGameLoop()
 
 		if (player.hp <= 0)
 		{
-			VBlankIntrWait();
 			playSound(11);
 			syncVideoBuffers();
 			endAnimation(14);
