@@ -11,7 +11,7 @@ int keyY = 0;
 int keyYAdd = 1;
 
 int difficulty = 0;
-bool randomInitialized = false;
+int randomInitialized = 0;
 
 void renderBkg()
 {
@@ -78,7 +78,7 @@ void renderStart()
 			fillArea(0, 0, 240, 140, 16);
 			fillArea(0, 128, 240, 160, 16);
 
-			writeLine("PRESS START", 11, 10, 140, 15, true);
+			writeLine("PRESS START", 11, 10, 140, 15, 1);
 
 			init++;
 		}
@@ -107,18 +107,18 @@ void renderMainMenu()
 		{
 			renderMenuBkg();
 			fillArea(18, 4, 222, 32, 16);
-			writeLine("MAIN MENU", 9, 20, 15, 15, true);
+			writeLine("MAIN MENU", 9, 20, 15, 15, 1);
 			fillArea(44, 45, 200, 115, 16);
 
-			writeLine("PLAY", 4, 37, 55, 15, true);
-			writeLine("KEYS", 4, 37, 75, 15, true);
-			writeLine("GUIDE", 5, 37, 95, 15, true);
+			writeLine("PLAY", 4, 37, 55, 15, 1);
+			writeLine("KEYS", 4, 37, 75, 15, 1);
+			writeLine("GUIDE", 5, 37, 95, 15, 1);
 			count++;
 			VBlankIntrWait();
 		}
 		fillArea(54, 50, 70, 110, 16);
 
-		writeLine(">", 1, 27, 55 + 20 * selection, 15, true);
+		writeLine(">", 1, 27, 55 + 20 * selection, 15, 1);
 
 		if (key_hit(KEY_DOWN))
 		{
@@ -146,7 +146,7 @@ void renderMainMenu()
 
 			if (selection == 0)
 			{
-				if (renderPlayMenu())
+				if (renderPlayMenu() == 1)
 					return;
 			}
 			else if (selection == 1)
@@ -167,7 +167,7 @@ void renderMainMenu()
 	}
 }
 
-bool renderPlayMenu()
+int renderPlayMenu()
 {
 
 	while (1)
@@ -185,18 +185,18 @@ bool renderPlayMenu()
 			{
 				renderMenuBkg();
 				fillArea(18, 4, 222, 32, 16);
-				writeLine("LEVEL SIZE", 10, 16, 15, 15, true);
+				writeLine("LEVEL SIZE", 10, 16, 15, 15, 1);
 				fillArea(44, 45, 200, 115, 16);
 
-				writeLine("SMALL", 5, 37, 55, 15, true);
-				writeLine("MEDIUM", 6, 37, 75, 15, true);
-				writeLine("LARGE", 5, 37, 95, 15, true);
+				writeLine("SMALL", 5, 37, 55, 15, 1);
+				writeLine("MEDIUM", 6, 37, 75, 15, 1);
+				writeLine("LARGE", 5, 37, 95, 15, 1);
 				count++;
 			}
 
 			fillArea(54, 50, 70, 110, 16);
 
-			writeLine(">", 1, 27, 55 + 20 * size, 15, true);
+			writeLine(">", 1, 27, 55 + 20 * size, 15, 1);
 
 			if (key_hit(KEY_A) || key_hit(KEY_START))
 			{
@@ -207,7 +207,7 @@ bool renderPlayMenu()
 			}
 			if (key_hit(KEY_B))
 			{
-				return false;
+				return 0;
 			}
 			else if (key_hit(KEY_DOWN))
 			{
@@ -240,32 +240,32 @@ bool renderPlayMenu()
 			{
 				renderMenuBkg();
 				fillArea(18, 4, 222, 32, 16);
-				writeLine("DIFFICULTY", 10, 16, 15, 15, true);
+				writeLine("DIFFICULTY", 10, 16, 15, 15, 1);
 				fillArea(44, 45, 200, 135, 16);
 
-				writeLine("NOOB", 4, 37, 55, 15, true);
-				writeLine("EASY", 4, 37, 75, 15, true);
-				writeLine("NORMAL", 6, 37, 95, 15, true);
-				writeLine("HARD", 4, 37, 115, 15, true);
+				writeLine("NOOB", 4, 37, 55, 15, 1);
+				writeLine("EASY", 4, 37, 75, 15, 1);
+				writeLine("NORMAL", 6, 37, 95, 15, 1);
+				writeLine("HARD", 4, 37, 115, 15, 1);
 
 				count++;
 			}
 
 			fillArea(54, 50, 70, 130, 16);
 
-			writeLine(">", 1, 27, 55 + 20 * diff, 15, true);
+			writeLine(">", 1, 27, 55 + 20 * diff, 15, 1);
 
 			if (key_hit(KEY_A) || key_hit(KEY_START))
 			{
 				difficulty = diff;
 				VBlankIntrWait();
 				playSound(10);
-				if (!randomInitialized)
+				if (randomInitialized == 0)
 				{
-					randomInitialized = true;
+					randomInitialized = 1;
 					sqran(readSeedTimer());
 				}
-				return true;
+				return 1;
 			}
 			else if (key_hit(KEY_B))
 			{
@@ -310,14 +310,14 @@ void renderKeysMenu()
 		{
 			renderMenuBkg();
 			fillArea(18, 4, 222, 32, 16);
-			writeLine("KEYS", 4, 42, 15, 15, true);
+			writeLine("KEYS", 4, 42, 15, 15, 1);
 			fillArea(10, 45, 230, 155, 16);
 
-			writeLine("DPAD          MOVE", 18, 39, 55, 15, false);
-			writeLine("L<R         STRAFE", 18, 39, 75, 15, false);
-			writeLine("A        OPEN DOOR", 18, 39, 95, 15, false);
-			writeLine("B           ATTACK", 18, 39, 115, 15, false);
-			writeLine("START    PAUSE<MAP", 18, 39, 135, 15, false);
+			writeLine("DPAD          MOVE", 18, 39, 55, 15, 0);
+			writeLine("L<R         STRAFE", 18, 39, 75, 15, 0);
+			writeLine("A        OPEN DOOR", 18, 39, 95, 15, 0);
+			writeLine("B           ATTACK", 18, 39, 115, 15, 0);
+			writeLine("START    PAUSE<MAP", 18, 39, 135, 15, 0);
 
 			count++;
 		}
@@ -344,14 +344,14 @@ void renderGuideMenu()
 		{
 			renderMenuBkg();
 			fillArea(18, 4, 222, 32, 16);
-			writeLine("GUIDE", 5, 38, 15, 15, true);
+			writeLine("GUIDE", 5, 38, 15, 15, 1);
 			fillArea(10, 45, 230, 155, 16);
 
-			writeLine("THERE IS A KEY HIDDEN", 21, 25, 55, 15, false);
-			writeLine("SOMEWHERE IN THE DUNGEON", 24, 13, 70, 15, false);
-			writeLine("TRY TO FIND IT", 14, 57, 95, 15, false);
-			writeLine("AFTERWARDS FIND YOUR WAY", 24, 13, 120, 15, false);
-			writeLine("BACK TO TO THE DOOR", 19, 35, 135, 15, false);
+			writeLine("THERE IS A KEY HIDDEN", 21, 25, 55, 15, 0);
+			writeLine("SOMEWHERE IN THE DUNGEON", 24, 13, 70, 15, 0);
+			writeLine("TRY TO FIND IT", 14, 57, 95, 15, 0);
+			writeLine("AFTERWARDS FIND YOUR WAY", 24, 13, 120, 15, 0);
+			writeLine("BACK TO TO THE DOOR", 19, 35, 135, 15, 0);
 
 			count++;
 		}
@@ -452,11 +452,11 @@ int renderPause2nd()
 
 			fillArea(40, 32, 200, 122, 16);
 
-			writeLine("TIME", 4, 42, 40, 15, true);
-			writeLine(timeLabel, 8, 25, 56, 15, true);
+			writeLine("TIME", 4, 42, 40, 15, 1);
+			writeLine(timeLabel, 8, 25, 56, 15, 1);
 
-			writeLine("RESUME", 6, 38, 88, 15, true);
-			writeLine("QUIT", 4, 38, 104, 15, true);
+			writeLine("RESUME", 6, 38, 88, 15, 1);
+			writeLine("QUIT", 4, 38, 104, 15, 1);
 			count++;
 		}
 
@@ -494,14 +494,14 @@ int renderPause2nd()
 
 		fillArea(50, 86, 70, 116, 16);
 
-		writeLine(">", 1, 27, 88 + selection * 16, 15, true);
+		writeLine(">", 1, 27, 88 + selection * 16, 15, 1);
 
 		vid_flip();
 		VBlankIntrWait();
 	}
 }
 
-bool renderPauseMenu(int *map, char *visited, int playerX, int playerY)
+int renderPauseMenu(int *map, char *visited, int playerX, int playerY)
 {
 	pauseTimer();
 	drawHud();
@@ -529,13 +529,13 @@ bool renderPauseMenu(int *map, char *visited, int playerX, int playerY)
 					playSound(9);
 
 					resumeTimer();
-					return true;
+					return 1;
 				}
 				if (selection == -1)
 				{
 					VBlankIntrWait();
 					playSound(9);
-					return false;
+					return 0;
 				}
 				break;
 			}
@@ -546,7 +546,7 @@ bool renderPauseMenu(int *map, char *visited, int playerX, int playerY)
 				playSound(9);
 
 				resumeTimer();
-				return true;
+				return 1;
 			}
 		}
 	}
@@ -565,7 +565,7 @@ void renderLevelDone()
 
 	fillArea(8, 10, 230, 115, 16);
 
-	writeLine("LEVEL DONE", 10, 15, 20, 15, true);
+	writeLine("LEVEL DONE", 10, 15, 20, 15, 1);
 
 	const char s1 = (time % 60 % 10) + '0';
 	const char s0 = (time % 60 / 10) + '0';
@@ -575,11 +575,11 @@ void renderLevelDone()
 	const char h0 = (time / 3600 / 10) + '0';
 
 	char timeLabel[8] = {h0, h1, ':', m0, m1, ':', s0, s1};
-	writeLine("TIME", 4, 42, 40, 15, true);
-	writeLine(timeLabel, 8, 25, 56, 15, true);
+	writeLine("TIME", 4, 42, 40, 15, 1);
+	writeLine(timeLabel, 8, 25, 56, 15, 1);
 
-	writeLine("PRESS A", 7, 28, 80, 15, true);
-	writeLine("TO CONTINUE", 11, 10, 96, 15, true);
+	writeLine("PRESS A", 7, 28, 80, 15, 1);
+	writeLine("TO CONTINUE", 11, 10, 96, 15, 1);
 
 	vid_flip();
 	VBlankIntrWait();

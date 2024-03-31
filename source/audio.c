@@ -5,8 +5,19 @@ void initAudio()
 
 	REG_SNDSTAT = SSTAT_ENABLE;
 	REG_SNDDMGCNT = SDMG_BUILD_LR(SDMG_SQR1 | SDMG_SQR2 | SDMG_NOISE, 7);
+
 	REG_SNDDSCNT = SDS_DMG100;
+	REG_SND1CNT = SSQR_ENV_BUILD(12, 0, 7) | SSQR_DUTY1_2;
+	REG_SND1SWEEP = SSW_INC | SSW_TIME(5) | SSW_SHIFT(5);
+
+	REG_SND1FREQ = 0;
+	REG_SND2FREQ = 0;
+	REG_SND4FREQ = 0;
+
 }
+
+// ei toimi:
+// key, menu ok
 
 void playSound(int id)
 {
@@ -75,6 +86,7 @@ void playSound(int id)
 	// maybe door open?
 	else if (id == 8)
 	{
+
 		REG_SND1CNT = SSQR_ENV_BUILD(12, 0, 7) | SSQR_DUTY1_2;
 		REG_SND1SWEEP = SSW_INC | SSW_TIME(7) | SSW_SHIFT(3);
 		REG_SND1FREQ = SFREQ_RESET | SND_RATE(NOTE_D, -2);
@@ -82,6 +94,7 @@ void playSound(int id)
 	// menu move
 	else if (id == 9)
 	{
+
 		REG_SND1CNT = SSQR_ENV_BUILD(8, 0, 7) | SSQR_DUTY1_2;
 		REG_SND1SWEEP = SSW_INC | SSW_TIME(5) | SSW_SHIFT(5);
 		REG_SND1FREQ = SFREQ_RESET | SND_RATE(NOTE_C, 2);
@@ -89,6 +102,7 @@ void playSound(int id)
 	// menu ok
 	else if (id == 10)
 	{
+
 		REG_SND1CNT = SSQR_ENV_BUILD(10, 0, 7) | SSQR_DUTY1_2;
 		REG_SND1SWEEP = SSW_INC | SSW_TIME(5) | SSW_SHIFT(5);
 		REG_SND1FREQ = SFREQ_RESET | SND_RATE(NOTE_C, -1);
@@ -127,6 +141,8 @@ void playSound(int id)
 	// key
 	else if (id == 16)
 	{
+		//return 0;
+
 		REG_SND1CNT = SSQR_ENV_BUILD(7, 0, 7) | SSQR_DUTY1_2;
 		REG_SND1SWEEP = SSW_INC | SSW_TIME(7) | SSW_SHIFT(7);
 		REG_SND1FREQ = SFREQ_RESET | SND_RATE(NOTE_A, 1) | SFREQ_TIMED;
@@ -140,6 +156,8 @@ void playSound(int id)
 	// door open
 	else if (id == 18)
 	{
+		//return 0;
+
 		REG_SND1CNT = SSQR_ENV_BUILD(10, 0, 7) | SSQR_DUTY1_2;
 		REG_SND1SWEEP = SSW_INC | SSW_TIME(3) | SSW_SHIFT(6);
 		REG_SND1FREQ = SFREQ_RESET | SND_RATE(NOTE_A, -1) | SFREQ_HOLD;
@@ -147,6 +165,8 @@ void playSound(int id)
 	// mana pickup
 	else if (id == 19)
 	{
+		//return 0;
+
 		REG_SND1CNT = SSQR_ENV_BUILD(12, 0, 2) | SSQR_DUTY1_2;
 		REG_SND1SWEEP = SSW_INC | SSW_TIME(7) | SSW_SHIFT(3);
 		REG_SND1FREQ = SFREQ_RESET | SND_RATE(NOTE_DIS, -1) | SFREQ_HOLD;

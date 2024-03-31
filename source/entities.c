@@ -38,14 +38,14 @@ void initEnemy(int id, int x, int y)
 	const int hpModifier = difficulty > 0 ? difficulty -1 : 0;
 
 
-	entities[id].active = true;
+	entities[id].active = 1;
 	entities[id].x = int2fx(x) + 128;
 	entities[id].y = int2fx(y) + 128;
 	entities[id].texture = ENEMYTEXTURES[enemyType];
 	entities[id].mask = ENEMYTEXTURES[enemyType];
 	entities[id].type = 3;
 	entities[id].scale = 92 + (ENEMYSIZES[enemyType] * 32);
-	entities[id].moving = true;
+	entities[id].moving = 1;
 	entities[id].yOffset = ENEMYOFFSETS[enemyType];
 	//192 - entities[id].scale * 2 / 3;
 	entities[id].speed = ENEMYSPEEDS[enemyType] / speedModifier;
@@ -65,13 +65,13 @@ void initPickup(int type, int id, int x, int y)
 
 	if (type == 0)
 	{ // gun level up
-		entities[id].active = true;
+		entities[id].active = 1;
 		entities[id].x = int2fx(x) + 128;
 		entities[id].y = int2fx(y) + 128;
 		entities[id].texture = 11;
 		entities[id].type = 5;
 		entities[id].scale = 128;
-		entities[id].moving = false;
+		entities[id].moving = 0;
 		entities[id].yOffset = 32;
 		entities[id].hit = 0;
 		copyText(entities[id].notification, "SPELL", 5);
@@ -79,13 +79,13 @@ void initPickup(int type, int id, int x, int y)
 	}
 	else if (type == 1)
 	{ // healthpack
-		entities[id].active = true;
+		entities[id].active = 1;
 		entities[id].x = int2fx(x) + 128;
 		entities[id].y = int2fx(y) + 128;
 		entities[id].texture = 12;
 		entities[id].type = 4;
 		entities[id].scale = 128;
-		entities[id].moving = false;
+		entities[id].moving = 0;
 		entities[id].yOffset = 32;
 		entities[id].hit = 0;
 		entities[id].damage = 50;
@@ -94,13 +94,13 @@ void initPickup(int type, int id, int x, int y)
 	}
 	else if (type == 2)
 	{
-		entities[id].active = true;
+		entities[id].active = 1;
 		entities[id].x = int2fx(x) + 128;
 		entities[id].y = int2fx(y) + 128;
 		entities[id].texture = 18;
 		entities[id].type = 6;
 		entities[id].scale = 128;
-		entities[id].moving = false;
+		entities[id].moving = 0;
 		entities[id].yOffset = 32;
 		entities[id].hit = 0;
 		copyText(entities[id].notification, "MANA", 4);
@@ -113,13 +113,13 @@ void initPickup(int type, int id, int x, int y)
 /// @param y -||-
 void initKey(int x, int y)
 {
-	entities[0].active = true;
+	entities[0].active = 1;
 	entities[0].x = int2fx(x) + 128;
 	entities[0].y = int2fx(y) + 128;
 	entities[0].texture = 3;
 	entities[0].type = 1;
 	entities[0].scale = 128;
-	entities[0].moving = false;
+	entities[0].moving = 0;
 	entities[0].yOffset = 32;
 	entities[0].hit = 0;
 	copyText(entities[0].notification, "KEY", 3);
@@ -128,7 +128,7 @@ void initKey(int x, int y)
 
 void initSplatter(int id)
 {
-	entities[id].active = true;
+	entities[id].active = 1;
 	entities[id].mask = 19;
 	entities[id].type = 7;
 	entities[id].hp = 4;
@@ -161,11 +161,11 @@ void fire(FIXED dirX, FIXED dirY)
 			entities[i].y = player.y;
 			entities[i].texture = PROJECTILETEXTURES[player.gunLevel - 1];
 			entities[i].type = 2;
-			entities[i].active = true;
+			entities[i].active = 1;
 			entities[i].scale = 64;
 			entities[i].xDir = dirX;
 			entities[i].yDir = dirY;
-			entities[i].moving = true;
+			entities[i].moving = 1;
 			entities[i].yOffset = 32;
 			entities[i].hit = 0;
 
@@ -205,7 +205,7 @@ void checkEntityCollisions()
 			{
 				setNotification(&entities[i]);
 				removeEntity(i);
-				player.hasKey = true;
+				player.hasKey = 1;
 				updateHud = 2;
 				VBlankIntrWait();
 				playSound(16);
@@ -379,12 +379,12 @@ void moveEntities()
 				const FIXED newX = fxadd(entities[i].x, xU);
 				const FIXED newY = fxadd(entities[i].y, yU);
 
-				if (!collisionCheck(newX, entities[i].y))
+				if (!(collisionCheck(newX, entities[i].y) == 1))
 				{
 					entities[i].x = newX;
 				}
 
-				if (!collisionCheck(entities[i].x, newY))
+				if (!(collisionCheck(entities[i].x, newY) == 1))
 				{
 					entities[i].y = newY;
 				}

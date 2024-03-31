@@ -5,8 +5,8 @@
 /// @brief an actor in the game that is drawn with a sprite
 struct Entity
 {
-	bool active;
-	bool moving;
+	int active;
+	int moving;
 	FIXED x;
 	FIXED y;
 	FIXED xDir;
@@ -25,7 +25,7 @@ struct Entity
 	int hp;
 	int hit; // set to 1, when should show hit frame
 	char notification[10];
-	size_t notificationLength;
+	int notificationLength;
 	int mask;
 };
 
@@ -34,7 +34,7 @@ struct Player
 	FIXED x;
 	FIXED y;
 	FIXED direction;
-	bool hasKey;
+	int hasKey;
 	int hp;
 	int maxHp;
 	int ammo;

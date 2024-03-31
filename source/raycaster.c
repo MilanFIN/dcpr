@@ -347,25 +347,25 @@ int castRay(int targetType, FIXED dirX, FIXED dirY)
 }
 
 /// @brief check if player is looking at anything special (walls)
-bool castForward(FIXED dirX, FIXED dirY)
+int castForward(FIXED dirX, FIXED dirY)
 {
 	// check if player has key and is looking at a door
 	int distance = castRay(5, dirX, dirY);
 	if (distance >= 0 && distance < 2)
 	{
 
-		if (player.hasKey)
+		if (player.hasKey == 1)
 		{
 			VBlankIntrWait();
 			playSound(18);
-			return true;
+			return 1;
 		}
 		else
 		{
 			VBlankIntrWait();
 			playSound(17);
-			return false;
+			return 0;
 		}
 	}
-	return false;
+	return 0;
 }

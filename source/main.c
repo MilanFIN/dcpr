@@ -113,11 +113,11 @@ void move(int type)
 		moveY = -fxmul(dirY, SPEED);
 	}
 
-	if (!collisionCheck(fxadd(player.x, fxadd(moveX, moveX)), player.y))
+	if (!(collisionCheck(fxadd(player.x, fxadd(moveX, moveX)), player.y) == 1))
 	{
 		player.x = fxadd(player.x, moveX);
 	}
-	if (!collisionCheck(player.x, fxadd(player.y, fxadd(moveY, moveY))))
+	if (!(collisionCheck(player.x, fxadd(player.y, fxadd(moveY, moveY))) == 1))
 	{
 		player.y = fxadd(player.y, moveY);
 	}
@@ -306,7 +306,7 @@ void initLevel()
 	player.hp = player.maxHp;
 	player.ammo = player.maxAmmo;
 	player.speed = float2fx(0.15);
-	player.hasKey = false;
+	player.hasKey = 0;
 	player.gunLevel = 1;
 	player.maxGunLevel = 3;
 	player.damage = 1;
@@ -423,7 +423,7 @@ void mainGameLoop()
 
 		if (key_hit(KEY_A))
 		{
-			if (castForward(dirX, dirY))
+			if (castForward(dirX, dirY) == 1)
 			{
 				pauseTimer();
 				syncVideoBuffers();
@@ -440,8 +440,8 @@ void mainGameLoop()
 		}
 		if (key_hit(KEY_START))
 		{
-			bool resume = renderPauseMenu(MAP, VISITEDLOCATIONS, fx2int(player.x), fx2int(player.y));
-			if (!resume)
+			int resume = renderPauseMenu(MAP, VISITEDLOCATIONS, fx2int(player.x), fx2int(player.y));
+			if (resume == 0)
 			{
 				break;
 			}
@@ -500,7 +500,7 @@ void mainGameLoop()
 		}
 		if (notificationCounter > 0)
 		{
-			writeLine(notification, notificationLength, 118 - 9 * notificationLength, 0, 15, true);
+			writeLine(notification, notificationLength, 118 - 9 * notificationLength, 0, 15, 1);
 			notificationCounter--;
 		}
 

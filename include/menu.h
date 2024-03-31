@@ -16,7 +16,7 @@ extern EWRAM_DATA int keyY;
 extern EWRAM_DATA int keyYAdd;
 
 extern int difficulty;
-extern bool randomInitialized;
+extern int randomInitialized;
 
 /// @brief render start menu bkg with a moving icon
 void renderBkg();
@@ -30,7 +30,7 @@ void renderStart();
 
 void renderMainMenu();
 
-bool renderPlayMenu();
+int renderPlayMenu();
 
 void renderKeysMenu();
 
@@ -57,7 +57,7 @@ int renderPause2nd();
 /// @param playerX player position on tilemap
 /// @param playerY -||-
 /// @return true: resume game, false: exit
-bool renderPauseMenu(int *map, char *visited, int playerX, int playerY);
+int renderPauseMenu(int *map, char *visited, int playerX, int playerY);
 
 void renderLevelDone();
 

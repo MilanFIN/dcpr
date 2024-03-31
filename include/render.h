@@ -320,7 +320,7 @@ void drawFlatColorFullResolution(const int *textures, int texture, int x, int y,
 /// @param x top left coordinate
 /// @param y -||-
 /// @param color color palette index
-void writeLetter(char *letter, int x, int y, int color, bool big);
+void writeLetter(char *letter, int x, int y, int color, int big);
 
 // writes a line of text (number or capital) to a position on screen with a color based on palette index
 
@@ -330,7 +330,7 @@ void writeLetter(char *letter, int x, int y, int color, bool big);
 /// @param x top left coordinate
 /// @param y -||-
 /// @param color color palette index
-void writeLine(char *content, char length, int x, int y, int color, bool big);
+void writeLine(char *content, int length, int x, int y, int color, int big);
 
 /// @brief fill an area on screen with flat color
 void fillArea(int x0, int y0, int x1, int y1, char color);

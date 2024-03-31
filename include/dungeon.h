@@ -64,6 +64,6 @@ void shrink(struct Leaf leaves[MAXITERATIONS]);
 /// @param mapsize map size (eg 50x50 => 50)
 void getDungeon(int *map, int mapsize);
 
-bool collisionCheck(FIXED x, FIXED y);
+int collisionCheck(FIXED x, FIXED y);
 
 #endif // DUNGEON_H
