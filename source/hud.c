@@ -29,7 +29,7 @@ void drawHud()
 	fillArea(238, 160 - HUDHEIGHT, 240, 160, 26);
 
 	// key icon and border
-	if (player.hasKey == 1)
+	if (player.hasKey)
 	{
 		drawFlat(TEXTURES, 3, 19, 160 - HUDHEIGHT - 10, 16, 16, 0, TEXTURESIZE);
 	}

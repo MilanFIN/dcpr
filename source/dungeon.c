@@ -278,14 +278,14 @@ void getDungeon(int *map, int mapsize)
 /// @param x fixed point position
 /// @param y fixed point position
 /// @return
-int collisionCheck(FIXED x, FIXED y)
+bool collisionCheck(FIXED x, FIXED y)
 {
 	if (MAP[fx2int(y) * MAPSIZE + fx2int(x)] != 0)
 	{
-		return 1;
+		return true;
 	}
 	else
 	{
-		return 0;
+		return false;
 	}
 }

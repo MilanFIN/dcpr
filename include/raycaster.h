@@ -39,6 +39,6 @@ void castRays();
 
 int castRay(int targetType, FIXED dirX, FIXED dirY);
 
-int castForward(FIXED dirX, FIXED dirY);
+bool castForward(FIXED dirX, FIXED dirY);
 
 #endif // RAYCASTER_H

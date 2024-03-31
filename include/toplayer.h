@@ -12,7 +12,7 @@ extern int offsetFrame;
 extern const int HANDXOFFSETS[OFFSETFRAMES];
 extern const int HANDYOFFSETS[OFFSETFRAMES];
 
-extern int movedThisFrame;
+extern bool movedThisFrame;
 
 void moveHands();
 

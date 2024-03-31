@@ -4,13 +4,13 @@ int offsetFrame = 0;
 const int HANDXOFFSETS[OFFSETFRAMES] = {0, 1, 2, 3, 3, 2, 1, 0, -1, -2, -3, -3, -2, -1};
 const int HANDYOFFSETS[OFFSETFRAMES] = {0, 1, 2, 3, 3, 2, 1, 0, 1, 2, 3, 3, 2, 1};
 
-int movedThisFrame = 0;
+bool movedThisFrame = false;
 
 void moveHands()
 {
-	if (movedThisFrame == 0)
+	if (!movedThisFrame)
 	{
-		movedThisFrame = 1;
+		movedThisFrame = true;
 		offsetFrame++;
 		if (offsetFrame >= OFFSETFRAMES)
 		{
@@ -21,7 +21,7 @@ void moveHands()
 
 void drawHands()
 {
-	movedThisFrame = 0;
+	movedThisFrame = false;
 	const int xOffset = HANDXOFFSETS[offsetFrame];
 	const int yOffset = HANDYOFFSETS[offsetFrame];
 
