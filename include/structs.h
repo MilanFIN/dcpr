@@ -24,7 +24,7 @@ struct Entity
 	int level;
 	int hp;
 	int hit; // set to 1, when should show hit frame
-	char notification[10];
+	int notification[10];
 	int notificationLength;
 	int mask;
 };

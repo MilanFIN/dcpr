@@ -45,7 +45,7 @@ void drawArrows();
 /// @param visited tilemap of previously visited positions
 /// @param playerX player position on tilemap
 /// @param playerY -||-
-void renderPause1st(int *map, char *visited, int playerX, int playerY);
+void renderPause1st(int *map, int *visited, int playerX, int playerY);
 
 /// @brief draw secondary tab of pause menu and return user input on exit
 /// @return 1 for resume, 0 for switch tab, -1 for exit game
@@ -57,7 +57,7 @@ int renderPause2nd();
 /// @param playerX player position on tilemap
 /// @param playerY -||-
 /// @return true: resume game, false: exit
-int renderPauseMenu(int *map, char *visited, int playerX, int playerY);
+int renderPauseMenu(int *map, int *visited, int playerX, int playerY);
 
 void renderLevelDone();
 

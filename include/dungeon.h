@@ -25,8 +25,8 @@ extern int MAXDEPTH;
 extern int mapSize;
 
 extern int MAP[MAPSIZE * MAPSIZE];
-extern int UTILITYMAPDATA[MAPSIZE * MAPSIZE];
-extern char VISITEDLOCATIONS[MAPSIZE * MAPSIZE];
+extern EWRAM_DATA int UTILITYMAPDATA[MAPSIZE * MAPSIZE];
+extern int VISITEDLOCATIONS[MAPSIZE * MAPSIZE];
 
 extern EWRAM_DATA struct Leaf finalLeaves[MAXITERATIONS];
 extern EWRAM_DATA struct Leaf pairTree[MAXITERATIONS];

@@ -77,7 +77,7 @@ void drawFlatMasked(const int *textures, int texture, int mask, int x, int y, in
 	}
 }
 
-void writeLetter(char *letter, int x, int y, int color, int big)
+void writeLetter(int *letter, int x, int y, int color, int big)
 {
 	// shifting to match the existing letter array
 	char characterIndex = letter[0] - 47;
@@ -90,7 +90,7 @@ void writeLetter(char *letter, int x, int y, int color, int big)
 	}
 }
 
-void writeLine(char *content, int length, int x, int y, int color, int big)
+void writeLine(int *content, int length, int x, int y, int color, int big)
 {
 	
 	for (int i = 0; i < length; i++)

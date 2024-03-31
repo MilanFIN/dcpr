@@ -77,8 +77,9 @@ void renderStart()
 		{
 			fillArea(0, 0, 240, 140, 16);
 			fillArea(0, 128, 240, 160, 16);
-
-			writeLine("PRESS START", 11, 10, 140, 15, 1);
+			//"PRESS START"
+			int presstart[11] = {80, 82, 69, 83, 83, 0, 83, 84, 65, 82, 84};
+			writeLine(presstart, 11, 10, 140, 15, 1);
 
 			init++;
 		}
@@ -107,18 +108,26 @@ void renderMainMenu()
 		{
 			renderMenuBkg();
 			fillArea(18, 4, 222, 32, 16);
-			writeLine("MAIN MENU", 9, 20, 15, 15, 1);
+			//"MAIN MENU"
+			int mainmenu[9] = {77, 65, 73, 78, 0, 77, 69, 78, 85};
+			writeLine(mainmenu, 9, 20, 15, 15, 1);
 			fillArea(44, 45, 200, 115, 16);
-
-			writeLine("PLAY", 4, 37, 55, 15, 1);
-			writeLine("KEYS", 4, 37, 75, 15, 1);
-			writeLine("GUIDE", 5, 37, 95, 15, 1);
+			//"PLAY"
+			int play[4] = {80, 76, 65, 89};
+			writeLine(play, 4, 37, 55, 15, 1);
+			//"KEYS"
+			int keys[4] = {75, 69, 89, 83};
+			writeLine(keys, 4, 37, 75, 15, 1);
+			//"GUIDE"
+			int guide[5] = {71, 85, 73, 68, 69};
+			writeLine(guide, 5, 37, 95, 15, 1);
 			count++;
 			VBlankIntrWait();
 		}
 		fillArea(54, 50, 70, 110, 16);
-
-		writeLine(">", 1, 27, 55 + 20 * selection, 15, 1);
+		//">"
+		int arrow[1] = {62};
+		writeLine(arrow, 1, 27, 55 + 20 * selection, 15, 1);
 
 		if (key_hit(KEY_DOWN))
 		{
@@ -371,7 +380,7 @@ void drawArrows()
 	drawFlatMirrored(TEXTURES, 17, 4, 5, 16, 16, 0, TEXTURESIZE);
 }
 
-void renderPause1st(int *map, char *visited, int playerX, int playerY)
+void renderPause1st(int *map, int *visited, int playerX, int playerY)
 {
 	castRays();
 	drawHands();
@@ -501,7 +510,7 @@ int renderPause2nd()
 	}
 }
 
-int renderPauseMenu(int *map, char *visited, int playerX, int playerY)
+int renderPauseMenu(int *map, int *visited, int playerX, int playerY)
 {
 	pauseTimer();
 	drawHud();
