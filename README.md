@@ -1,6 +1,6 @@
-# gba-raycast-engine
+# dcpr
 
-A very much work in progress 3d raycast game for the Game Boy Advance. Written in C.
+A 3d raycast game for the Game Boy Advance. Written in C using Tonc.
 
 ## Compiling
 

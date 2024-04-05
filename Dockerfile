@@ -1,3 +1,3 @@
 FROM devkitpro/devkitarm:latest
-COPY ./ /gba-raycast-engine
-RUN cd gba-raycast-engine && make
+COPY ./ /dcpr
+RUN cd dcpr && make
